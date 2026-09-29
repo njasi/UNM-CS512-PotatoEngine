@@ -157,7 +157,7 @@ export function generateBarrel(
  * @param {*} z_c
  * @returns
  */
-function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
+export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
   const rim = generateTorus(segments, R, r, x_c, y_c, z_c);
 
   let spokes = {

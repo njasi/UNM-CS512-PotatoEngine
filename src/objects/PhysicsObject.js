@@ -67,9 +67,7 @@ export default class PhysicsObject extends SceneObject {
       // NOTE: in a thoughtful simulator we would not do collisions
       // per object, but once per scene so things dont need to
       // be recalculated... but I'm being lazy rn.
-      for (let i = 0; i < scene.objects.length; i++) {
-        const testobj = scene.objects[i];
-
+      for (const [_, testobj] of scene.objects) {
         // if not physics object or not collidable physics
         if (!testobj.collidable || testobj.label == this.label) {
           continue;

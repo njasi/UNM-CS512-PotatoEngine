@@ -140,9 +140,8 @@ export default class SceneObject {
     gl.uniform3f(this.uScaleLoc, this.scale[0], this.scale[1], this.scale[2]);
 
     // if parent exists try to pass over its transformation matrix
-    if (!!this.parent && !!this.parent.M) {
-      gl.uniformMatrix4fv(this.uWorldLoc, false, this.parent.M);
-    }
+    const parentM = !!this.parent?.M ? this.parent.M : mat4Identity()
+    gl.uniformMatrix4fv(this.uWorldLoc, false, parentM);
 
     // draw the object by the index order
     gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);

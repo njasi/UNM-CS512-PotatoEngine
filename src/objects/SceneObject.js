@@ -128,7 +128,6 @@ export default class SceneObject {
    * @param {*} obj the object to add
    */
   addChild(obj) {
-    console.log("adding ", obj.label, "to", this.label, "children")
     this.children.push(obj);
     obj.parent = this;
   }
@@ -169,10 +168,6 @@ export default class SceneObject {
 
     // if parent exists try to pass over its transformation matrix
     const parentM = !!this.parent?.M ? this.parent.M : mat4Identity();
-    if(this.parent){
-      console.log(this.posLoc)
-      console.log(parentM)
-    }
     gl.uniformMatrix4fv(this.uWorldLoc, false, parentM);
 
     // draw the object by the index order

@@ -86,7 +86,6 @@ export default class Scene {
    * @param {Shader} shader
    */
   addShader(shader) {
-    console.log("Adding shader", shader.label)
     this.shaders.set(shader.label, shader);
   }
 

@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>UNM CS 512 Arm Example</title>
+    <!-- load styles from the main site if we online -->
+    <link href="/public/styles.css" rel="stylesheet" />
+    <script defer src="/dist/bundle.js"></script>
+  </head>
+
+  <body>
+    <h1>Arm Example</h1>
+    <main>
+      <div style="display: flex; justify-content: center">
+        <canvas id="glcanvas" width="800" height="450"></canvas>
+        <div class="controls">
+          <p>Arm0</p>
+          <label class="slider-control">
+            <span>
+              <strong>Elevation</strong>
+              <output><span id="elevation0Value">45</span>°</output>
+            </span>
+
+            <input
+              id="elevation0"
+              name="elevation"
+              type="range"
+              min="-180"
+              max="180"
+              value="45"
+              class="metal-slider elevation-slider"
+            />
+          </label>
+
+          <label class="slider-control">
+            <span>
+              <strong>Yaw</strong>
+              <output><span id="yaw0Value">0</span>°</output>
+            </span>
+
+            <input
+              id="yaw0"
+              name="yaw"
+              type="range"
+              min="-180"
+              max="180"
+              value="0"
+              class="metal-slider direction-slider"
+            />
+          </label>
+          <p>Arm1</p>
+          <label class="slider-control">
+            <span>
+              <strong>Elevation</strong>
+              <output><span id="elevation1Value">45</span>°</output>
+            </span>
+
+            <input
+              id="elevation1"
+              name="elevation"
+              type="range"
+              min="-180"
+              max="180"
+              value="45"
+              class="metal-slider elevation-slider"
+            />
+          </label>
+
+          <label class="slider-control">
+            <span>
+              <strong>Yaw</strong>
+              <output><span id="yaw1Value">0</span>°</output>
+            </span>
+
+            <input
+              id="yaw1"
+              name="yaw"
+              type="range"
+              min="-180"
+              max="180"
+              value="0"
+              class="metal-slider direction-slider"
+            />
+          </label>
+          <p>Arm2</p>
+          <label class="slider-control">
+            <span>
+              <strong>Elevation</strong>
+              <output><span id="elevation2Value">45</span>°</output>
+            </span>
+
+            <input
+              id="elevation2"
+              name="elevation"
+              type="range"
+              min="-180"
+              max="180"
+              value="45"
+              class="metal-slider elevation-slider"
+            />
+          </label>
+
+          <label class="slider-control">
+            <span>
+              <strong>Yaw</strong>
+              <output><span id="yaw2Value">0</span>°</output>
+            </span>
+
+            <input
+              id="yaw2"
+              name="yaw"
+              type="range"
+              min="-180"
+              max="180"
+              value="0"
+              class="metal-slider direction-slider"
+            />
+          </label>
+
+          <p>Arm3</p>
+          <label class="slider-control">
+            <span>
+              <strong>Elevation</strong>
+              <output><span id="elevation3Value">45</span>°</output>
+            </span>
+
+            <input
+              id="elevation3"
+              name="elevation"
+              type="range"
+              min="-180"
+              max="180"
+              value="45"
+              class="metal-slider elevation-slider"
+            />
+          </label>
+
+          <label class="slider-control">
+            <span>
+              <strong>Yaw</strong>
+              <output><span id="yaw3Value">0</span>°</output>
+            </span>
+
+            <input
+              id="yaw3"
+              name="yaw"
+              type="range"
+              min="-180"
+              max="180"
+              value="0"
+              class="metal-slider direction-slider"
+            />
+          </label>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

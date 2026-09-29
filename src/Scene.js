@@ -16,6 +16,7 @@ export default class Scene {
 
     // TODO replace objects & shaders with maps. will probably want lights too
     this.objects = new Map();
+    this.renderList = new Map();
     this.lights = new Map();
     this.shaders = new Map();
     this.background = rgba(64, 112, 255, 1);
@@ -162,8 +163,9 @@ export default class Scene {
    *   that should live in here though. Added for now
    * @param {SceneObject} obj the object to add
    * @param {string} programLabel the label for the shader program to use with this object
+   * @param {boolean} [child=false] if the object is a child, if so is not added to scenes render list, the parent renders it
    */
-  addObject(obj, programLabel = obj.programLabel) {
+  addObject(obj, programLabel = obj.programLabel, child = false) {
     if (!programLabel) {
       throw new Error(
         `Object "${obj.label ?? "unknown"}" does not have a shader program`,
@@ -171,6 +173,9 @@ export default class Scene {
     }
 
     obj.programLabel = programLabel;
+    if(!child){
+      this.renderList.set(obj.label, obj);
+    }
     this.objects.set(obj.label, obj);
     obj.loadBuffers(this.gl);
 
@@ -196,6 +201,7 @@ export default class Scene {
    */
   removeObject(label) {
     this.objects.delete(label);
+    this.renderList.delete(label);
   }
 
   /**
@@ -216,7 +222,7 @@ export default class Scene {
    * @param {*} dt timestep in seconds
    */
   update(dt) {
-    this.objects.forEach((obj) => {
+    this.renderList.forEach((obj) => {
       obj.update(dt, this);
     });
   }
@@ -267,7 +273,7 @@ export default class Scene {
     );
 
     let i =0;
-    for (const [_, obj] of this.objects) {
+    for (const [_, obj] of this.renderList) {
       const shaderProgram = this.getProgram(obj.programLabel);
       if (obj.programLabel != this.activeProgram) {
         shaderProgram.use(this.gl);
@@ -295,8 +301,9 @@ export default class Scene {
         }
       }
 
-      obj.bindBuffers(this.gl, shaderProgram.posLoc, shaderProgram.colorLoc);
+      // obj.bindBuffers(this.gl, shaderProgram.posLoc, shaderProgram.colorLoc);
       obj.draw(this.gl);
+
 
       i++;
     }

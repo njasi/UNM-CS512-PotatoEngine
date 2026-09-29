@@ -91,14 +91,14 @@ export default class SceneObject {
    *
    * @param {*} gl the webgl2 context from canvas
    */
-  bindBuffers(gl, posLoc, colorLoc) {
+  bindBuffers(gl) {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-    gl.enableVertexAttribArray(posLoc);
-    gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.posLoc);
+    gl.vertexAttribPointer(this.posLoc, 4, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
-    gl.enableVertexAttribArray(colorLoc);
-    gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.colorLoc);
+    gl.vertexAttribPointer(this.colorLoc, 4, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
   }
 
@@ -117,6 +117,32 @@ export default class SceneObject {
       shader.program,
       "uWorldTransformationMatrix",
     );
+
+    this.posLoc = scene.gl.getAttribLocation(shader.program, "aPosition");
+    this.colorLoc = scene.gl.getAttribLocation(shader.program, "aColor");
+  }
+
+  /**
+   * Add a child to the children list
+   *
+   * @param {*} obj the object to add
+   */
+  addChild(obj) {
+    console.log("adding ", obj.label, "to", this.label, "children")
+    this.children.push(obj);
+    obj.parent = this;
+  }
+
+  /**
+   * Remove a child from the children list
+   *
+   * TODO do we need special handling for if child deletes itself?
+   * hmm the children should proabbly be a map too
+   * 
+   * @param {*} label the label of the object to remove
+   */
+  removeChild(label) {
+    this.children = this.children.filter((c) => c.label != label);
   }
 
   /**
@@ -125,6 +151,8 @@ export default class SceneObject {
    * @param {*} gl the webgl2 context from canvas
    */
   draw(gl) {
+    this.bindBuffers(gl)
+
     gl.uniform3f(
       this.uPosLoc,
       this.position[0],
@@ -140,7 +168,11 @@ export default class SceneObject {
     gl.uniform3f(this.uScaleLoc, this.scale[0], this.scale[1], this.scale[2]);
 
     // if parent exists try to pass over its transformation matrix
-    const parentM = !!this.parent?.M ? this.parent.M : mat4Identity()
+    const parentM = !!this.parent?.M ? this.parent.M : mat4Identity();
+    if(this.parent){
+      console.log(this.posLoc)
+      console.log(parentM)
+    }
     gl.uniformMatrix4fv(this.uWorldLoc, false, parentM);
 
     // draw the object by the index order

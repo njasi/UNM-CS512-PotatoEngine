@@ -13,6 +13,13 @@
  * - transformation matrix previously used?
  */
 
+import {
+  mat4Identity,
+  mat4RotateX,
+  mat4Translate,
+  matMul,
+} from "../transformations";
+
 export default class SceneObject {
   constructor(label, vertices, colors, indices, parent = undefined) {
     this.label = label;
@@ -33,6 +40,9 @@ export default class SceneObject {
     this.vbo = undefined;
     this.nbo = undefined;
     this.ibo = undefined;
+
+    // attach update function here, such as an explosion growing
+    this.updateCB = undefined;
 
     this.position = [0, 0, 0];
     this.rotation = [0, 0, 0];
@@ -100,6 +110,10 @@ export default class SceneObject {
     this.uPosLoc = scene.gl.getUniformLocation(shader.program, "uPosition");
     this.uRotLoc = scene.gl.getUniformLocation(shader.program, "uRotation");
     this.uScaleLoc = scene.gl.getUniformLocation(shader.program, "uScale");
+    this.uWorldLoc = scene.gl.getUniformLocation(
+      shader.program,
+      "uWorldTransformationMatrix",
+    );
   }
 
   /**
@@ -120,17 +134,59 @@ export default class SceneObject {
       this.rotation[1],
       this.rotation[2],
     );
-    gl.uniform3f(
-      this.uScaleLoc,
-      this.scale[0],
-      this.scale[1],
-      this.scale[2],
-    );
+    gl.uniform3f(this.uScaleLoc, this.scale[0], this.scale[1], this.scale[2]);
+
+    // if parent exists try to pass over its transformation matrix
+    if (!!this.parent && !!this.parent.M) {
+      gl.uniformMatrix4fv(this.uWorldLoc, false, this.parent.M);
+    }
+
     // draw the object by the index order
     gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
+    for (const child of this.children) {
+      child.draw(gl);
+    }
   }
 
+  // attach this to the callback passed so we can reference the object
+  setUpdateCB(cb) {
+    this.updateCB = cb;
+    this.updateCB = this.updateCB.bind(this);
+  }
+
+  /**
+   * Update the transformation matrix that represents the world for children
+   * components
+   */
+  updateWorldMatrix() {
+    let M = this.parent ? this.parent.M : mat4Identity();
+
+    // apply transformss one by one to calc world
+    // for the children of this component
+    M = mat4Translate(M, this.position);
+    M = mat4RotateX(M, this.rotation[0]);
+    M = mat4RotateY(M, this.rotation[1]);
+    M = mat4RotateZ(M, this.rotation[2]);
+    M = mat4Scale(M, this.scale);
+
+    this.M = M;
+  }
+
+  /**
+   * Update the object based on time change and
+   * the updateCB function if set
+   * @param {*} dt
+   * @param {*} scene
+   */
   update(dt, scene) {
-    // TODO, implement by extending this class
+    if (!!this.updateCB) {
+      this.updateCB(dt, scene);
+    }
+
+    this.updateWorldMatrix();
+
+    for (const child of this.children) {
+      child.update(dt, scene);
+    }
   }
 }

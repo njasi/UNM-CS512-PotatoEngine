@@ -8,6 +8,9 @@ uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform mat4 uModelTransformationMatrix;
 
+// transformation applied to the world ie parent component
+uniform mat4 uWorldTransformationMatrix;
+
 // object translation coords, not an actual
 // translation matrix
 uniform vec3 uPosition; 
@@ -157,6 +160,6 @@ void main() {
   mat4 R = rotate3D(uRotation.x, uRotation.y, uRotation.z);
   mat4 S = scaling3D(uScale.x, uScale.y, uScale.z);
 
-  gl_Position = uProjectionMatrix * uModelViewMatrix * uModelTransformationMatrix * T * R * S * vec4(aPosition, 1.0f);
+  gl_Position = uProjectionMatrix * uModelViewMatrix * uModelTransformationMatrix * uWorldTransformationMatrix * T * R * S * vec4(aPosition, 1.0f);
   vColor = aColor;
 }

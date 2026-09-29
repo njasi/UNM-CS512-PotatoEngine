@@ -243,6 +243,26 @@ export function mat4RotateZ(matrix, angle) {
 }
 
 /**
+ * Matrix scaling
+ * @param {*} matrix
+ * @param {*} scale
+ * @returns
+ */
+export function mat4Scale(matrix, scale) {
+  const [sx, sy, sz] = scale;
+
+  const result = new Float32Array(matrix);
+
+  for (let i = 0; i < 4; i++) {
+    result[i] *= sx;
+    result[4 + i] *= sy;
+    result[8 + i] *= sz;
+  }
+
+  return result;
+}
+
+/**
  * Apply a transformation matrix to a array of vertices
  *
  * @param {Array(Number)} vertices

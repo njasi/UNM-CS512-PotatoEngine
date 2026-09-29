@@ -31,7 +31,7 @@ scene.addShader(
     "basicVertex",
     scene.gl.VERTEX_SHADER,
     "",
-    "./src/shaders/vertex.vert",
+    "/src/shaders/vertex.vert",
   ),
 );
 
@@ -40,7 +40,7 @@ scene.addShader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
     "",
-    "./src/shaders/fragment.frag",
+    "/src/shaders/fragment.frag",
   ),
 );
 
@@ -49,7 +49,7 @@ scene.addShader(
     "waterVertex",
     scene.gl.VERTEX_SHADER,
     "",
-    "./src/shaders/water.vert",
+    "/src/shaders/water.vert",
   ),
 );
 
@@ -425,9 +425,9 @@ async function main() {
   const fragmentShader = scene.getShader("basicFragment");
   const waterShader = scene.getShader("waterVertex");
 
-  // vertEditor.value = vertexShader.source;
-  // waterEditor.value = waterShader.source;
-  // fragEditor.value = fragmentShader.source;
+  vertEditor.value = vertexShader.source;
+  waterEditor.value = waterShader.source;
+  fragEditor.value = fragmentShader.source;
 
   scene.initBuffers();
 
@@ -437,7 +437,7 @@ async function main() {
 
   setupMouseControls();
   setupKeyboardControls();
-  // setupInputControls();
+  setupInputControls();
 
   // Initialize when page loads
   // dont need onload since we defer this script

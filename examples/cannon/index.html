@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>UNM CS 512 HW3</title>
+    <!-- load styles from the main site if we online -->
+    <link href="/public/styles.css" rel="stylesheet" />
+    <link href="/examples/cannon/styles.css" rel="stylesheet" />
+
+    <!-- TODO should webpack all these files together -->
+    <script defer src="/dist/bundle.js"></script>
+  </head>
+
+  <body>
+    <h1>HW 3: Interactive Controls & Geometric Primitives</h1>
+    <main>
+      <!-- <h2>Interactive Controls & Geometric Primitives</h2> -->
+      <!-- <p>
+        Edit vertex and fragment shaders on the left to get the result
+        instantly.<br />
+        Use mouse to drag and rotate the cube. <br />
+        Use arrow keys and w, s keys to move the camera.<br />
+        Press F12 to see the console for debugging.
+      </p> -->
+
+      <div style="display: flex; justify-content: center">
+        <div class="cannon-wooden-border">
+          <div class="cannon-controls control-panel control-panel-small">
+            <h2>Cannon Minigame <br /></h2>
+          </div>
+
+          <canvas id="glcanvas" width="800" height="450"></canvas>
+          <div class="cannon-controls">
+            <div class="control-panel control-panel-main">
+              <label class="slider-control">
+                <span>
+                  <strong>Elevation</strong>
+                  <output><span id="elevationValue">45</span>°</output>
+                </span>
+
+                <input
+                  id="elevation"
+                  name="elevation"
+                  type="range"
+                  min="0"
+                  max="90"
+                  value="45"
+                  class="metal-slider elevation-slider"
+                />
+              </label>
+
+              <label class="slider-control">
+                <span>
+                  <strong>Yaw</strong>
+                  <output><span id="yawValue">0</span>°</output>
+                </span>
+
+                <input
+                  id="yaw"
+                  name="yaw"
+                  type="range"
+                  min="-180"
+                  max="180"
+                  value="0"
+                  class="metal-slider direction-slider"
+                />
+              </label>
+
+              <label class="slider-control power-control">
+                <span>
+                  <strong>Power</strong>
+                  <output><span id="powerValue">50</span>%</output>
+                </span>
+
+                <input
+                  id="power"
+                  name="power"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="50"
+                  class="power-slider"
+                />
+              </label>
+            </div>
+            <div class="control-panel control-panel-fire">
+              <button
+                id="fire-button"
+                class="fire-button"
+                type="button"
+              ></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <br />
+      <h2>Shaders</h2>
+      <div class="shader-editors">
+        <div>
+          <b>Vertex Shader</b><br />
+          <textarea id="vertEditor"></textarea>
+        </div>
+        <div>
+          <b>Fragment Shader</b><br />
+          <textarea id="fragEditor"></textarea>
+        </div>
+        <div>
+          <b>Water Vertex Shader</b><br />
+          <textarea id="waterEditor"></textarea>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

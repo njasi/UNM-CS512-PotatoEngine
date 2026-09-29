@@ -1,4 +1,4 @@
-import { PhysicsObject } from "./PhysicsObject";
+import PhysicsObject from "./PhysicsObject";
 
 /**
  * Literally just a object floating on water, that behaves just like physics object
@@ -6,7 +6,7 @@ import { PhysicsObject } from "./PhysicsObject";
  *
  * Floating calculations are very lazy but good enough for now.
  */
-export class FloatingObject extends PhysicsObject {
+export default class FloatingObject extends PhysicsObject {
   /**
    * Create a floating physics object
    * @param {*} label 

@@ -267,7 +267,7 @@ export default class Scene {
     );
 
     let i =0;
-    for (const [key, obj] of this.objects) {
+    for (const [_, obj] of this.objects) {
       const shaderProgram = this.getProgram(obj.programLabel);
       if (obj.programLabel != this.activeProgram) {
         shaderProgram.use(this.gl);

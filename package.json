@@ -2,7 +2,7 @@
   "name": "hw3",
   "version": "1.0.0",
   "description": "Third homework from CS512: Introduction to computer graphics @ UNM fall 2026",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "webpack serve",
     "build": "webpack --mode production"

@@ -2,7 +2,7 @@ import ShaderProgram from "../ShaderProgram";
 import { vec4distance, scaleVec4, sumVec4 } from "../vec4";
 import SceneObject from "./SceneObject";
 
-export class PhysicsObject extends SceneObject {
+export default class PhysicsObject extends SceneObject {
   /**
    *
    * @param {*} label

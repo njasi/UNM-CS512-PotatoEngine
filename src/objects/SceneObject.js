@@ -16,6 +16,9 @@
 import {
   mat4Identity,
   mat4RotateX,
+  mat4RotateY,
+  mat4RotateZ,
+  mat4Scale,
   mat4Translate,
   matMul,
 } from "../transformations";
@@ -164,9 +167,9 @@ export default class SceneObject {
     // apply transformss one by one to calc world
     // for the children of this component
     M = mat4Translate(M, this.position);
-    M = mat4RotateX(M, this.rotation[0]);
-    M = mat4RotateY(M, this.rotation[1]);
     M = mat4RotateZ(M, this.rotation[2]);
+    M = mat4RotateY(M, this.rotation[1]);
+    M = mat4RotateX(M, this.rotation[0]);
     M = mat4Scale(M, this.scale);
 
     this.M = M;

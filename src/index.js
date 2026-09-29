@@ -425,9 +425,9 @@ async function main() {
   const fragmentShader = scene.getShader("basicFragment");
   const waterShader = scene.getShader("waterVertex");
 
-  vertEditor.value = vertexShader.source;
-  waterEditor.value = waterShader.source;
-  fragEditor.value = fragmentShader.source;
+  // vertEditor.value = vertexShader.source;
+  // waterEditor.value = waterShader.source;
+  // fragEditor.value = fragmentShader.source;
 
   scene.initBuffers();
 
@@ -437,7 +437,7 @@ async function main() {
 
   setupMouseControls();
   setupKeyboardControls();
-  setupInputControls();
+  // setupInputControls();
 
   // Initialize when page loads
   // dont need onload since we defer this script

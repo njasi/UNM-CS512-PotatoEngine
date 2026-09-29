@@ -13,17 +13,17 @@ export default class Scene {
     if (!this.gl) {
       alert("WebGL2 not supported");
     }
-    
+
     // TODO replace objects & shaders with maps. will probably want lights too
-    this.objects = [];
-    this.lights = [];
-    this.shaders = [];
+    this.objects = new Map();
+    this.lights = new Map();
+    this.shaders = new Map();
     this.background = rgba(64, 112, 255, 1);
 
     // start time and time elapsed
-    this.startTime = Date.now()
+    this.startTime = Date.now();
     this.time = 0;
-    
+
     // use to check if we actually need to switch shaders...
     this.activeProgram = undefined;
     // Map<string, ShaderProgram>
@@ -33,7 +33,7 @@ export default class Scene {
     this.rotationY = 0;
 
     // corrected aspect, should keep things looking 1:1
-    this.camera = new Camera( this.canvas.width / this.canvas.height)
+    this.camera = new Camera(this.canvas.width / this.canvas.height);
 
     // object rotation
     this.rotationX;
@@ -47,11 +47,13 @@ export default class Scene {
    * Load our shaders and setup
    */
   async loadShaders() {
-    await Promise.all(this.shaders.map((shader) => shader.loadRemote()));
+    await Promise.all(
+      [...this.shaders].map(([key, shader]) => shader.loadRemote()),
+    );
 
-    for (let i = 0; i < this.shaders.length; i++) {
-      this.shaders[i].create(this.gl);
-    }
+    this.shaders.forEach((shader) => {
+      shader.create(this.gl);
+    });
   }
 
   /**
@@ -80,20 +82,21 @@ export default class Scene {
 
   /**
    * Add a shader to the scene
-   * @param {Shader} shader 
+   * @param {Shader} shader
    */
   addShader(shader) {
-    this.shaders.push(shader);
+    console.log("Adding shader", shader.label)
+    this.shaders.set(shader.label, shader);
   }
 
   /**
    * Get a shader by its label
-   * @param {*} label 
-   * @returns 
+   * @param {*} label
+   * @returns
    */
   getShader(label) {
     // TODO should I shove shaders in a map?
-    const shader = this.shaders.find((shader) => shader.label === label);
+    const shader = this.shaders.get(label);
 
     if (!shader) {
       throw new Error(`Shader "${label}" was not found`);
@@ -153,9 +156,9 @@ export default class Scene {
 
   /**
    * Add an object to the scene
-   * 
+   *
    * - need an additional call to SceneObject.loadBuffers
-   *   when adding, not sure if that is something 
+   *   when adding, not sure if that is something
    *   that should live in here though. Added for now
    * @param {SceneObject} obj the object to add
    * @param {string} programLabel the label for the shader program to use with this object
@@ -168,23 +171,23 @@ export default class Scene {
     }
 
     obj.programLabel = programLabel;
-    this.objects.push(obj);
-    obj.loadBuffers(this.gl)
+    this.objects.set(obj.label, obj);
+    obj.loadBuffers(this.gl);
 
     // TODO make setuniforms standard
-    if(!!obj.setUniforms){
-      obj.setUniforms(this)
+    if (!!obj.setUniforms) {
+      obj.setUniforms(this);
     }
   }
 
   /**
    * Get an object by its lable
-   * 
+   *
    * TODO: should really update the objects colleciton to a map instead of a list
-   * @param {string} label 
+   * @param {string} label
    */
-  getObject(label){
-    return this.objects.find(obj => obj.label == label)
+  getObject(label) {
+    return this.objects.get(label);
   }
 
   /**
@@ -192,7 +195,7 @@ export default class Scene {
    * @param {*} label
    */
   removeObject(label) {
-    this.objects = this.objects.filter((obj) => obj.label !== label);
+    this.objects.delete(label);
   }
 
   /**
@@ -213,10 +216,9 @@ export default class Scene {
    * @param {*} dt timestep in seconds
    */
   update(dt) {
-    for (let i = 0; i < this.objects.length; i++) {
-      const obj = this.objects[i];
+    this.objects.forEach((obj) => {
       obj.update(dt, this);
-    }
+    });
   }
 
   /**
@@ -226,12 +228,11 @@ export default class Scene {
     const nextTime = Date.now() - this.startTime;
 
     const dt = nextTime - this.time;
-    this.update(dt / 1000)
+    this.update(dt / 1000);
 
-    this.time = nextTime
+    this.time = nextTime;
 
     // delta time since start in ms
-
 
     if (!this.gl) {
       console.error("Scene has no WebGL context");
@@ -265,24 +266,20 @@ export default class Scene {
       sceneRotation,
     );
 
-    for (let i = 0; i < this.objects.length; i++) {
-      const obj = this.objects[i];
-
+    let i =0;
+    for (const [key, obj] of this.objects) {
       const shaderProgram = this.getProgram(obj.programLabel);
-      if(obj.programLabel != this.activeProgram){
+      if (obj.programLabel != this.activeProgram) {
         shaderProgram.use(this.gl);
       }
 
-
-
       // we only need to update these guys on the first loop iteration or on switch
-      if(i == 0 || obj.programLabel != this.activeProgram){
-
+      if (i == 0 || obj.programLabel != this.activeProgram) {
         // set time in seconds
         if (shaderProgram.timeLoc !== null) {
           this.gl.uniform1f(shaderProgram.timeLoc, this.time / 1000);
         }
-  
+
         if (shaderProgram.uPM !== null) {
           this.gl.uniformMatrix4fv(shaderProgram.uPM, false, projectionMatrix);
         }
@@ -300,6 +297,8 @@ export default class Scene {
 
       obj.bindBuffers(this.gl, shaderProgram.posLoc, shaderProgram.colorLoc);
       obj.draw(this.gl);
+
+      i++;
     }
   }
 }

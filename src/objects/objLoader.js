@@ -26,7 +26,7 @@ export async function cacheOBJ(url, id) {
 
     switch (type) {
       case "v":
-        vertices.push(...data.slice(1, 4).map(toNum));
+        vertices.push(...data.slice(1, 4).map(toNum), 0);
         break;
 
       case "vn":

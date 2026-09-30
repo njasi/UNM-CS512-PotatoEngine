@@ -29,8 +29,8 @@ npm run build
 - [ ] shader "ping ponging" for support of multiple shaders per object, consider: s_1 material -> s_2 lighting
     - [ ] should also allow passes for more complicated lighting later if interested
     - [ ] bind basic values to shader uniforms for all shaders like lighting, position, transformation etc
-- [ ] hierarchical model handling
+- [x] hierarchical model handling
 - [ ] object reaping, consider cannon balls far out of range... these should be killed
 - [ ] standardize object classes & clean up interfaces
-- [ ] wrap "engine" into an npm module to use conveniently for homework & final project
+- [o] wrap "engine" into an npm module to use conveniently for homework & final project
 - [ ] add handling for mirroring and skewing in gl pipeline.

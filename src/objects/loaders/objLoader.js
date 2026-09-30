@@ -1,7 +1,7 @@
 // todo load obj file? should be fairly doable
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
 
-import { makeSceneObjectGenerator } from "./helpers";
+import { makeSceneObjectGenerator } from "../helpers";
 
 // TODO probably do something more reasonable than this
 const LOADED_OBJECTS = {};

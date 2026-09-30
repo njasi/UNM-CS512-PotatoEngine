@@ -32,5 +32,11 @@ npm run build
 - [x] hierarchical model handling
 - [ ] object reaping, consider cannon balls far out of range... these should be killed
 - [ ] standardize object classes & clean up interfaces
-- [o] wrap "engine" into an npm module to use conveniently for homework & final project
+- [x] wrap "engine" into an npm module to use conveniently for homework & final project
 - [ ] add handling for mirroring and skewing in gl pipeline.
+- [o] implement BVH loader for assignment 4, basic arm, in examples dir is just too boring...
+    - https://research.cs.wisc.edu/graphics/Courses/cs-838-1999/Jeff/BVH.html
+    - [ ] parse bvh file
+    - [ ] construct skeleton based on the bvh file
+    - [ ] play bvh animation
+        - [ ] loop animation

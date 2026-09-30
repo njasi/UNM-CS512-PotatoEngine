@@ -1,4 +1,4 @@
-export { default as BasicControls } from "./basic";
+import * as BasicControls from "./basic";
 
 export default {
   BasicControls,

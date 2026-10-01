@@ -223,7 +223,7 @@ function parseBVH(text) {
       numLabel += nextToken();
     }
     const value = nextNumber();
-    return { [numLabel.replace(":", "")]: value };
+    return { [numLabel.replace(":", "").replaceAll(" ", "")]: value };
   }
 
   /**
@@ -293,6 +293,7 @@ function makeJoint(label, segments, thickness, color, bvh = false) {
  * @param {Joint} rootJoint     the root of the joint structure
  * @param {*} jointList    list of sequential joint names
  * @param {*} frames    the animation frames
+ * @param {*} motionInfo  animation metadata
  * @param {number} thickness    the radius of object geometry
  * @param {number} segments the number of segments to use in object geometry
  * @param {rgba()} color    the color of all created objects
@@ -303,6 +304,7 @@ function bvhToSkeletonObject(
   rootJoint,
   jointList,
   frames,
+  motionInfo,
   thickness = 0.1,
   segments = 16,
   color = rgba(255, 255, 255, 1),
@@ -314,9 +316,13 @@ function bvhToSkeletonObject(
 
   makeBones(root, rootJoint, thickness, segments, color, prefix);
 
+  jointList.forEach((j) => {
+    j.label = prefix + j.label;
+  });
   root.jointList = jointList;
   root.frames = frames;
   root.animationPlay = true;
+  root.motionInfo = motionInfo;
 
   root.setUpdateCB(updateBVH);
 
@@ -404,21 +410,13 @@ function makeBones(
  * this will be some soft of spline from the previous frame to the current
  * frame based on the time. probably linear is easiest
  *
- * @param {SceneObject} child
- * @param {*} time          the current time in the animation
- * @param {*} framesPrevStart    the time the prev frame started
- * @param {*} framesNextStart    the time the next frame starts
- * @param {*} framesPrev    the parameters for the prev frame
- * @param {*} framesNext    the parameters for the next frame
+ * @param {Joint} child   the child joint to animate
+ * @param {Scene} scene   the animation scene
+ * @param {number} frameRatio  the ratio between frames
+ * @param {*} framesPrev  the previous frame location
+ * @param {*} framesNext  the next frame locations
  */
-function applyChildFrame(
-  child,
-  time,
-  framePrevStart,
-  frameNextStart,
-  framesPrev,
-  framesNext,
-) {}
+function applyChildFrame(child, scene, frameRatio, framesPrev, framesNext) {}
 
 /**
  * Update function to play the animation
@@ -431,9 +429,25 @@ function updateBVH(dt, scene) {
   // console.log(this.jointList)
   this.animationTime += dt;
 
+  const loopedTime =
+    this.animationTime % (this.motionInfo.Frames * this.motionInfo.FrameTime);
+  const prevFrameIdx = Math.floor(loopedTime / this.motionInfo.FrameTime);
+  const nextFrameIdx = (prevFrameIdx + 1) % this.motionInfo.Frames;
+  const frameRatio =
+    (loopedTime % this.motionInfo.FrameTime) / this.motionInfo.FrameTime;
+
   let offset = 0;
   for (const joint of this.jointList) {
     offset += joint.channels.length;
+    const prevFrame = this.frames[prevFrameIdx].slice(
+      offset,
+      offset + joint.channels.length,
+    );
+    const nextFrame = this.frames[nextFrameIdx].slice(
+      offset,
+      offset + joint.channels.length,
+    );
+    applyChildFrame(joint, scene);
   }
 
   return updateBVH;
@@ -459,6 +473,7 @@ export function loadBVH(
     LOADED_BVH[id].rootJoint,
     LOADED_BVH[id].jointList,
     LOADED_BVH[id].frames,
+    LOADED_BVH[id].motionInfo,
     thickness,
     segments,
     color,

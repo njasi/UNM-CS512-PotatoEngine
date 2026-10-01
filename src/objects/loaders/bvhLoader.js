@@ -116,14 +116,14 @@ function makeJoint(label, segments, thickness, color) {
 /**
  * Construct bones from joint positions and update function
  * from the frames
- * 
+ *
  * @param {*} joints    the joint list & structure
  * @param {*} frames    the animation frames
  * @param {number} thickness    the radius of object geometry
  * @param {number} segments the number of segments to use in object geometry
  * @param {rgba()} color    the color of all created objects
  * @param {string} prefix   the prefix to attach to all object labels
- * @returns 
+ * @returns
  */
 function bvhToSkeletonObject(
   joints,
@@ -242,6 +242,28 @@ function generateUpdateBVH(joints, frames) {
   return updateBVH;
 }
 
-export function loadBVH(id) {
-  return bvhToSkeletonObject(...LOADED_BVH[id]);
+/**
+ * Load a BVH file into a SceneObject.
+ * @param {*} id the id of the cached & parsed bvh file to load
+ * @param {number} thickness    the radius of object geometry
+ * @param {number} segments the number of segments to use in object geometry
+ * @param {rgba()} color    the color of all created objects
+ * @param {string} prefix   the prefix to attach to all object labels
+ * @returns
+ */
+export function loadBVH(
+  id,
+  thickness = 0.1,
+  segments = 16,
+  color = rgba(255, 255, 255, 1),
+  prefix = "",
+) {
+  return bvhToSkeletonObject(
+    LOADED_BVH[id].joints,
+    LOADED_BVH[id].frames,
+    thickness,
+    segments,
+    color,
+    prefix,
+  );
 }

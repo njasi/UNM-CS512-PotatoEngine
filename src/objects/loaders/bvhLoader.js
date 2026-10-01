@@ -89,14 +89,16 @@ export async function cacheBVH(url, id) {
   const response = await fetch(url);
   const text = await response.text();
 
-  const { joints, frames } = parseBVH(text);
+  const loadedBVH = parseBVH(text);
 
-  LOADED_BVH[id] = { joints, frames };
+  console.log(loadedBVH)
+
+  LOADED_BVH[id] = loadedBVH;
 }
 
 function parseBVH(text) {
   // todo track joint obj names so can reference while animating
-  const joints = [];
+  const jointNames = [];
   const frames = [];
 
   const tokens = text.match(/[{}]|[^\s{}]+/g);
@@ -144,8 +146,9 @@ function parseBVH(text) {
   function parseJoint() {
     const type = nextToken();
     const label = nextToken();
+    jointNames.push(label);
 
-    console.log(type,label)
+    console.log(type, label);
 
     nextExpect("{");
     nextExpect("OFFSET");
@@ -174,25 +177,26 @@ function parseBVH(text) {
         nextExpect("Site");
         nextExpect("{");
         nextExpect("OFFSET");
-        const offset = parseVector()
-        nextExpect("}")
+        const offset = parseVector();
+        nextExpect("}");
 
         joint.addChild(new Joint(label + "end", offset, [], false, true));
       }
     }
-    
-    nextExpect("}")
-    return joint
+
+    nextExpect("}");
+    return joint;
   }
 
-
-  function parseMotion(){
-    nextExpect("MOTION")
+  function parseMotion() {
+    nextExpect("MOTION");
     // TODO lots of numbers lol
   }
 
-  nextExpect("HIERARCHY")
-  console.log(parseJoint())
+  nextExpect("HIERARCHY");
+  const rootJoint = parseJoint();
+
+  return { rootJoint, jointNames, frames };
 }
 
 ///////////////////////////////////

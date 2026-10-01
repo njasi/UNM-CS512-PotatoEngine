@@ -115,9 +115,10 @@ function parseBVH(text) {
   // todo track joint objs so can reference while animating
   const jointList = [];
   const frames = [];
-  
+
   const tokens = text.match(/[{}]|[^\s{}]+/g);
 
+  let motionInfo = {};
   let totalChannels = 0;
   let i = 0;
 
@@ -216,10 +217,13 @@ function parseBVH(text) {
     return joint;
   }
 
-  function parseNamedNumber(){
-    const numLabel = nextToken().replace(":", "")
-    const value = nextNumber()
-    return {[numLabel]: value}
+  function parseNamedNumber() {
+    let numLabel = "";
+    while (!numLabel.endsWith(":")) {
+      numLabel += nextToken();
+    }
+    const value = nextNumber();
+    return { [numLabel.replace(":", "")]: value };
   }
 
   /**
@@ -227,15 +231,20 @@ function parseBVH(text) {
    */
   function parseMotion() {
     nextExpect("MOTION");
-    parseNamedNumber()
-    parseNamedNumber()
-    // TODO lots of numbers lol
+    motionInfo = {
+      ...parseNamedNumber(),
+      ...parseNamedNumber(),
+    };
+    for (let j = 0; j < motionInfo.Frames; j++) {
+      frames.push([...new Array(totalChannels)].map((_) => nextNumber()));
+    }
   }
 
   nextExpect("HIERARCHY");
   const rootJoint = parseJoint();
+  parseMotion();
 
-  return { rootJoint, jointList, frames };
+  return { rootJoint, jointList, frames, motionInfo };
 }
 
 ///////////////////////////////////

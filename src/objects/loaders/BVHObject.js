@@ -12,5 +12,6 @@ export default class BVHObject extends SceneObject {
     this.animationTime = 0;
     this.jointList = [];
     this.frames = [];
+    this.motionInfo = {};
   }
 }

@@ -95,6 +95,7 @@ export async function cacheBVH(url, id) {
 }
 
 function parseBVH(text) {
+  // todo track joint obj names so can reference while animating
   const joints = [];
   const frames = [];
 
@@ -141,8 +142,10 @@ function parseBVH(text) {
   }
 
   function parseJoint() {
-    const type = next();
-    const label = next();
+    const type = nextToken();
+    const label = nextToken();
+
+    console.log(type,label)
 
     nextExpect("{");
     nextExpect("OFFSET");
@@ -153,7 +156,7 @@ function parseBVH(text) {
 
     const channels = [];
     for (let i = 0; i < channelCount; i++) {
-      channels.push(next());
+      channels.push(nextToken());
     }
 
     const joint = new Joint(label, offset, channels, type == "ROOT");
@@ -167,6 +170,7 @@ function parseBVH(text) {
 
       if (tokens[i] == "End") {
         // at an endpoinit
+        nextToken();
         nextExpect("Site");
         nextExpect("{");
         nextExpect("OFFSET");
@@ -176,7 +180,18 @@ function parseBVH(text) {
         joint.addChild(new Joint(label + "end", offset, [], false, true));
       }
     }
+    
+    return joint
   }
+
+
+  function parseMotion(){
+    nextExpect("MOTION")
+    // TODO lots of numbers lol
+  }
+
+  nextExpect("HIERARCHY")
+  console.log(parseJoint())
 }
 
 ///////////////////////////////////

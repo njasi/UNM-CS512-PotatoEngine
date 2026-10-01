@@ -97,6 +97,15 @@ export async function cacheBVH(url, id) {
   LOADED_BVH[id] = loadedBVH;
 }
 
+/**
+ * Parse the BVH structure from text
+ * - load joint structure
+ * - give list of joint names in order for animation
+ * - return animation frame information
+ * 
+ * @param {*} text text to parse
+ * @returns 
+ */
 function parseBVH(text) {
   // todo track joint obj names so can reference while animating
   const jointNames = [];
@@ -144,6 +153,20 @@ function parseBVH(text) {
     return [nextNumber(), nextNumber(), nextNumber()];
   }
 
+  /**
+   * Parse a joint and its children recursively from tokens
+   * 
+   * ROOT joint_Root
+   * {
+   * OFFSET 0 0 0
+   * CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+   * JOINT Hips
+   * {...}
+   * ...
+   * }
+   * 
+   * @returns 
+   */
   function parseJoint() {
     const type = nextToken();
     const label = nextToken();
@@ -189,6 +212,9 @@ function parseBVH(text) {
     return joint;
   }
 
+  /**
+   * Parse the motion (animation frame) section of the bvh file
+   */
   function parseMotion() {
     nextExpect("MOTION");
     // TODO lots of numbers lol

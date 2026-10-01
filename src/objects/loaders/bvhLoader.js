@@ -25,7 +25,11 @@
  *      (this is handled by the hierarchical model setup already we just need to set the offset per child)
  */
 
-import { makeSceneObjectGenerator, rgba } from "../helpers";
+import {
+  generateSphereObject,
+  makeSceneObjectGenerator,
+  rgba,
+} from "../helpers";
 import { generateCylinder, generateFillerColors } from "../primitives";
 import SceneObject from "../SceneObject";
 
@@ -105,13 +109,8 @@ export async function cacheBVH(url, id) {
  * @param {string} label
  * @returns
  */
-function makeJoint(label) {
-  return new SceneObject(
-    label,
-    new Float32Array(),
-    new Float32Array(),
-    new Uint16Array(),
-  );
+function makeJoint(label, segments, thickness, color) {
+  return generateSphereObject(label, color, segments, thickness);
 }
 
 /**

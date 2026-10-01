@@ -97,6 +97,42 @@ function parseBVH(text) {
   const frames = [];
 
   const tokens = text.match(/[{}]|[^\s{}]+/g);
+  console.log(tokens);
+
+  let i = 0;
+
+  /**
+   * Get the next token in the list
+   * @returns
+   */
+  function nextToken() {
+    i++;
+    return tokens[i - 1];
+  }
+
+  /**
+   * Get the next token in list and parse it into a number
+   * @returns Number
+   */
+  function nextNumber() {
+    const value = Number(nextToken());
+    return value;
+  }
+
+  /**
+   * Check if the next value is an expected valkue
+   * @param {string} expected
+   */
+  function nextExpect(expected) {
+    const value = nextToken();
+    if (value != expected) {
+      throw new Error(`expected ${expected} got ${value}`);
+    }
+  }
+
+  function parseVector() {
+    return [nextNumber(), nextNumber(), nextNumber()];
+  }
 
   function parseJoint() {}
 }

@@ -87,18 +87,23 @@ export async function cacheBVH(url, id) {
   const response = await fetch(url);
   const text = await response.text();
 
-  const joints = [];
-  const frames = [];
-
-  const lines = text.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // TODO actul parsing
-  }
+  const { joints, frames } = parseBVH(text);
 
   LOADED_BVH[id] = { joints, frames };
 }
+
+function parseBVH(text) {
+  const joints = [];
+  const frames = [];
+
+  const tokens = text.match(/[{}]|[^\s{}]+/g);
+
+  function parseJoint() {}
+}
+
+///////////////////////////////////
+// SKELETON SCENEOBJECT CREATION //
+///////////////////////////////////
 
 /**
  * Make a joint placeholder bones connect from joint to joint
@@ -209,6 +214,10 @@ function makeBones(
 
   return jointObj;
 }
+
+////////////////////////
+// ANIMATION CREATION //
+////////////////////////
 
 /**
  * Apply a frame to a single child

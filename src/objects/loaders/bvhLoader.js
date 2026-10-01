@@ -214,13 +214,18 @@ function parseBVH(text) {
  * @returns
  */
 function makeJoint(label, segments, thickness, color) {
-  return generateSphereObject(label, rgba(255,255,255,1), segments, thickness);
+  return generateSphereObject(
+    label,
+    rgba(255, 255, 255, 1),
+    segments,
+    1.5 * thickness,
+  );
 }
 
 /**
  * Construct bones from joint positions and update function
  * from the frames
- * 
+ *
  * NOTE: joint names probably changes at somepoint
  *
  * @param {Joint} rootJoint     the root of the joint structure
@@ -243,7 +248,7 @@ function bvhToSkeletonObject(
 ) {
   // this will be empty with no verts since its a 'joint'
   // unless I want to render them as spheres...
-  const root = makeJoint(prefix+"ROOT", segments, thickness, color);
+  const root = makeJoint(prefix + "ROOT", segments, thickness, color);
 
   makeBones(root, rootJoint, thickness, segments, color, prefix);
 
@@ -276,7 +281,12 @@ function makeBones(
   color = rgba(255, 255, 255, 1),
   prefix = "",
 ) {
-  const jointObj = makeJoint(prefix + currJoint.label, segments, thickness, color);
+  const jointObj = makeJoint(
+    prefix + currJoint.label,
+    segments,
+    thickness,
+    color,
+  );
   jointObj.position = [...currJoint.offset];
   parent.addChild(jointObj);
 
@@ -296,9 +306,9 @@ function makeBones(
       0,
       0,
       dist / 2,
-      0,
+      0.75,
       true,
-      2,
+      8,
     );
     const colors = generateFillerColors(bonePrim.vertexCount, color, true);
     const bone = new SceneObject(
@@ -373,7 +383,7 @@ export function loadBVH(
   prefix = "",
 ) {
   return bvhToSkeletonObject(
-    LOADED_BVH[id].rootJoint, 
+    LOADED_BVH[id].rootJoint,
     LOADED_BVH[id].jointNames,
     LOADED_BVH[id].frames,
     thickness,
@@ -388,7 +398,7 @@ export function loadBVH(
  * we created all those bones in here without adding them to the scene
  * @param {Scene} scene
  * @param {SceneObject} bvhObject
- * @param {string} shader 
+ * @param {string} shader
  */
 export function sceneAddBVH(scene, bvhObject, shader, root = true) {
   scene.addObject(bvhObject, shader, !root);

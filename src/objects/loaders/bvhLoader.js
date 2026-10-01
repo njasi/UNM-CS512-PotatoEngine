@@ -181,6 +181,7 @@ function parseBVH(text) {
       }
     }
     
+    nextExpect("}")
     return joint
   }
 

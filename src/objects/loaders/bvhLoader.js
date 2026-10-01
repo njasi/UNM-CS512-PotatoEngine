@@ -30,9 +30,14 @@ import {
   makeSceneObjectGenerator,
   rgba,
 } from "../helpers";
-import { generateCylinder, generateFillerColors } from "../primitives";
+import {
+  generateCylinder,
+  generateFillerColors,
+  generateSphere,
+} from "../primitives";
 import SceneObject from "../SceneObject";
 import Scene from "../../Scene";
+import BVHObject from "./BVHObject";
 
 // TODO probably do something more reasonable than this
 const LOADED_BVH = {};
@@ -102,18 +107,18 @@ export async function cacheBVH(url, id) {
  * - load joint structure
  * - give list of joint names in order for animation
  * - return animation frame information
- * 
+ *
  * @param {*} text text to parse
- * @returns 
+ * @returns
  */
 function parseBVH(text) {
-  // todo track joint obj names so can reference while animating
-  const jointNames = [];
+  // todo track joint objs so can reference while animating
+  const jointList = [];
   const frames = [];
-
+  
   const tokens = text.match(/[{}]|[^\s{}]+/g);
-  console.log(tokens);
 
+  let totalChannels = 0;
   let i = 0;
 
   /**
@@ -155,7 +160,7 @@ function parseBVH(text) {
 
   /**
    * Parse a joint and its children recursively from tokens
-   * 
+   *
    * ROOT joint_Root
    * {
    * OFFSET 0 0 0
@@ -164,15 +169,12 @@ function parseBVH(text) {
    * {...}
    * ...
    * }
-   * 
-   * @returns 
+   *
+   * @returns
    */
   function parseJoint() {
     const type = nextToken();
     const label = nextToken();
-    jointNames.push(label);
-
-    console.log(type, label);
 
     nextExpect("{");
     nextExpect("OFFSET");
@@ -187,6 +189,8 @@ function parseBVH(text) {
     }
 
     const joint = new Joint(label, offset, channels, type == "ROOT");
+    jointList.push(joint);
+    totalChannels += joint.channels.length;
 
     while (tokens[i] !== "}") {
       if (tokens[i] == "JOINT") {
@@ -212,18 +216,26 @@ function parseBVH(text) {
     return joint;
   }
 
+  function parseNamedNumber(){
+    const numLabel = nextToken().replace(":", "")
+    const value = nextNumber()
+    return {[numLabel]: value}
+  }
+
   /**
    * Parse the motion (animation frame) section of the bvh file
    */
   function parseMotion() {
     nextExpect("MOTION");
+    parseNamedNumber()
+    parseNamedNumber()
     // TODO lots of numbers lol
   }
 
   nextExpect("HIERARCHY");
   const rootJoint = parseJoint();
 
-  return { rootJoint, jointNames, frames };
+  return { rootJoint, jointList, frames };
 }
 
 ///////////////////////////////////
@@ -239,7 +251,22 @@ function parseBVH(text) {
  * @param {string} label
  * @returns
  */
-function makeJoint(label, segments, thickness, color) {
+function makeJoint(label, segments, thickness, color, bvh = false) {
+  if (bvh) {
+    const spherePrim = generateSphere(segments, 1.5 * thickness);
+    const colors = generateFillerColors(
+      spherePrim.vertexCount,
+      rgba(255, 255, 255, 1),
+    );
+
+    return new BVHObject(
+      label,
+      new Float32Array(spherePrim.vertices),
+      new Float32Array(colors),
+      new Uint16Array(spherePrim.indices),
+    );
+  }
+
   return generateSphereObject(
     label,
     rgba(255, 255, 255, 1),
@@ -255,7 +282,7 @@ function makeJoint(label, segments, thickness, color) {
  * NOTE: joint names probably changes at somepoint
  *
  * @param {Joint} rootJoint     the root of the joint structure
- * @param {*} jointNames    list of sequential joint names
+ * @param {*} jointList    list of sequential joint names
  * @param {*} frames    the animation frames
  * @param {number} thickness    the radius of object geometry
  * @param {number} segments the number of segments to use in object geometry
@@ -265,7 +292,7 @@ function makeJoint(label, segments, thickness, color) {
  */
 function bvhToSkeletonObject(
   rootJoint,
-  jointNames,
+  jointList,
   frames,
   thickness = 0.1,
   segments = 16,
@@ -274,12 +301,15 @@ function bvhToSkeletonObject(
 ) {
   // this will be empty with no verts since its a 'joint'
   // unless I want to render them as spheres...
-  const root = makeJoint(prefix + "ROOT", segments, thickness, color);
+  const root = makeJoint(prefix + "ROOT", segments, thickness, color, true);
 
   makeBones(root, rootJoint, thickness, segments, color, prefix);
 
-  // TODO
-  // root.setUpdateCB(generateUpdateBVH(joints, frames));
+  root.jointList = jointList;
+  root.frames = frames;
+  root.animationPlay = true;
+
+  root.setUpdateCB(updateBVH);
 
   return root;
 }
@@ -384,9 +414,17 @@ function applyChildFrame(
 /**
  * Update function to play the animation
  */
-function generateUpdateBVH(joints, frames) {
-  function updateBVH(dt, scene) {
-    // TODO use frames to update object
+function updateBVH(dt, scene) {
+  if (!this.animationPlay) {
+    return;
+  }
+
+  // console.log(this.jointList)
+  this.animationTime += dt;
+
+  let offset = 0;
+  for (const joint of this.jointList) {
+    offset += joint.channels.length;
   }
 
   return updateBVH;
@@ -410,7 +448,7 @@ export function loadBVH(
 ) {
   return bvhToSkeletonObject(
     LOADED_BVH[id].rootJoint,
-    LOADED_BVH[id].jointNames,
+    LOADED_BVH[id].jointList,
     LOADED_BVH[id].frames,
     thickness,
     segments,

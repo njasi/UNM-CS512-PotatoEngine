@@ -26,7 +26,7 @@
  */
 
 import { makeSceneObjectGenerator, rgba } from "../helpers";
-import { generateCylinder } from "../primitives";
+import { generateCylinder, generateFillerColors } from "../primitives";
 import SceneObject from "../SceneObject";
 
 // TODO probably do something more reasonable than this
@@ -97,6 +97,24 @@ export async function cacheBVH(url, id) {
 }
 
 /**
+ * Make a joint placeholder bones connect from joint to joint
+ * i think we will rotate a joint to apply the animation later
+ * not the bone? unsure...
+ *
+ * TODO could make these balls so theyre visible...
+ * @param {string} label
+ * @returns
+ */
+function makeJoint(label) {
+  return new SceneObject(
+    label,
+    new Float32Array(),
+    new Float32Array(),
+    new Uint16Array(),
+  );
+}
+
+/**
  * Construct bones from joint positions and update function
  * from the frames
  *
@@ -104,47 +122,73 @@ export async function cacheBVH(url, id) {
 function bvhToSkeletonObject(joints, frames) {
   // this will be empty with no verts since its a 'joint'
   // unless I want to render them as spheres...
-  const root = new SceneObject();
+  const root = makeJoint("ROOT");
 
   makeBones(root, joints[i]);
 
   root.setUpdateCB(generateUpdateBVH(joints, frames));
+
+  return root;
 }
 
+/**
+ *
+ * @param {SceneObject} parent
+ * @param {Joint} currJoint
+ * @param {number} thickness
+ * @param {number} segments
+ * @param {rgba()} color
+ * @param {string} prefix
+ */
 function makeBones(
-  prevJoint,
+  parent,
   currJoint,
   thickness = 0.1,
   segments = 16,
   color = rgba(255, 255, 255, 1),
   prefix = "",
 ) {
-  // make new cylinder from prev joint to current joint position
-  const dist = Math.hypot(
-    currJoint.offset[0] - prevJoint.offset[0],
-    currJoint.offset[1] - prevJoint.offset[1],
-    currJoint.offset[2] - prevJoint.offset[2],
-  );
-
-  // hmm might need to make joints like the root joint thats empty
-  const bonePrim = generateCylinder(
-    segments,
-    thickness,
-    dist,
-    0,
-    0,
-    dist / 2,
-    0,
-    true,
-    2,
-  );
-  // TODO rotate prim to the right direction
-  const bone = new SceneObject(prefix + "_" + currJoint.label);
+  const jointObj = makeJoint(prefix + currJoint.label);
+  jointObj.position = [...currJoint.offset];
+  parent.addChild(jointObj);
 
   for (let i = 0; i < currJoint.children.length; i++) {
-    let childObj = makeBones(currJoint, currJoint.children[i]);
-    bone.addChild(childObj);
+    const childJoint = currJoint.children[i];
+    const [x, y, z] = childJoint.offset;
+
+    // make new cylinder from prev joint to current joint position
+    // relative coords now so we dont need to use diffs
+    const dist = Math.hypot(x, y, z);
+
+    // hmm might need to make joints like the root joint thats empty
+    const bonePrim = generateCylinder(
+      segments,
+      thickness,
+      dist,
+      0,
+      0,
+      dist / 2,
+      0,
+      true,
+      2,
+    );
+    const colors = generateFillerColors(bonePrim.vertexCount, color, true);
+    const bone = new SceneObject(
+      prefix + currJoint.label + "-" + childJoint.label,
+      bonePrim.vertices,
+      colors,
+      bonePrim.indices,
+    );
+
+    // TODO: calculate the rotation from the x,y,z values
+    bone.rotation = [0, 0, 0];
+
+    jointObj.addChild(bone);
+
+    makeBones(jointObj, childJoint, thickness, segments, color, prefix);
   }
+
+  return jointObj;
 }
 
 /**

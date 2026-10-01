@@ -61,11 +61,13 @@ const toNum = (x) => parseFloat(x);
  * root.addChild(hips)
  */
 class Joint {
-  constructor(label, offset, channels, root = false) {
+  constructor(label, offset, channels, root = false, end = false) {
     this.label = label;
     this.offset = offset;
     this.channels = channels;
     this.children = [];
+    this.root = root;
+    this.end = end;
   }
 
   /**
@@ -154,15 +156,24 @@ function parseBVH(text) {
       channels.push(next());
     }
 
+    const joint = new Joint(label, offset, channels, type == "ROOT");
+
     while (tokens[i] !== "}") {
       if (tokens[i] == "JOINT") {
         // children parsing
-        parseJoint();
+        joint.addChild(parseJoint());
         continue;
       }
 
       if (tokens[i] == "End") {
         // at an endpoinit
+        nextExpect("Site");
+        nextExpect("{");
+        nextExpect("OFFSET");
+        const offset = parseVector()
+        nextExpect("}")
+
+        joint.addChild(new Joint(label + "end", offset, [], false, true));
       }
     }
   }

@@ -32,6 +32,7 @@ import {
 } from "../helpers";
 import { generateCylinder, generateFillerColors } from "../primitives";
 import SceneObject from "../SceneObject";
+import Scene from "../../Scene";
 
 // TODO probably do something more reasonable than this
 const LOADED_BVH = {};
@@ -91,7 +92,7 @@ export async function cacheBVH(url, id) {
 
   const loadedBVH = parseBVH(text);
 
-  console.log(loadedBVH)
+  console.log(loadedBVH);
 
   LOADED_BVH[id] = loadedBVH;
 }
@@ -213,14 +214,17 @@ function parseBVH(text) {
  * @returns
  */
 function makeJoint(label, segments, thickness, color) {
-  return generateSphereObject(label, color, segments, thickness);
+  return generateSphereObject(label, rgba(255,255,255,1), segments, thickness);
 }
 
 /**
  * Construct bones from joint positions and update function
  * from the frames
+ * 
+ * NOTE: joint names probably changes at somepoint
  *
- * @param {*} joints    the joint list & structure
+ * @param {Joint} rootJoint     the root of the joint structure
+ * @param {*} jointNames    list of sequential joint names
  * @param {*} frames    the animation frames
  * @param {number} thickness    the radius of object geometry
  * @param {number} segments the number of segments to use in object geometry
@@ -229,7 +233,8 @@ function makeJoint(label, segments, thickness, color) {
  * @returns
  */
 function bvhToSkeletonObject(
-  joints,
+  rootJoint,
+  jointNames,
   frames,
   thickness = 0.1,
   segments = 16,
@@ -238,11 +243,12 @@ function bvhToSkeletonObject(
 ) {
   // this will be empty with no verts since its a 'joint'
   // unless I want to render them as spheres...
-  const root = makeJoint("ROOT");
+  const root = makeJoint(prefix+"ROOT", segments, thickness, color);
 
-  makeBones(root, joints[i]);
+  makeBones(root, rootJoint, thickness, segments, color, prefix);
 
-  root.setUpdateCB(generateUpdateBVH(joints, frames));
+  // TODO
+  // root.setUpdateCB(generateUpdateBVH(joints, frames));
 
   return root;
 }
@@ -270,7 +276,7 @@ function makeBones(
   color = rgba(255, 255, 255, 1),
   prefix = "",
 ) {
-  const jointObj = makeJoint(prefix + currJoint.label);
+  const jointObj = makeJoint(prefix + currJoint.label, segments, thickness, color);
   jointObj.position = [...currJoint.offset];
   parent.addChild(jointObj);
 
@@ -297,13 +303,14 @@ function makeBones(
     const colors = generateFillerColors(bonePrim.vertexCount, color, true);
     const bone = new SceneObject(
       prefix + currJoint.label + "-" + childJoint.label,
-      bonePrim.vertices,
-      colors,
-      bonePrim.indices,
+      new Float32Array(bonePrim.vertices),
+      new Float32Array(colors),
+      new Uint16Array(bonePrim.indices),
     );
 
-    // TODO: calculate the rotation from the x,y,z values
-    bone.rotation = [0, 0, 0];
+    const rotationX = -Math.atan2(y, Math.hypot(x, z));
+    const rotationY = Math.atan2(x, z);
+    bone.rotation = [rotationX, rotationY, 0];
 
     jointObj.addChild(bone);
 
@@ -366,11 +373,26 @@ export function loadBVH(
   prefix = "",
 ) {
   return bvhToSkeletonObject(
-    LOADED_BVH[id].joints,
+    LOADED_BVH[id].rootJoint, 
+    LOADED_BVH[id].jointNames,
     LOADED_BVH[id].frames,
     thickness,
     segments,
     color,
     prefix,
   );
+}
+
+/**
+ * Add a bvh object to a scene, this is more complicated than normal because
+ * we created all those bones in here without adding them to the scene
+ * @param {Scene} scene
+ * @param {SceneObject} bvhObject
+ * @param {string} shader 
+ */
+export function sceneAddBVH(scene, bvhObject, shader, root = true) {
+  scene.addObject(bvhObject, shader, !root);
+  for (const child of bvhObject.children) {
+    sceneAddBVH(scene, child, shader, false);
+  }
 }

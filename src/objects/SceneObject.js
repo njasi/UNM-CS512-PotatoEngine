@@ -61,6 +61,7 @@ export default class SceneObject {
    * @param {*} gl the webgl2 context from canvas
    */
   loadBuffers(gl) {
+    console.log("verts", this.vertices)
     if (!(this.vertices instanceof Float32Array)) {
       throw new Error("vertices must be a Float32Array");
     }

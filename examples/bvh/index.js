@@ -1,6 +1,6 @@
 import Scene from "../../src/Scene";
 import Shader from "../../src/Shader";
-import { cacheBVH } from "../../src/objects";
+import { cacheBVH, loadBVH, rgba, sceneAddBVH } from "../../src/objects";
 import basicControls from "../../src/controls/basic";
 
 const scene = new Scene("glcanvas");
@@ -40,7 +40,9 @@ async function main() {
 
   scene.addProgram("basic", "basicVertex", "basicFragment");
 
-  //   scene.addObject(loadBVH("Example1"),"basic");
+  const skeleton = loadBVH("Example1", 1, 16, rgba(0, 0, 0, 1));
+  skeleton.scale = [0.2, 0.2, 0.2];
+  sceneAddBVH(scene, skeleton, "basic");
   scene.initBuffers();
 
   basicControls.setupMouseControls(scene);

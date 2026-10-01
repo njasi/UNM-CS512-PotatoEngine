@@ -116,9 +116,23 @@ function makeJoint(label, segments, thickness, color) {
 /**
  * Construct bones from joint positions and update function
  * from the frames
- *
+ * 
+ * @param {*} joints    the joint list & structure
+ * @param {*} frames    the animation frames
+ * @param {number} thickness    the radius of object geometry
+ * @param {number} segments the number of segments to use in object geometry
+ * @param {rgba()} color    the color of all created objects
+ * @param {string} prefix   the prefix to attach to all object labels
+ * @returns 
  */
-function bvhToSkeletonObject(joints, frames) {
+function bvhToSkeletonObject(
+  joints,
+  frames,
+  thickness = 0.1,
+  segments = 16,
+  color = rgba(255, 255, 255, 1),
+  prefix = "",
+) {
   // this will be empty with no verts since its a 'joint'
   // unless I want to render them as spheres...
   const root = makeJoint("ROOT");
@@ -131,13 +145,19 @@ function bvhToSkeletonObject(joints, frames) {
 }
 
 /**
+ * Make the skeleton structure described in the bvh file
  *
- * @param {SceneObject} parent
- * @param {Joint} currJoint
- * @param {number} thickness
- * @param {number} segments
- * @param {rgba()} color
- * @param {string} prefix
+ * - joints are spheres
+ *      - rotate move these to produce the animation later
+ * - bones are cylinders that go from joint to joint
+ *      - dont think we need to touch these after creating
+ *
+ * @param {SceneObject} parent  the previous parent object
+ * @param {Joint} currJoint current joint we are parsing
+ * @param {number} thickness    the radius of object geometry
+ * @param {number} segments the number of segments to use in object geometry
+ * @param {rgba()} color    the color of all created objects
+ * @param {string} prefix   the prefix to attach to all object labels
  */
 function makeBones(
   parent,

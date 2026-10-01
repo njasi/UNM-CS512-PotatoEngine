@@ -130,11 +130,42 @@ function parseBVH(text) {
     }
   }
 
+  /**
+   * Parse a vec of numbers from the token stream
+   * @returns [x, y, z]
+   */
   function parseVector() {
     return [nextNumber(), nextNumber(), nextNumber()];
   }
 
-  function parseJoint() {}
+  function parseJoint() {
+    const type = next();
+    const label = next();
+
+    nextExpect("{");
+    nextExpect("OFFSET");
+    const offset = parseVector();
+
+    nextExpect("CHANNELS");
+    const channelCount = nextNumber();
+
+    const channels = [];
+    for (let i = 0; i < channelCount; i++) {
+      channels.push(next());
+    }
+
+    while (tokens[i] !== "}") {
+      if (tokens[i] == "JOINT") {
+        // children parsing
+        parseJoint();
+        continue;
+      }
+
+      if (tokens[i] == "End") {
+        // at an endpoinit
+      }
+    }
+  }
 }
 
 ///////////////////////////////////

@@ -93,7 +93,7 @@ export class BVHObjectRoot extends BVHObject {
     super(...arguments);
 
     this.animationPlay = false;
-    this.animationSpeed = 10;
+    this.animationSpeed = 1;
     this.animationTime = 0;
     this.animationInterpolate = true;
     this.jointList = [];

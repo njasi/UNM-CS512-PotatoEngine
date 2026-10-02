@@ -367,6 +367,11 @@ function makeBones(
     // relative coords now so we dont need to use diffs
     const dist = Math.hypot(x, y, z);
 
+    if(dist == 0){
+      makeBones(jointObj, childJoint, thickness, segments, color, prefix);
+      continue
+    }
+
     // hmm might need to make joints like the root joint thats empty
     const bonePrim = generateCylinder(
       segments,

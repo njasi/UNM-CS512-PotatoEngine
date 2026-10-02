@@ -51,6 +51,8 @@ export default class SceneObject {
     this.rotation = [0, 0, 0];
     this.scale = [1, 1, 1];
 
+    this.shouldDraw = true;
+
     // attached in scene
     this.programLabel;
   }
@@ -150,6 +152,9 @@ export default class SceneObject {
    * @param {*} gl the webgl2 context from canvas
    */
   draw(gl) {
+    if(!this.shouldDraw){
+      return
+    }
     this.bindBuffers(gl)
 
     gl.uniform3f(

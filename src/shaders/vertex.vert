@@ -17,6 +17,9 @@ uniform vec3 uPosition;
 uniform vec3 uRotation;
 uniform vec3 uScale;
 
+// if rotation should be applied in bvh order
+uniform int uBVH;
+
 out vec3 vColor;
 
 // create a 2d scaling matrix
@@ -77,12 +80,71 @@ mat4 rotate3DZ(float angle){
     );
 }
 
-// rotate around all axis
+// include all orders to handle bvh probably a smarter way to do this...
+mat4 rotateXYZ(float ax, float ay, float az) {
+  return rotate3DZ(az) * rotate3DY(ay) * rotate3DX(ax);
+}
+
+mat4 rotateXZY(float ax, float ay, float az) {
+  return rotate3DY(ay) * rotate3DZ(az) * rotate3DX(ax);
+}
+
+mat4 rotateYXZ(float ax, float ay, float az) {
+  return rotate3DZ(az) * rotate3DX(ax) * rotate3DY(ay);
+}
+
+mat4 rotateYZX(float ax, float ay, float az) {
+  return rotate3DX(ax) * rotate3DZ(az) * rotate3DY(ay);
+}
+
+mat4 rotateZXY(float ax, float ay, float az) {
+  return rotate3DY(ay) * rotate3DX(ax) * rotate3DZ(az);
+}
+
+mat4 rotateZYX(float ax, float ay, float az) {
+  return rotate3DX(ax) * rotate3DY(ay) * rotate3DZ(az);
+}
+
+// rotate around all axis in default order
 mat4 rotate3D(float ax, float ay, float az){
     // TODO could probaby make more efficient by writing out the whole matrix
     //      but tbh thats what the X,Y,Z specific rotations are for anyway
-    return rotate3DZ(az) * rotate3DY(ay) * rotate3DX(ax);
+    return rotateXYZ(ax, ay, az);
 }
+
+// get rotation matrix based on the rotation order
+// order values:
+// XYZ: 0
+// XZY: 1
+// YXZ: 2
+// YZX: 3
+// ZXY: 4
+// ZYX: 5
+mat4 getBVHRotation(
+  float x,
+  float y,
+  float z,
+  int order
+) {
+  if(order == 0) {
+    return rotateXYZ(x, y, z);
+  }
+  if(order == 1) {
+    return rotateXZY(x, y, z);
+  }
+  if(order == 2) {
+    return rotateYXZ(x, y, z);
+  }
+  if(order == 3) {
+    return rotateYZX(x, y, z);
+  }
+  if(order == 4) {
+    return rotateZXY(x, y, z);
+  }
+
+  return rotateZYX(x, y, z);
+}
+
 
 // create a 2d shear matrix
 // to shear in only x/y leave the other param = 0
@@ -157,8 +219,13 @@ mat4 translate3D(float tx, float ty, float tz){
 
 void main() {
   mat4 T = translate3D(uPosition.x, uPosition.y, uPosition.z);
-  mat4 R = rotate3D(uRotation.x, uRotation.y, uRotation.z);
   mat4 S = scaling3D(uScale.x, uScale.y, uScale.z);
+  mat4 R;
+  if(uBVH == 0) {
+    R = rotate3D(uRotation.x, uRotation.y, uRotation.z);
+  } else {
+    R = getBVHRotation(uRotation.x, uRotation.y, uRotation.z, uBVH);
+  }
 
   gl_Position = uProjectionMatrix * uModelViewMatrix * uModelTransformationMatrix * uWorldTransformationMatrix * T * R * S * vec4(aPosition, 1.0f);
   vColor = aColor;

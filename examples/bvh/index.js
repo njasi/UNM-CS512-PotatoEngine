@@ -1,10 +1,16 @@
 import Scene from "../../src/Scene";
 import Shader from "../../src/Shader";
-import { cacheBVH, loadBVH, rgba, sceneAddBVH } from "../../src/objects";
+import {
+  bandaiNamcoHideTail,
+  cacheBVH,
+  loadBVH,
+  rgba,
+  sceneAddBVH,
+} from "../../src/objects";
 import basicControls from "../../src/controls/basic";
 
 const scene = new Scene("glcanvas");
-scene.camera.move(0, -2.5, -25);
+scene.camera.move(0, -8, -25);
 scene.rotationX += Math.PI / 6;
 
 scene.addShader(
@@ -34,14 +40,17 @@ scene.addShader(
  * - start animation loop
  */
 async function main() {
-  await cacheBVH("./Example1.bvh", "Example1");
+  // try bvh from https://github.com/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset
+  await cacheBVH("./dance.bvh", "dance");
 
   await scene.loadShaders();
-
   scene.addProgram("basic", "basicVertex", "basicFragment");
 
-  const skeleton = loadBVH("Example1", 1, 16, rgba(0, 0, 0, 1));
-  skeleton.scale = [0.2, 0.2, 0.2];
+  const skeleton = bandaiNamcoHideTail(
+    loadBVH("dance", 3, 16, rgba(0, 0, 0, 1), "dance"),
+  );
+  skeleton.scale = [0.1, 0.1, 0.1];
+
   sceneAddBVH(scene, skeleton, "basic");
   scene.initBuffers();
 

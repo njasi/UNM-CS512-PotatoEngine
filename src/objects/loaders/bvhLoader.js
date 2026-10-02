@@ -13,6 +13,10 @@
  *      (these operations should probably be applied to the primitive itself for the initial positions...
  *       )
  *
+ *      !!! this is a lie, turns out bvh files can use any rotation order
+ *      and each joint can even use its own rotation order..........
+ *      offset seems to be standard xyz but I dont trust that any more
+ *
  * - offset
  *      Adding the offset information is simple, just poke the X,Y
  *      and Z translation data into into the proper locations of
@@ -25,11 +29,7 @@
  *      (this is handled by the hierarchical model setup already we just need to set the offset per child)
  */
 
-import {
-  generateSphereObject,
-  makeSceneObjectGenerator,
-  rgba,
-} from "../helpers";
+import { rgba } from "../helpers";
 import {
   generateCylinder,
   generateFillerColors,
@@ -37,12 +37,10 @@ import {
 } from "../primitives";
 import SceneObject from "../SceneObject";
 import Scene from "../../Scene";
-import BVHObject from "./BVHObject";
+import BVHObject, { BVHObjectRoot } from "./BVHObject";
 
 // TODO probably do something more reasonable than this
 const LOADED_BVH = {};
-
-const toNum = (x) => parseFloat(x);
 
 /**
  * Representation of a joint/root node
@@ -260,15 +258,15 @@ function parseBVH(text) {
  * @param {string} label
  * @returns
  */
-function makeJoint(label, segments, thickness, color, bvh = false) {
-  if (bvh) {
-    const spherePrim = generateSphere(segments, 1.5 * thickness);
-    const colors = generateFillerColors(
-      spherePrim.vertexCount,
-      rgba(255, 255, 255, 1),
-    );
+function makeJoint(label, segments, thickness, color, root = false) {
+  const spherePrim = generateSphere(segments, 1.5 * thickness);
+  const colors = generateFillerColors(
+    spherePrim.vertexCount,
+    rgba(255, 255, 255, 1),
+  );
 
-    return new BVHObject(
+  if (root) {
+    return new BVHObjectRoot(
       label,
       new Float32Array(spherePrim.vertices),
       new Float32Array(colors),
@@ -276,11 +274,11 @@ function makeJoint(label, segments, thickness, color, bvh = false) {
     );
   }
 
-  return generateSphereObject(
+  return new BVHObject(
     label,
-    rgba(255, 255, 255, 1),
-    segments,
-    1.5 * thickness,
+    new Float32Array(spherePrim.vertices),
+    new Float32Array(colors),
+    new Uint16Array(spherePrim.indices),
   );
 }
 
@@ -394,6 +392,10 @@ function makeBones(
     bone.rotation = [rotationX, rotationY, 0];
 
     jointObj.addChild(bone);
+    // might need a safty check, not sure if every joint is garunteed to have rotation channels
+    jointObj.bvhRotationOrder = currJoint.channels
+      .filter((e) => e.endsWith("rotation"))
+      .map((e) => e.replace("rotation", ""));
 
     makeBones(jointObj, childJoint, thickness, segments, color, prefix);
   }
@@ -410,16 +412,41 @@ function makeBones(
  * this will be some soft of spline from the previous frame to the current
  * frame based on the time. probably linear is easiest
  *
+ * TODO actually do interpolatio
+ *
  * @param {Joint} child   the child joint to animate
  * @param {Scene} scene   the animation scene
  * @param {number} frameRatio  the ratio between frames
- * @param {*} framesPrev  the previous frame location
- * @param {*} framesNext  the next frame locations
+ * @param {*} prevFrame  the previous frame location
+ * @param {*} nextFrame  the next frame locations
  */
-function applyChildFrame(child, scene, frameRatio, framesPrev, framesNext) {}
+function applyChildFrame(child, scene, frameRatio, prevFrame, nextFrame) {
+  const channels = {};
+  for (let i = 0; i < child.channels.length; i++) {
+    channels[child.channels[i]] = prevFrame[i];
+  }
+
+  const x = (channels["Xrotation"] * Math.PI) / 180;
+  const y = (channels["Yrotation"] * Math.PI) / 180;
+  const z = (channels["Zrotation"] * Math.PI) / 180;
+
+  const rotation = [x, y, z];
+
+  const childObj = scene.getObject(child.label);
+  childObj.rotation = rotation;
+  if ((child.channels.length > 3) & child.root) {
+    childObj.position = [
+      channels["Xposition"],
+      channels["Yposition"],
+      channels["Zposition"],
+    ];
+  }
+}
 
 /**
  * Update function to play the animation
+ *
+ * could probably precompute a lot of things here, but seems fast enough already
  */
 function updateBVH(dt, scene) {
   if (!this.animationPlay) {
@@ -427,7 +454,7 @@ function updateBVH(dt, scene) {
   }
 
   // console.log(this.jointList)
-  this.animationTime += dt;
+  this.animationTime += dt * 1;
 
   const loopedTime =
     this.animationTime % (this.motionInfo.Frames * this.motionInfo.FrameTime);
@@ -438,7 +465,6 @@ function updateBVH(dt, scene) {
 
   let offset = 0;
   for (const joint of this.jointList) {
-    offset += joint.channels.length;
     const prevFrame = this.frames[prevFrameIdx].slice(
       offset,
       offset + joint.channels.length,
@@ -447,10 +473,9 @@ function updateBVH(dt, scene) {
       offset,
       offset + joint.channels.length,
     );
-    applyChildFrame(joint, scene);
+    offset += joint.channels.length;
+    applyChildFrame(joint, scene, frameRatio, prevFrame, nextFrame);
   }
-
-  return updateBVH;
 }
 
 /**
@@ -493,4 +518,15 @@ export function sceneAddBVH(scene, bvhObject, shader, root = true) {
   for (const child of bvhObject.children) {
     sceneAddBVH(scene, child, shader, false);
   }
+}
+
+/**
+ * Hide the "tail" that these bandai namco bvh files have
+ * @param {*} bvhObject
+ * @returns
+ */
+export function bandaiNamcoHideTail(bvhObject) {
+  const tail = bvhObject.children[0].children[0];
+  tail.shouldDraw = false;
+  return bvhObject;
 }

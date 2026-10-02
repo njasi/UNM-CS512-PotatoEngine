@@ -61,9 +61,6 @@ export default class BVHObject extends SceneObject {
     // apply transformss one by one to calc world
     // for the children of this component
     M = mat4Translate(M, this.position);
-    // M = mat4RotateZ(M, this.rotation[2]);
-    // M = mat4RotateY(M, this.rotation[1]);
-    // M = mat4RotateX(M, this.rotation[0]);
     for(const char of this.bvhRotationOrder){
       M = rotationFuncs[char](M)
     }
@@ -96,7 +93,9 @@ export class BVHObjectRoot extends BVHObject {
     super(...arguments);
 
     this.animationPlay = false;
+    this.animationSpeed = 10;
     this.animationTime = 0;
+    this.animationInterpolate = true;
     this.jointList = [];
     this.frames = [];
     this.motionInfo = {};

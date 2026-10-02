@@ -367,9 +367,9 @@ function makeBones(
     // relative coords now so we dont need to use diffs
     const dist = Math.hypot(x, y, z);
 
-    if(dist == 0){
+    if (dist == 0) {
       makeBones(jointObj, childJoint, thickness, segments, color, prefix);
-      continue
+      continue;
     }
 
     // hmm might need to make joints like the root joint thats empty
@@ -413,6 +413,31 @@ function makeBones(
 ////////////////////////
 
 /**
+ * Interpolate positions between two frames
+ *
+ * @param {*} positions
+ * @param {*} ratio
+ * @returns
+ */
+function interpolatePosition(positions, ratio) {
+  return (1 - ratio) * positions[0] + ratio * positions[1];
+}
+
+/**
+ * Interpolate angles (bvh degrees) between two frames
+ *
+ * @param {*} positions
+ * @param {*} ratio
+ * @returns
+ */
+function interpolateAngles(angles, ratio) {
+  const diff = angles[1] - angles[0];
+  const delta = ((diff + 540) % 360) - 180;
+
+  return (angles[0] + ratio * delta + 360) % 360;
+}
+
+/**
  * Apply a frame to a single child
  * this will be some soft of spline from the previous frame to the current
  * frame based on the time. probably linear is easiest
@@ -422,29 +447,55 @@ function makeBones(
  * @param {Joint} child   the child joint to animate
  * @param {Scene} scene   the animation scene
  * @param {number} frameRatio  the ratio between frames
- * @param {*} prevFrame  the previous frame location
- * @param {*} nextFrame  the next frame locations
+ * @param {*} prevFrame   the previous frame location
+ * @param {*} nextFrame   the next frame locations
+ * @param {*} interpolate if frames should be interpolated
  */
-function applyChildFrame(child, scene, frameRatio, prevFrame, nextFrame) {
+function applyChildFrame(
+  child,
+  scene,
+  frameRatio,
+  prevFrame,
+  nextFrame,
+  interpolate,
+) {
   const channels = {};
   for (let i = 0; i < child.channels.length; i++) {
-    channels[child.channels[i]] = prevFrame[i];
+    channels[child.channels[i]] = [prevFrame[i], nextFrame[i]];
   }
 
-  const x = (channels["Xrotation"] * Math.PI) / 180;
-  const y = (channels["Yrotation"] * Math.PI) / 180;
-  const z = (channels["Zrotation"] * Math.PI) / 180;
+  let x,
+    y,
+    z = 0;
+
+  if (interpolate) {
+    x = (interpolateAngles(channels["Xrotation"], frameRatio) * Math.PI) / 180;
+    y = (interpolateAngles(channels["Yrotation"], frameRatio) * Math.PI) / 180;
+    z = (interpolateAngles(channels["Zrotation"], frameRatio) * Math.PI) / 180;
+  } else {
+    x = (channels["Xrotation"][0] * Math.PI) / 180;
+    y = (channels["Yrotation"][0] * Math.PI) / 180;
+    z = (channels["Zrotation"][0] * Math.PI) / 180;
+  }
 
   const rotation = [x, y, z];
 
   const childObj = scene.getObject(child.label);
   childObj.rotation = rotation;
   if ((child.channels.length > 3) & child.root) {
-    childObj.position = [
-      channels["Xposition"],
-      channels["Yposition"],
-      channels["Zposition"],
-    ];
+    if (interpolate) {
+      childObj.position = [
+        interpolatePosition(channels["Xposition"], frameRatio),
+        interpolatePosition(channels["Yposition"], frameRatio),
+        interpolatePosition(channels["Zposition"], frameRatio),
+      ];
+    } else {
+      childObj.position = [
+        channels["Xposition"][0],
+        channels["Yposition"][0],
+        channels["Zposition"][0],
+      ];
+    }
   }
 }
 
@@ -458,9 +509,9 @@ function updateBVH(dt, scene) {
     return;
   }
 
-  // console.log(this.jointList)
-  this.animationTime += dt * 1;
+  this.animationTime += dt * this.animationSpeed;
 
+  // calculate the prev, next frames and the ratio between them for interpolation
   const loopedTime =
     this.animationTime % (this.motionInfo.Frames * this.motionInfo.FrameTime);
   const prevFrameIdx = Math.floor(loopedTime / this.motionInfo.FrameTime);
@@ -470,6 +521,8 @@ function updateBVH(dt, scene) {
 
   let offset = 0;
   for (const joint of this.jointList) {
+    // grab only the frame parts needed in the joint update
+    // could probably pass offset & the whole array to save on compute ig
     const prevFrame = this.frames[prevFrameIdx].slice(
       offset,
       offset + joint.channels.length,
@@ -479,7 +532,14 @@ function updateBVH(dt, scene) {
       offset + joint.channels.length,
     );
     offset += joint.channels.length;
-    applyChildFrame(joint, scene, frameRatio, prevFrame, nextFrame);
+    applyChildFrame(
+      joint,
+      scene,
+      frameRatio,
+      prevFrame,
+      nextFrame,
+      this.animationInterpolate,
+    );
   }
 }
 

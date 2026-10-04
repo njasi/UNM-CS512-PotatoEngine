@@ -314,10 +314,11 @@ function bvhToSkeletonObject(
 
   makeBones(root, rootJoint, thickness, segments, color, prefix);
 
-  jointList.forEach((j) => {
+  jointListCopy = [...jointList]
+  jointListCopy.forEach((j) => {
     j.label = prefix + j.label;
   });
-  root.jointList = jointList;
+  root.jointListCopy = jointListCopy;
   root.frames = frames;
   root.animationPlay = true;
   root.motionInfo = motionInfo;

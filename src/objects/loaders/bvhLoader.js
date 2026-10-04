@@ -314,7 +314,7 @@ function bvhToSkeletonObject(
 
   makeBones(root, rootJoint, thickness, segments, color, prefix);
 
-  jointListCopy = [...jointList]
+  const jointListCopy = [...jointList]
   jointListCopy.forEach((j) => {
     j.label = prefix + j.label;
   });

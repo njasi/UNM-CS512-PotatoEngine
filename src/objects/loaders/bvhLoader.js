@@ -318,7 +318,7 @@ function bvhToSkeletonObject(
   jointListCopy.forEach((j) => {
     j.label = prefix + j.label;
   });
-  root.jointListCopy = jointListCopy;
+  root.jointList = jointListCopy;
   root.frames = frames;
   root.animationPlay = true;
   root.motionInfo = motionInfo;

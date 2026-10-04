@@ -314,9 +314,10 @@ function bvhToSkeletonObject(
 
   makeBones(root, rootJoint, thickness, segments, color, prefix);
 
-  const jointListCopy = [...jointList]
-  jointListCopy.forEach((j) => {
+  const jointListCopy = jointList.map((joint) => {
+    const j = structuredClone(joint);
     j.label = prefix + j.label;
+    return j;
   });
   root.jointList = jointListCopy;
   root.frames = frames;

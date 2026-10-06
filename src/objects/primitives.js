@@ -1,3 +1,5 @@
+import PrimitiveObject from "./PrimitiveObject";
+
 export function generateCube() {
   // cube
   const positions = [
@@ -5,30 +7,34 @@ export function generateCube() {
     -1,
     -1, // 0
     1,
+    1,
     -1,
     -1, // 1
     1,
     1,
+    1,
     -1, // 2
+    1,
     -1,
     1,
     -1, // 3
+    1,
     -1,
     -1,
     1, // 4
+    1,
     1,
     -1,
     1, // 5
     1,
     1,
+    1,
     1, // 6
+    1,
     -1,
     1,
     1, // 7
-  ];
-
-  const colors = [
-    1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1,
+    1,
   ];
 
   // faces
@@ -46,8 +52,8 @@ export function generateCube() {
     // Left
     0, 4, 7, 0, 7, 3,
   ];
-
-  return { vertices: positions, colors, indices };
+  
+  return PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -90,12 +96,7 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return {
-    vertices: vertices,
-    indices: indices,
-    vertexCount: vertices.length / 4,
-    indexCount: indices.length,
-  };
+  return PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -153,12 +154,7 @@ export function generateCone(segments, r, h, x_c, y_c, z_c, solid = true) {
   }
 
   // package it for the buffers
-  return {
-    vertices: vertices,
-    indices: indices,
-    vertexCount: vertices.length / 4,
-    indexCount: indices.length,
-  };
+  return PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -259,12 +255,7 @@ export function generateCylinder(
   }
 
   // package it for the buffers
-  return {
-    vertices: vertices,
-    indices: indices,
-    vertexCount: vertices.length / 4,
-    indexCount: indices.length,
-  };
+  return PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -313,12 +304,7 @@ export function generateTorus(segments, R, r, x_c, y_c, z_c) {
   }
 
   // package it for the buffers
-  return {
-    vertices: vertices,
-    indices: indices,
-    vertexCount: vertices.length / 4,
-    indexCount: indices.length,
-  };
+  return PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -359,12 +345,7 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return {
-    vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
-    vertexCount: vertices.length / 4,
-    indexCount: indices.length,
-  };
+  return new PrimitiveObject(vertices, { indices });
 }
 
 /**

@@ -86,10 +86,15 @@ class Joint {
 /**
  * Parse a bvh file into more understandable format for later
  *
+ * if id already in cache dont load again
  * @param {*} url
  * @param {*} id
  */
 export async function cacheBVH(url, id) {
+  if(!!LOADED_BVH[id]){
+    return
+  }
+
   const response = await fetch(url);
   const text = await response.text();
 

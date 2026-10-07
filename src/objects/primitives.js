@@ -52,8 +52,9 @@ export function generateCube() {
     // Left
     0, 4, 7, 0, 7, 3,
   ];
-  
-  return PrimitiveObject(vertices, { indices });
+
+  // sharp normals on cube will be annoying come back to this
+  return PrimitiveObject(positions, { indices });
 }
 
 /**
@@ -67,6 +68,7 @@ export function generateCube() {
  */
 export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
+  const normals = [];
   const indices = [];
 
   for (let v = 0; v <= segments; v++) {
@@ -78,8 +80,12 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
 
       const vertX = x_c + r * Math.sin(vRad) * Math.sin(uRad);
       const vertY = y_c + r * Math.sin(vRad) * Math.cos(uRad);
-
       vertices.push(vertX, vertY, vertZ, 1);
+
+      const nx = Math.sin(vRad) * Math.sin(uRad);
+      const ny = Math.sin(vRad) * Math.cos(uRad);
+      const nz = Math.cos(vRad);
+      normals.push(nx, ny, nz);
     }
   }
 
@@ -112,6 +118,7 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
  */
 export function generateCone(segments, r, h, x_c, y_c, z_c, solid = true) {
   const vertices = [];
+  const normals = [];
   const indices = [];
 
   for (let v = 0; v <= segments; v++) {
@@ -123,8 +130,12 @@ export function generateCone(segments, r, h, x_c, y_c, z_c, solid = true) {
 
       const vertX = x_c + r * (1 - vFrac) * Math.cos(uRad);
       const vertY = y_c + r * (1 - vFrac) * Math.sin(uRad);
-
       vertices.push(vertX, vertY, vertZ, 1);
+
+      const nx = (h * Math.cos(uRad)) / (h * h + r * r);
+      const ny = (h * Math.sin(uRad)) / (h * h + r * r);
+      const nz = r / (h * h + r * r);
+      normals.push(nx, ny, nz);
     }
   }
 
@@ -214,6 +225,11 @@ export function generateCylinder(
       const vertY = y_c + r * bulgeAmt * Math.sin(uRad);
 
       vertices.push(vertX, vertY, vertZ, 1);
+
+      // normals going to be a bit annoying because of the bulge 
+      // and will want to show angles for low poly or prism mode
+      // insert extra verts to shade flat?
+      // or should add a shade flat mode to shader? 
     }
   }
 
@@ -275,6 +291,7 @@ export function generateCylinder(
  */
 export function generateTorus(segments, R, r, x_c, y_c, z_c) {
   const vertices = [];
+  const normals = [];
   const indices = [];
 
   for (let v = 0; v <= segments; v++) {
@@ -286,8 +303,12 @@ export function generateTorus(segments, R, r, x_c, y_c, z_c) {
 
       const vertX = x_c + (R + r * Math.cos(vRad)) * Math.cos(uRad);
       const vertY = y_c + (R + r * Math.cos(vRad)) * Math.sin(uRad);
-
       vertices.push(vertX, vertY, vertZ, 1);
+
+      const nx = Math.cos(vRad) * Math.cos(uRad);
+      const ny = Math.cos(vRad) * Math.sin(uRad);
+      const nz = Math.sin(vRad);
+      normals.push(nx, ny, nz);
     }
   }
 
@@ -304,19 +325,20 @@ export function generateTorus(segments, R, r, x_c, y_c, z_c) {
   }
 
   // package it for the buffers
-  return PrimitiveObject(vertices, { indices });
+  return PrimitiveObject(vertices, { indices, normals });
 }
 
 /**
  * Generate a square grid centered on the origin
  * @param {*} segments
  * @param {*} size
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
+ * @param {*} x_c x coord of the center of the grid
+ * @param {*} y_c y coord of the center of the grid
+ * @param {*} z_c z coord of the center of the grid
  */
 export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
+  const normals = [];
   const indices = [];
 
   // iterate over depth
@@ -326,6 +348,7 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
     for (let x = 0; x <= segments; x++) {
       const vertX = (x / segments - 0.5) * size + x_c;
       vertices.push(vertX, y_c, vertZ, 1);
+      normals.push(0, 1, 0)
     }
   }
 
@@ -345,7 +368,7 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices, normals });
 }
 
 /**

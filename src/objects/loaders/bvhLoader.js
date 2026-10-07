@@ -106,6 +106,14 @@ export async function cacheBVH(url, id) {
 }
 
 /**
+ * Check if a id is already cached
+ * @param {*} id 
+ */
+export function isCached(id){
+  return !!LOADED_BVH[id]
+}
+
+/**
  * Parse the BVH structure from text
  * - load joint structure
  * - give list of joint names in order for animation

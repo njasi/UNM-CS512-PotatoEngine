@@ -100,8 +100,6 @@ export async function cacheBVH(url, id) {
 
   const loadedBVH = parseBVH(text);
 
-  console.log(loadedBVH);
-
   LOADED_BVH[id] = loadedBVH;
 }
 

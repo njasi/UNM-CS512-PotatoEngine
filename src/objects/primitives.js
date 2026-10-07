@@ -54,7 +54,7 @@ export function generateCube() {
   ];
 
   // sharp normals on cube will be annoying come back to this
-  return PrimitiveObject(positions, { indices });
+  return new PrimitiveObject(positions, { indices });
 }
 
 /**
@@ -102,7 +102,7 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -165,7 +165,7 @@ export function generateCone(segments, r, h, x_c, y_c, z_c, solid = true) {
   }
 
   // package it for the buffers
-  return PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -271,7 +271,7 @@ export function generateCylinder(
   }
 
   // package it for the buffers
-  return PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices });
 }
 
 /**
@@ -325,7 +325,7 @@ export function generateTorus(segments, R, r, x_c, y_c, z_c) {
   }
 
   // package it for the buffers
-  return PrimitiveObject(vertices, { indices, normals });
+  return new PrimitiveObject(vertices, { indices, normals });
 }
 
 /**

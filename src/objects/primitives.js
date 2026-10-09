@@ -265,41 +265,51 @@ export function generateCylinder(
   }
 
   /**
-   * Helper function to generate the cap since its getting 
+   * Helper function to generate the cap since its getting
    * complicated...
-   * 
+   *
    * TODO how to handle the sharp angles from top
    *      & bottom cap? extra verts?
-   * @param {*} top 
+   *      - extra verts at same positon as bottom top ring, inbetween center
+   *        vert and the side verts
+   * @param {*} z z value to use
+   * @param {*} nz normal value to use for the entire cap
+   * @param {*} top
    */
-  function generateCap(top){
+  function generateCap(z, nz, top) {
     const centerIndex = vertices.length / 4;
     vertices.push(x_c, y_c, z_c - h / 2, 1);
 
-    const topStart = segments_h * (segments + 1);
+    const capStart = vertices.length / 4;
+    for (let u = 0; u < segments; u++) {
+      const uRad = (2 * Math.PI * u) / segments;
+
+      const vertX = x_c + r * Math.cos(uRad);
+      const vertY = y_c + r * Math.sin(uRad);
+
+      vertices.push(vertX, vertY, z, 1);
+      normals.push(0, 0, nz);
+    }
 
     for (let u = 0; u < segments; u++) {
-      let current = u;
-      if(top){
-        current += topStart;
-      }
+      let current = capStart + u;
       const next = current + 1;
 
-      if(top){
+      if (top) {
         indices.push(centerIndex, next, current);
-      }else{
+      } else {
         indices.push(centerIndex, current, next);
       }
     }
   }
 
   if (solid) {
-    generateCap(true)
-    generateCap(false)
+    generateCap(z_c - h / 2, -1, true);
+    generateCap(z_c + h / 2, 1, false);
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices, normals });
 }
 
 /**

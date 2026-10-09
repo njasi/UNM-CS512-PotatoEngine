@@ -1,5 +1,17 @@
 import PrimitiveObject from "./PrimitiveObject";
 
+/**
+ * Helper to normalize a vector
+ * @param {*} x
+ * @param {*} y
+ * @param {*} z
+ * @returns
+ */
+function normalizeV3(x, y, z) {
+  const len = Math.hypot(x, y, z) || 1;
+  return [x / len, y / len, z / len];
+}
+
 export function generateCube() {
   // cube
   const positions = [
@@ -155,6 +167,7 @@ export function generateCone(segments, r, h, x_c, y_c, z_c, solid = true) {
     const bottomCenterIndex = vertices.length / 4;
 
     vertices.push(x_c, y_c, z_c, 1);
+    normals.push(0, 0, -1);
 
     for (let u = 0; u < segments; u++) {
       const current = u;
@@ -208,28 +221,33 @@ export function generateCylinder(
   segments_h = 2,
 ) {
   const vertices = [];
+  const normals = [];
   const indices = [];
 
   segments_h = segments_h == undefined ? segments : segments_h;
 
   for (let v = 0; v <= segments_h; v++) {
     const vFrac = v / segments_h;
-
     const vertZ = z_c - h / 2 + vFrac * h;
+    const bulgeAmt = 1 + bulge * Math.sin(vFrac * Math.PI);
+
+    const trueRadius = r * bulgeAmt;
+
+    let dRadius = 0;
+    if (h !== 0) {
+      dRadius = (r * bulge * Math.PI * Math.cos(vFrac * Math.PI)) / h;
+    }
+
     for (let u = 0; u <= segments; u++) {
       const uRad = (2 * Math.PI * u) / segments;
 
-      const bulgeAmt = 1 + bulge * Math.sin(vFrac * Math.PI);
-
-      const vertX = x_c + r * bulgeAmt * Math.cos(uRad);
-      const vertY = y_c + r * bulgeAmt * Math.sin(uRad);
+      const vertX = x_c + trueRadius * Math.cos(uRad);
+      const vertY = y_c + trueRadius * Math.sin(uRad);
 
       vertices.push(vertX, vertY, vertZ, 1);
 
-      // normals going to be a bit annoying because of the bulge 
-      // and will want to show angles for low poly or prism mode
-      // insert extra verts to shade flat?
-      // or should add a shade flat mode to shader? 
+      // NOTE: unsure if dRadius should be - or + based on this winding order
+      normals.push(...normalizeV3(Math.cos(uRad), Math.sin(uRad), dRadius));
     }
   }
 
@@ -240,34 +258,44 @@ export function generateCylinder(
       const i_2 = i_0 + segments + 1;
       const i_3 = i_2 + 1;
 
+      // fixed to counter clockwise winding
       // push the two triangle faces
-      indices.push(i_0, i_2, i_1, i_1, i_2, i_3);
+      indices.push(i_0, i_1, i_2, i_1, i_3, i_2);
     }
   }
 
-  if (solid) {
-    const bottomCenterIndex = vertices.length / 4;
-
+  /**
+   * Helper function to generate the cap since its getting 
+   * complicated...
+   * 
+   * TODO how to handle the sharp angles from top
+   *      & bottom cap? extra verts?
+   * @param {*} top 
+   */
+  function generateCap(top){
+    const centerIndex = vertices.length / 4;
     vertices.push(x_c, y_c, z_c - h / 2, 1);
-
-    for (let u = 0; u < segments; u++) {
-      const current = u;
-      const next = u + 1;
-
-      indices.push(bottomCenterIndex, next, current);
-    }
-
-    const topCenterIndex = vertices.length / 4;
-    vertices.push(x_c, y_c, z_c + h / 2, 1);
 
     const topStart = segments_h * (segments + 1);
 
     for (let u = 0; u < segments; u++) {
-      const current = topStart + u;
+      let current = u;
+      if(top){
+        current += topStart;
+      }
       const next = current + 1;
 
-      indices.push(topCenterIndex, current, next);
+      if(top){
+        indices.push(centerIndex, next, current);
+      }else{
+        indices.push(centerIndex, current, next);
+      }
     }
+  }
+
+  if (solid) {
+    generateCap(true)
+    generateCap(false)
   }
 
   // package it for the buffers
@@ -348,7 +376,7 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
     for (let x = 0; x <= segments; x++) {
       const vertX = (x / segments - 0.5) * size + x_c;
       vertices.push(vertX, y_c, vertZ, 1);
-      normals.push(0, 1, 0)
+      normals.push(0, 1, 0);
     }
   }
 

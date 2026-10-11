@@ -128,7 +128,15 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
  * @param {*} solid if the bottom of the cone should be closed
  * @returns
  */
-export function generateCone(segments, r, h, x_c, y_c, z_c, solid = true) {
+export function generateCone(
+  segments,
+  r,
+  h,
+  x_c = 0,
+  y_c = 0,
+  z_c = 0,
+  solid = true,
+) {
   const vertices = [];
   const normals = [];
   const indices = [];
@@ -327,20 +335,16 @@ export function generateCylinder(
 
 /**
  * Generate a torus
- * 
- * 
- * Torus/Donut
-  x = (R + r cos v)cos u
-  y = (R + r cos v)sin u
-  z = r sin v
+ *
  * @param {*} segments how many divisions there are
- * @param {*} r the radius of the sphere
+ * @param {*} R the big radius of the torus
+ * @param {*} r the radius of the tube part of the torus
  * @param {*} x_c x coord of the center of the torus
  * @param {*} y_c y coord of the center of the torus
  * @param {*} z_c z coord of the center of the torus
  * @returns
  */
-export function generateTorus(segments, R, r, x_c, y_c, z_c) {
+export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
   const normals = [];
   const indices = [];

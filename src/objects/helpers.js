@@ -9,6 +9,7 @@ import {
   generateNGonPrism,
   generateSphere,
   generateFillerColors,
+  generateTorus,
 } from "./primitives";
 
 /**
@@ -31,8 +32,8 @@ export const rgba = (r, g, b, a) => [
 
 export const hex = (hexcode) => {
   // TODO
-  return [0,0,0,0]
-}
+  return [0, 0, 0, 0];
+};
 
 /**
  * Helper function that turns a primitive
@@ -42,27 +43,25 @@ export const hex = (hexcode) => {
  */
 export function makeSceneObjectGenerator(generatePrimitive) {
   return function genericSceneObjectGenerator(objectName, color = undefined) {
-    const { vertices, indices, vertexCount, colors } = generatePrimitive(
-      ...[...arguments].slice(2),
-    );
-    const fillerColors =
-      colors == undefined
-        ? generateFillerColors(vertexCount, color, true)
-        : colors;
+    const prim = generatePrimitive(...[...arguments].slice(2));
+
+    prim.colors =
+      prim.colors == undefined || prim.colors.length == 0
+        ? generateFillerColors(prim.vertexCount, color, true)
+        : prim.colors;
 
     return new SceneObject(
       objectName,
-      new Float32Array(vertices),
-      new Float32Array(fillerColors),
-      new Uint16Array(indices),
+      new Float32Array(prim.vertices),
+      new Float32Array(prim.colors),
+      new Uint16Array(prim.indices),
     );
   };
 }
 
-
 /**
  * Generate a cannon object
- * 
+ *
  * TODO cannon is more complicated since it has parts
  *      unless we make the whole things one part
  * @param {*} name the name of the object
@@ -70,15 +69,13 @@ export function makeSceneObjectGenerator(generatePrimitive) {
  */
 export const generateCannonObject = makeSceneObjectGenerator(generateCannon);
 
-
 /**
  * Generate a bomb object
- * 
+ *
  * @param {*} name the name of the object
  * @param {*} color the color the object should have
  */
 export const generateBombObject = makeSceneObjectGenerator(generateBomb);
-
 
 /**
  * Generate a Parametric (kinda) Barrel
@@ -172,9 +169,24 @@ export const generateNGonPrismObject =
   makeSceneObjectGenerator(generateNGonPrism);
 
 /**
- * Calculate the center of mass of an object given its vertices
- * @param {*} vertices 
+ * Generate a torus
+ *
+ * @param {*} name the name of the object
+ * @param {*} color the color the object should have
+ * @param {*} segments how many divisions there are
+ * @param {*} R the big radius of the torus
+ * @param {*} r the radius of the tube part of the torus
+ * @param {*} x_c x coord of the center of the torus
+ * @param {*} y_c y coord of the center of the torus
+ * @param {*} z_c z coord of the center of the torus
+ * @returns
  */
-export function calculateCenterOfMass(vertices){
+export const generateTorusObject = makeSceneObjectGenerator(generateTorus);
+
+/**
+ * Calculate the center of mass of an object given its vertices
+ * @param {*} vertices
+ */
+export function calculateCenterOfMass(vertices) {
   // TODO
 }

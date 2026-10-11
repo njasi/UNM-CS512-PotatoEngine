@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>UNM CS 512: Template</title>
+  <!-- general styles to load from COMMON-->
+  <link href="../../common/styles.css" rel="stylesheet" />
+  <link href="../../common/navbar.css" rel="stylesheet" />
+  <script defer src="../../common/navbar.js"></script>
+
+  <!-- page specific files -->
+  <!-- <link href="./public/.css" rel="stylesheet" /> -->
+  <script defer src="../../dist/bundle.js"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-surface">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">UNM CS 512</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              Homework
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink" id="dropdown-homework"></ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              Side Projects
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink" id="dropdown-projects"></ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main>
+    <h1>Example: Primitive Testing</h1>
+
+    <p></p>
+    <div id="demo">
+      <div class="canvas-wrapper" style="display: flex; justify-content: center">
+        <canvas id="glcanvas" width="800" height="450"></canvas>
+        <div id="loader-wrapper">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label>
+          Spin Primitives
+          <input id="primSpin" name="spin" type="checkbox" checked="true" />
+        </label>
+
+        <label>
+          Focused Primitive
+          <select id="primSelector">
+            <option value="none">None</option>
+          </select>
+        </label>
+
+        <label>
+          Primitive Segments
+          <input id="segmentRange" type="range" max="64" min="8" step=8 value=16>
+        </label>
+
+
+        <label>
+          Primitive Color
+          <select id="colorSelector">
+          </select>
+        </label>
+
+      </div>
+    </div>
+
+    <p>Controls and some things to try:</p>
+    <ul>
+      <li>
+        Rotate the scene with your mouse and move with WS + the arrow keys.
+      </li>
+    </ul>
+  </main>
+</body>
+
+</html>

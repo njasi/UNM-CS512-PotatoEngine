@@ -2,6 +2,7 @@
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
 
 import { makeSceneObjectGenerator } from "../helpers";
+import PrimitiveObject from "../PrimitiveObject";
 
 // TODO probably do something more reasonable than this
 const LOADED_OBJECTS = {};
@@ -37,26 +38,25 @@ export async function cacheOBJ(url, id) {
         // assume faces are already triangulated
         const faceVerts = data.slice(1);
         for (let j = 0; j < faceVerts.length; j++) {
-          const [positionIdx, _, normalIdx] = faceVerts[j].split("/").map(toNum);
+          const [positionIdx, _, normalIdx] = faceVerts[j]
+            .split("/")
+            .map(toNum);
           indices.push(positionIdx - 1);
         }
         break;
     }
   }
 
-
   // slap into loaded objects so we dont need to reload them ever
   // would make sense to have the scene handle these tbh
-  LOADED_OBJECTS[id] = {
-    vertices: vertices,
-    indices: indices,
-    vertexCount: vertices.length / 3,
-    indexCount: indices.length,
-  };
+  LOADED_OBJECTS[id] = new PrimitiveObject(vertices, {
+    indices,
+    normals,
+  });
 }
 
 export function loadOBJ(id) {
-  return LOADED_OBJECTS[id];
+  return structuredClone(LOADED_OBJECTS[id]);
 }
 
 /**

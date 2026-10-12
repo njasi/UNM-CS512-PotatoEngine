@@ -1,16 +1,30 @@
 import { rgba } from "../objects";
 import ShaderProgram from "../ShaderProgram";
 
-class Light {
+export const LIGHT_POINT = 0;
+export const LIGHT_SPOT = 1;
+export const LIGHT_DIRECTIONAL = 2;
+
+export default class Light {
+  /**
+   * Representation of a light source
+   * @param {*} label
+   * @param {*} position
+   * @param {*} options
+   * @param {*} options.color
+   * @param {*} options.intensity
+   * @param {*} options.type
+   */
   constructor(
     label,
+    position,
     {
-      position,
       color = rgba(255, 255, 255, 1),
       intensity = 1.0,
-      type = "point",
+      type = LIGHT_POINT,
     } = {},
   ) {
+    this.label = label;
     this.position = position;
     this.color = color;
     this.intensity = intensity;
@@ -25,23 +39,61 @@ class Light {
 
   /**
    * Update the light's loc values
+   * - access the ith element in uLights and grab the
+   *   respective properties
+   *
    * @param {*} gl
-   * @param {ShaderProgram} shader The
+   * @param {ShaderProgram} shader
+   * @param {Number} index
    */
-  getLocs(gl, shader) {
-    // can i get the position of elements of a struct?
-    // would be useful here...
-    // esp if can bind to elements in an array...
-    this.positionLoc = gl.getUniformLocation(shader.program, "uLightPosition");
-    this.colorLoc = gl.getUniformLocation(shader.program, "uLightColor");
+  updateLocs(gl, shader, index) {
+    this.positionLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].position`,
+    );
+    this.colorLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].color`,
+    );
     this.intensityLoc = gl.getUniformLocation(
       shader.program,
-      "uLightIntensity",
+      `uLights[${index}].intensity`,
     );
-    this.typeLoc = gl.getUniformLocation(shader.program, "uLightType");
+    this.typeLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].type`,
+    );
   }
 
-  bindBuffers(gl) {
-    // how to bind an individual light to a array?
+  /**
+   * Update the value of the uniform for this light
+   * @param {*} gl
+   */
+  updateUniforms(gl) {
+    gl.uniform3f(
+      this.positionLoc,
+      this.position[0],
+      this.position[1],
+      this.position[2],
+    );
+
+    gl.uniform3f(this.colorLoc, this.color[0], this.color[1], this.color[2]);
+
+    gl.uniform1f(this.intensityLoc, this.intensity);
+
+    gl.uniform1i(this.typeLoc, this.type);
+  }
+
+  /**
+   * Update the light for the given shader
+   * - refinds the locations (for if the indexes have changed)
+   * - then updates the uniform locs
+   * @param {*} gl
+   * @param {ShaderProgram} shader
+   * @param {Number} index
+   */
+  update(gl, shader, index) {
+    this.updateLocs(gl, shader, index);
+    this.updateUniforms();
   }
 }

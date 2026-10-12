@@ -1,10 +1,11 @@
 import ShaderProgram from "../ShaderProgram";
 import { rgb } from "../objects";
+import Material from "./Material";
 
 /**
  * Convince Interface class for phong shader materials
  */
-export default class PhongMaterial {
+export default class PhongMaterial extends Material{
   /**
    * Create a (phong shader) material interface object.
    * @param {rgb()} ka
@@ -13,6 +14,7 @@ export default class PhongMaterial {
    * @param {float} specularExp
    */
   constructor(ka, kd, ks, specularExp) {
+    super()
     this.ka = ka;
     this.kd = kd;
     this.ks = ks;
@@ -30,6 +32,7 @@ export default class PhongMaterial {
    * @param {ShaderProgram} shader
    */
   initUniforms(gl, shader) {
+    super.initUniforms()
     this.kaLoc = gl.getUniformLocation(shader.program, "mat.ka");
     this.kdLoc = gl.getUniformLocation(shader.program, "mat.kd");
     this.ksLoc = gl.getUniformLocation(shader.program, "mat.ks");
@@ -44,6 +47,7 @@ export default class PhongMaterial {
    * @param {*} gl
    */
   updateUniforms(gl) {
+    super.updateUniforms()
     gl.uniform3f(this.kaLoc, this.ka[0], this.ka[1], this.ka[2]);
     gl.uniform3f(this.kdLoc, this.kd[0], this.kd[1], this.kd[2]);
     gl.uniform3f(this.ksLoc, this.ks[0], this.ks[1], this.ks[2]);

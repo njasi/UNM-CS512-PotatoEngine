@@ -24,13 +24,37 @@ import {
 } from "../transformations";
 
 export default class SceneObject {
+  /**
+   * 
+   * @param {*} label 
+   * @param {*} vertices 
+   * @param {*} colors 
+   * @param {*} indices 
+   * @param {*} normals 
+   * @param {*} options 
+   * @param {*} options.parent
+   * @param {*} options.position
+   * @param {*} options.rotation
+   * @param {*} options.scale
+   * @param {*} options.shouldDraw
+   * @param {*} options.programLabel
+   * @param {*} options.materialLabel
+   */
   constructor(
     label,
     vertices,
     colors,
     indices,
     normals,
-    { parent = undefined } = {},
+    {
+      parent = undefined,
+      position = [0, 0, 0],
+      rotation = [0, 0, 0],
+      scale = [1, 1, 1],
+      shouldDraw = true,
+      programLabel = undefined,
+      materialLabel = undefined,
+    } = {},
   ) {
     this.label = label;
 
@@ -61,14 +85,15 @@ export default class SceneObject {
     // attach update function here, such as an explosion growing
     this.updateCB = undefined;
 
-    this.position = [0, 0, 0];
-    this.rotation = [0, 0, 0];
-    this.scale = [1, 1, 1];
+    this.position = position;
+    this.rotation = rotation;
+    this.scale = scale;
 
-    this.shouldDraw = true;
+    this.shouldDraw = shouldDraw;
 
-    // attached in scene
-    this.programLabel;
+    // attached in scene if not set at init
+    this.programLabel = programLabel;
+    this.materialLabel = materialLabel;
   }
 
   /**

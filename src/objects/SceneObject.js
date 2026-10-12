@@ -41,8 +41,9 @@ export default class SceneObject {
 
     // vertex buffer, colors buffer, indices buffer
     this.vbo = undefined;
-    this.nbo = undefined;
+    this.cbo = undefined;
     this.ibo = undefined;
+    this.nbo = undefined;
 
     // attach update function here, such as an explosion growing
     this.updateCB = undefined;
@@ -79,13 +80,18 @@ export default class SceneObject {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
 
-    this.nbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
+    this.cbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
 
     this.ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
+    this.nbo = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
+    gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
+
   }
 
   /**
@@ -98,10 +104,15 @@ export default class SceneObject {
     gl.enableVertexAttribArray(this.posLoc);
     gl.vertexAttribPointer(this.posLoc, 4, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);
     gl.enableVertexAttribArray(this.colorLoc);
     gl.vertexAttribPointer(this.colorLoc, 4, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
+    gl.enableVertexAttribArray(this.normalLoc);
+    gl.vertexAttribPointer(this.normalLoc, 4, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.nbo);
   }
 
   /**
@@ -122,6 +133,7 @@ export default class SceneObject {
 
     this.posLoc = scene.gl.getAttribLocation(shader.program, "aPosition");
     this.colorLoc = scene.gl.getAttribLocation(shader.program, "aColor");
+    this.normalLoc = scene.gl.getAttribLocation(shader.program, "aNormal");
   }
 
   /**

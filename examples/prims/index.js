@@ -46,7 +46,7 @@ scene.addShader(
   ),
 );
 
-scene.addMaterial(common.vertColor("ambient+diffuse+specular"), "phong");
+scene.addMaterial(common.vertColor("0.8ambient+0.2diffuse+0.2specular"), "phong");
 scene.addMaterial(common.ambientOnly("ambientOnly"), "phong");
 scene.addMaterial(common.diffuseOnly("diffuseOnly"), "phong");
 scene.addMaterial(common.specularOnly("specularOnly"), "phong");
@@ -64,7 +64,7 @@ function initSceneObjects(
   segments = 16,
   color = undefined,
   shader = "basic",
-  mat = "ambient+diffuse+specular",
+  mat = "0.8ambient+0.2diffuse+0.2specular",
 ) {
   prims = [];
 
@@ -187,7 +187,7 @@ function setupInputControls() {
   let primSegments = 16;
   let primColor = undefined;
   let shader = "basic";
-  let mat = "ambient+diffuse+specular";
+  let mat = "0.8ambient+0.2diffuse+0.2specular";
 
   document.getElementById("primSpin").addEventListener("input", (event) => {
     doPrimSpin = event.target.checked;

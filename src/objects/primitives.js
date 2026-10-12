@@ -114,7 +114,7 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices, normals });
 }
 
 /**
@@ -186,7 +186,7 @@ export function generateCone(
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices });
+  return new PrimitiveObject(vertices, { indices, normals });
 }
 
 /**
@@ -319,11 +319,11 @@ export function generateCylinder(
     generateCap(z_c + h / 2, 1, false);
   }
 
-  console.log("vert len:", vertices.length / 4);
-  console.log(
-    "max indc:",
-    indices.reduce((prev, curr) => Math.max(prev, curr), 0),
-  );
+  // console.log("vert len:", vertices.length / 4);
+  // console.log(
+  //   "max indc:",
+  //   indices.reduce((prev, curr) => Math.max(prev, curr), 0),
+  // );
 
   // package it for the buffers
   return new PrimitiveObject(vertices, {

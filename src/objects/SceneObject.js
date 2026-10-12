@@ -24,13 +24,26 @@ import {
 } from "../transformations";
 
 export default class SceneObject {
-  constructor(label, vertices, colors, indices, parent = undefined) {
+  constructor(
+    label,
+    vertices,
+    colors,
+    indices,
+    normals,
+    { parent = undefined } = {},
+  ) {
     this.label = label;
 
     // basic input from model generation
     this.vertices = vertices;
     this.colors = colors;
     this.indices = indices;
+    this.normals = normals;
+
+    // console.log("normals:", this.normals, this.normals.length / 3);
+    // console.log("positions:", this.vertices, this.vertices.length / 4);
+    // console.log("colors:", this.colors, this.colors.length / 4);
+    // console.log("indices:", this.indices, this.indices.length);
 
     // TODO parent and children for hierarchy later
     this.parent = parent;
@@ -76,6 +89,10 @@ export default class SceneObject {
       throw new Error("indices must be a Uint16Array");
     }
 
+    if (!(this.normals instanceof Float32Array)) {
+      throw new Error("normals must be a Float32Array");
+    }
+
     this.vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
@@ -84,14 +101,13 @@ export default class SceneObject {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
 
-    this.ibo = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
-
-    this.nbo = gl.createBuffer()
+    this.nbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
 
+    this.ibo = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
   }
 
   /**
@@ -104,15 +120,14 @@ export default class SceneObject {
     gl.enableVertexAttribArray(this.posLoc);
     gl.vertexAttribPointer(this.posLoc, 4, gl.FLOAT, false, 0, 0);
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
+    gl.enableVertexAttribArray(this.normalLoc);
+    gl.vertexAttribPointer(this.normalLoc, 3, gl.FLOAT, false, 0, 0);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);
     gl.enableVertexAttribArray(this.colorLoc);
     gl.vertexAttribPointer(this.colorLoc, 4, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
-    gl.enableVertexAttribArray(this.normalLoc);
-    gl.vertexAttribPointer(this.normalLoc, 4, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.nbo);
   }
 
   /**
@@ -151,7 +166,7 @@ export default class SceneObject {
    *
    * TODO do we need special handling for if child deletes itself?
    * hmm the children should proabbly be a map too
-   * 
+   *
    * @param {*} label the label of the object to remove
    */
   removeChild(label) {
@@ -164,10 +179,10 @@ export default class SceneObject {
    * @param {*} gl the webgl2 context from canvas
    */
   draw(gl) {
-    if(!this.shouldDraw){
-      return
+    if (!this.shouldDraw) {
+      return;
     }
-    this.bindBuffers(gl)
+    this.bindBuffers(gl);
 
     gl.uniform3f(
       this.uPosLoc,

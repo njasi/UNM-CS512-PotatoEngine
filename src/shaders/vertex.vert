@@ -2,6 +2,7 @@
 
 in vec3 aPosition;
 in vec3 aColor;
+in vec3 aNormal;
 
 uniform float uTime; // time in sec
 uniform mat4 uModelViewMatrix;
@@ -21,6 +22,8 @@ uniform vec3 uScale;
 uniform int uBVH;
 
 out vec3 vColor;
+out vec3 vPosition;
+out vec3 vNormal;
 
 // create a 2d scaling matrix
 mat3 scaling2D(float xs, float ys){
@@ -227,6 +230,11 @@ void main() {
     R = getBVHRotation(uRotation.x, uRotation.y, uRotation.z, uBVH);
   }
 
-  gl_Position = uProjectionMatrix * uModelViewMatrix * uModelTransformationMatrix * uWorldTransformationMatrix * T * R * S * vec4(aPosition, 1.0f);
+  mat4 M =  uModelViewMatrix * uModelTransformationMatrix * uWorldTransformationMatrix * T * R * S;
+
+  vPosition = (M * vec4(aPosition, 1.0f)).xyz;
+  vNormal = mat3(M) * aNormal;
   vColor = aColor;
+
+  gl_Position = uProjectionMatrix * vec4(vPosition, 1.0f);
 }

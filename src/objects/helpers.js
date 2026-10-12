@@ -89,6 +89,7 @@ export function makeSceneObjectGenerator(generatePrimitive) {
       new Float32Array(prim.vertices),
       new Float32Array(prim.colors),
       new Uint16Array(prim.indices),
+      new Float32Array(prim.normals)
     );
   };
 }

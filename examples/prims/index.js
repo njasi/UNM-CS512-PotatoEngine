@@ -32,6 +32,15 @@ scene.addShader(
   ),
 );
 
+scene.addShader(
+  new Shader(
+    "phongFragment",
+    scene.gl.FRAGMENT_SHADER,
+    "",
+    "/src/shaders/phong.frag",
+  ),
+);
+
 let prims = [];
 let doPrimSpin = true;
 let noneSelected = true;
@@ -41,15 +50,13 @@ let prim_spin = 0;
 /**
  * Add primitive of all types to test
  */
-function initSceneObjects(segments = 16, color = undefined) {
-  console.log(segments);
-  console.log(typeof segments);
+function initSceneObjects(segments = 16, color = undefined, shader = "basic") {
   prims = [];
 
   scene.removeObject("testCylinder");
   const cyl = generateCylinderObject("testCylinder", color, segments, 1, 1);
   prims.push(cyl);
-  scene.addObject(cyl, "basic");
+  scene.addObject(cyl, shader);
 
   scene.removeObject("testBulgeCylinder");
   const cylBulge = generateCylinderObject(
@@ -66,27 +73,27 @@ function initSceneObjects(segments = 16, color = undefined) {
     segments,
   );
   prims.push(cylBulge);
-  scene.addObject(cylBulge, "basic");
+  scene.addObject(cylBulge, shader);
 
   scene.removeObject("testSphere");
   const sphere = generateSphereObject("testSphere", color, segments, 1);
   prims.push(sphere);
-  scene.addObject(sphere, "basic");
+  scene.addObject(sphere, shader);
 
   scene.removeObject("testCone");
   const cone = generateConeObject("testCone", color, segments, 1, 1);
   prims.push(cone);
-  scene.addObject(cone, "basic");
+  scene.addObject(cone, shader);
 
   scene.removeObject("testGrid");
   const grid = generateGridObject("testGrid", color, segments, 2);
   prims.push(grid);
-  scene.addObject(grid, "basic");
+  scene.addObject(grid, shader);
 
   scene.removeObject("testHexPrism");
   const prism6 = generateNGonPrismObject("testHexPrism", color, 6, 1, 1);
   prims.push(prism6);
-  scene.addObject(prism6, "basic");
+  scene.addObject(prism6, shader);
 
   scene.removeObject("testQuadPrism");
   const prism4 = generateNGonPrismObject(
@@ -97,17 +104,17 @@ function initSceneObjects(segments = 16, color = undefined) {
     Math.sqrt(2),
   );
   prims.push(prism4);
-  scene.addObject(prism4, "basic");
+  scene.addObject(prism4, shader);
 
   scene.removeObject("testTriPrism");
   const prism3 = generateNGonPrismObject("testTriPrism", color, 3, 1, 1);
   prims.push(prism3);
-  scene.addObject(prism3, "basic");
+  scene.addObject(prism3, shader);
 
   scene.removeObject("testTorus");
   const torus = generateTorusObject("testTorus", color, segments, 1, 0.5);
   prims.push(torus);
-  scene.addObject(torus, "basic");
+  scene.addObject(torus, shader);
 
   // // generateCube
   // scene.addObject(generateConeObject(), "basic");
@@ -158,6 +165,7 @@ function setupInputControls() {
 
   let primSegments = 16;
   let primColor = undefined;
+  let shader = "basic";
 
   document.getElementById("primSpin").addEventListener("input", (event) => {
     doPrimSpin = event.target.checked;
@@ -165,10 +173,17 @@ function setupInputControls() {
 
   document.getElementById("segmentRange").addEventListener("input", (event) => {
     primSegments = Number(event.target.value);
-    initSceneObjects(primSegments, primColor);
+    initSceneObjects(primSegments, primColor, shader);
   });
 
-  // setup color selector, will be useful for lighting 
+  document
+    .getElementById("shaderSelector")
+    .addEventListener("input", (event) => {
+      shader = event.target.value;
+      initSceneObjects(primSegments, primColor, shader);
+    });
+
+  // setup color selector, will be useful for lighting
   const colors = {
     Random: undefined,
     Red: rgba(200, 0, 0, 1),
@@ -184,7 +199,7 @@ function setupInputControls() {
   }
   colorSelector.addEventListener("input", (event) => {
     primColor = colors[event.target.value];
-    initSceneObjects(primSegments, primColor);
+    initSceneObjects(primSegments, primColor, shader);
   });
 }
 
@@ -199,6 +214,7 @@ function setupInputControls() {
 async function main() {
   await scene.loadShaders();
   scene.addProgram("basic", "basicVertex", "basicFragment");
+  scene.addProgram("phong", "basicVertex", "phongFragment");
 
   initSceneObjects();
   try {

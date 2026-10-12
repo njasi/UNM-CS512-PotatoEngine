@@ -4,8 +4,11 @@
 export default class Material {
   /**
    * create a material instance
+   * @param {string} label 
    */
-  constructor() {}
+  constructor(label) {
+    this.label = label
+  }
 
   /**
    * Get the location values for the parts of the material

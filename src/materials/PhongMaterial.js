@@ -13,8 +13,8 @@ export default class PhongMaterial extends Material{
    * @param {rgb()} ks
    * @param {float} specularExp
    */
-  constructor(ka, kd, ks, specularExp) {
-    super()
+  constructor(label, ka, kd, ks, specularExp) {
+    super(label)
     this.ka = ka;
     this.kd = kd;
     this.ks = ks;

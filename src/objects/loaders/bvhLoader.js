@@ -91,8 +91,8 @@ class Joint {
  * @param {*} id
  */
 export async function cacheBVH(url, id) {
-  if(!!LOADED_BVH[id]){
-    return
+  if (!!LOADED_BVH[id]) {
+    return;
   }
 
   const response = await fetch(url);
@@ -105,10 +105,10 @@ export async function cacheBVH(url, id) {
 
 /**
  * Check if a id is already cached
- * @param {*} id 
+ * @param {*} id
  */
-export function isCached(id){
-  return !!LOADED_BVH[id]
+export function isCached(id) {
+  return !!LOADED_BVH[id];
 }
 
 /**
@@ -591,10 +591,10 @@ export function loadBVH(
  * @param {SceneObject} bvhObject
  * @param {string} shader
  */
-export function sceneAddBVH(scene, bvhObject, shader, root = true) {
-  scene.addObject(bvhObject, shader, !root);
+export function sceneAddBVH(scene, bvhObject, shader, mat, root = true) {
+  scene.addObject(bvhObject, shader, mat, { child: !root });
   for (const child of bvhObject.children) {
-    sceneAddBVH(scene, child, shader, false);
+    sceneAddBVH(scene, child, shader, mat, false);
   }
 }
 

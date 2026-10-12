@@ -25,12 +25,12 @@ struct Material {
 };
 
 uniform Light uLights[MAX_LIGHTS];
-// uniform Material mat;
+uniform Material mat;
 
 // placeholder material for until i setup material classes
 // Material mat = Material(vec3(0.35f, 0.35f, 0.35f), vec3(0.3f, 0.3f, 0.3f), vec3(0.4f, 0.4f, 0.4f), 16.f);
 // Material mat = Material(vec3(0.1, 0.1, 0.1), vec3(0.8, 0.8, 0.8), vec3(0.5, 0.5, 0.5), 32.f);
-Material mat = Material(vec3(0.8, 0.8, 0.8), vec3(0.2, 0.2, 0.2), vec3(0.2, 0.2, 0.2), 32.f);
+// Material mat = Material(vec3(0.8, 0.8, 0.8), vec3(0.2, 0.2, 0.2), vec3(0.2, 0.2, 0.2), 32.f);
 
 // given the Light source, calculate the contribution
 // ambient light has 
@@ -55,6 +55,8 @@ void main() {
     // ambient only calcuated once
     vec3 totalColor = ambient();
 
+    // seesm like length of the array is alwasy the max i defined
+    // so probably need to pass through a count uniform?
     for(int i = 0; i < 1; i++) {
         totalColor += phongShading(uLights[i]);
     }

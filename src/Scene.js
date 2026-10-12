@@ -1,4 +1,5 @@
 import Camera from "./Camera";
+import Material from "./materials/Material";
 import { rgba } from "./objects";
 import SceneObject from "./objects/SceneObject";
 import Shader from "./Shader";
@@ -19,14 +20,16 @@ export default class Scene {
     this.renderList = new Map();
     this.lights = new Map();
     this.shaders = new Map();
+    this.materials = new Map();
     this.background = rgba(64, 112, 255, 1);
 
     // start time and time elapsed
     this.startTime = Date.now();
     this.time = 0;
 
-    // use to check if we actually need to switch shaders...
+    // use to check if we actually need to switch shaders / materials
     this.activeProgram = undefined;
+    this.activeMaterial = undefined;
     // Map<string, ShaderProgram>
     this.programs = new Map();
 
@@ -50,6 +53,25 @@ export default class Scene {
 
     this.shaders.forEach((shader) => {
       shader.create(this.gl);
+    });
+  }
+
+  /**
+   * intialize the uniforms locators for all the materials
+   */
+  loadMaterials() {
+    // attach materials
+    this.materials.forEach((mat) => {
+      try {
+        const shaderProg = this.getProgram(mat.programLabel);
+        mat.initUniforms(this.gl, shaderProg);
+      } catch (error) {
+        console.log(mat);
+        console.error(
+          `Error initializing uniforms for material ${mat.label} in shader program ${mat.programLabel}`,
+        );
+        console.error(error);
+      }
     });
   }
 
@@ -91,7 +113,6 @@ export default class Scene {
    * @returns
    */
   getShader(label) {
-    // TODO should I shove shaders in a map?
     const shader = this.shaders.get(label);
 
     if (!shader) {
@@ -99,6 +120,33 @@ export default class Scene {
     }
 
     return shader;
+  }
+
+  /**
+   * Add a material to the scene
+   * - setup its uniforms when we init shaders later
+   *
+   * @param {Material} material the material wrapper
+   * @param {ShaderProgram} shader the shader program to use this material in
+   */
+  addMaterial(material, program) {
+    material.programLabel = program;
+    this.materials.set(material.label, material);
+  }
+
+  /**
+   * Get a shader by its label
+   * @param {*} label
+   * @returns
+   */
+  getMaterial(label) {
+    const material = this.materials.get(label);
+
+    if (!material) {
+      throw new Error(`Material "${label}" was not found`);
+    }
+
+    return material;
   }
 
   /**
@@ -129,7 +177,7 @@ export default class Scene {
   /**
    * Get a program by its label
    * @param {string} label
-   * @returns
+   * @returns ShaderProgram
    */
   getProgram(label) {
     const shaderProgram = this.programs.get(label);
@@ -158,9 +206,15 @@ export default class Scene {
    *   that should live in here though. Added for now
    * @param {SceneObject} obj the object to add
    * @param {string} programLabel the label for the shader program to use with this object
-   * @param {boolean} [child=false] if the object is a child, if so is not added to scenes render list, the parent renders it
+   * @param {string} materialLabel the label for the object's material
+   * @param {boolean} options.child if the object is a child, if so is not added to scenes render list, the parent renders it
    */
-  addObject(obj, programLabel = obj.programLabel, child = false) {
+  addObject(
+    obj,
+    programLabel = obj.programLabel,
+    materialLabel = obj.materialLabel,
+    { child = false } = false,
+  ) {
     if (!programLabel) {
       throw new Error(
         `Object "${obj.label ?? "unknown"}" does not have a shader program`,
@@ -168,7 +222,9 @@ export default class Scene {
     }
 
     obj.programLabel = programLabel;
-    if(!child){
+    obj.materialLabel = materialLabel;
+
+    if (!child) {
       this.renderList.set(obj.label, obj);
     }
     this.objects.set(obj.label, obj);
@@ -181,7 +237,7 @@ export default class Scene {
   }
 
   /**
-   * Get an object by its lable
+   * Get an object by its label
    *
    * TODO: should really update the objects colleciton to a map instead of a list
    * @param {string} label
@@ -267,11 +323,20 @@ export default class Scene {
       sceneRotation,
     );
 
-    let i =0;
+    let i = 0;
     for (const [_, obj] of this.renderList) {
       const shaderProgram = this.getProgram(obj.programLabel);
       if (obj.programLabel != this.activeProgram) {
         shaderProgram.use(this.gl);
+      }
+
+      if (
+        obj.materialLabel != this.activeMaterial &&
+        obj.materialLabel != undefined
+      ) {
+        console.log("using material", obj.materialLabel);
+        this.getMaterial(obj.materialLabel).updateUniforms(this.gl);
+        // this.activeMaterial = obj.materialLabel;
       }
 
       // we only need to update these guys on the first loop iteration or on switch
@@ -298,7 +363,6 @@ export default class Scene {
 
       // obj.bindBuffers(this.gl, shaderProgram.posLoc, shaderProgram.colorLoc);
       obj.draw(this.gl);
-
 
       i++;
     }

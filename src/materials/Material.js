@@ -8,6 +8,9 @@ export default class Material {
    */
   constructor(label) {
     this.label = label
+
+    // set in secne when we add a mat
+    this.programLabel = undefined
   }
 
   /**

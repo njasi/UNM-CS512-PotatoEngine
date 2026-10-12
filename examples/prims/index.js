@@ -1,15 +1,20 @@
 import Scene from "../../src/Scene";
 import Shader from "../../src/Shader";
 import {
+  cacheOBJ,
   generateConeObject,
   generateCylinderObject,
   generateGridObject,
   generateNGonPrismObject,
+  generateOBJObject,
   generateSphereObject,
   generateTorusObject,
+  loadOBJ,
   rgba,
 } from "../../src/objects";
 import basicControls from "../../src/controls/basic";
+import PhongMaterial from "../../src/materials/PhongMaterial";
+import { common } from "../../src/materials";
 
 const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;
@@ -41,6 +46,11 @@ scene.addShader(
   ),
 );
 
+scene.addMaterial(common.vertColor("ambient+diffuse+specular"), "phong");
+scene.addMaterial(common.ambientOnly("ambientOnly"), "phong");
+scene.addMaterial(common.diffuseOnly("diffuseOnly"), "phong");
+scene.addMaterial(common.specularOnly("specularOnly"), "phong");
+
 let prims = [];
 let doPrimSpin = true;
 let noneSelected = true;
@@ -50,13 +60,18 @@ let prim_spin = 0;
 /**
  * Add primitive of all types to test
  */
-function initSceneObjects(segments = 16, color = undefined, shader = "basic") {
+function initSceneObjects(
+  segments = 16,
+  color = undefined,
+  shader = "basic",
+  mat = "ambient+diffuse+specular",
+) {
   prims = [];
 
   scene.removeObject("testCylinder");
   const cyl = generateCylinderObject("testCylinder", color, segments, 1, 1);
   prims.push(cyl);
-  scene.addObject(cyl, shader);
+  scene.addObject(cyl, shader, mat);
 
   scene.removeObject("testBulgeCylinder");
   const cylBulge = generateCylinderObject(
@@ -73,27 +88,27 @@ function initSceneObjects(segments = 16, color = undefined, shader = "basic") {
     segments,
   );
   prims.push(cylBulge);
-  scene.addObject(cylBulge, shader);
+  scene.addObject(cylBulge, shader, mat);
 
   scene.removeObject("testSphere");
   const sphere = generateSphereObject("testSphere", color, segments, 1);
   prims.push(sphere);
-  scene.addObject(sphere, shader);
+  scene.addObject(sphere, shader, mat);
 
   scene.removeObject("testCone");
   const cone = generateConeObject("testCone", color, segments, 1, 1);
   prims.push(cone);
-  scene.addObject(cone, shader);
+  scene.addObject(cone, shader, mat);
 
   scene.removeObject("testGrid");
   const grid = generateGridObject("testGrid", color, segments, 2);
   prims.push(grid);
-  scene.addObject(grid, shader);
+  scene.addObject(grid, shader, mat);
 
   scene.removeObject("testHexPrism");
   const prism6 = generateNGonPrismObject("testHexPrism", color, 6, 1, 1);
   prims.push(prism6);
-  scene.addObject(prism6, shader);
+  scene.addObject(prism6, shader, mat);
 
   scene.removeObject("testQuadPrism");
   const prism4 = generateNGonPrismObject(
@@ -104,17 +119,23 @@ function initSceneObjects(segments = 16, color = undefined, shader = "basic") {
     Math.sqrt(2),
   );
   prims.push(prism4);
-  scene.addObject(prism4, shader);
+  scene.addObject(prism4, shader, mat);
 
   scene.removeObject("testTriPrism");
   const prism3 = generateNGonPrismObject("testTriPrism", color, 3, 1, 1);
   prims.push(prism3);
-  scene.addObject(prism3, shader);
+  scene.addObject(prism3, shader, mat);
 
   scene.removeObject("testTorus");
   const torus = generateTorusObject("testTorus", color, segments, 1, 0.5);
   prims.push(torus);
-  scene.addObject(torus, shader);
+  scene.addObject(torus, shader, mat);
+
+  scene.removeObject("testTeapot");
+  const teapot = generateOBJObject("teapot", color, "teapot");
+  teapot.scale = [0.5, 0.5, 0.5];
+  prims.push(teapot);
+  scene.addObject(teapot, shader, mat);
 
   // // generateCube
   // scene.addObject(generateConeObject(), "basic");
@@ -166,6 +187,7 @@ function setupInputControls() {
   let primSegments = 16;
   let primColor = undefined;
   let shader = "basic";
+  let mat = "ambient+diffuse+specular";
 
   document.getElementById("primSpin").addEventListener("input", (event) => {
     doPrimSpin = event.target.checked;
@@ -173,15 +195,26 @@ function setupInputControls() {
 
   document.getElementById("segmentRange").addEventListener("input", (event) => {
     primSegments = Number(event.target.value);
-    initSceneObjects(primSegments, primColor, shader);
+    initSceneObjects(primSegments, primColor, shader, mat);
   });
 
   document
     .getElementById("shaderSelector")
     .addEventListener("input", (event) => {
       shader = event.target.value;
-      initSceneObjects(primSegments, primColor, shader);
+      initSceneObjects(primSegments, primColor, shader, mat);
     });
+
+  const matSel = document.getElementById("matSelector");
+
+  scene.materials.forEach((mat) => {
+    matSel.innerHTML += `<option value="${mat.label}">${mat.label}</option>`;
+  })
+
+  matSel.addEventListener("input", (event) => {
+    mat = event.target.value;
+    initSceneObjects(primSegments, primColor, shader, mat);
+  });
 
   // setup color selector, will be useful for lighting
   const colors = {
@@ -199,7 +232,7 @@ function setupInputControls() {
   }
   colorSelector.addEventListener("input", (event) => {
     primColor = colors[event.target.value];
-    initSceneObjects(primSegments, primColor, shader);
+    initSceneObjects(primSegments, primColor, shader, mat);
   });
 }
 
@@ -213,8 +246,13 @@ function setupInputControls() {
  */
 async function main() {
   await scene.loadShaders();
+
+  await cacheOBJ("./utah_teapot.obj", "teapot");
+
   scene.addProgram("basic", "basicVertex", "basicFragment");
   scene.addProgram("phong", "basicVertex", "phongFragment");
+
+  scene.loadMaterials();
 
   initSceneObjects();
   try {

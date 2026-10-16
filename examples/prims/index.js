@@ -9,11 +9,10 @@ import {
   generateOBJObject,
   generateSphereObject,
   generateTorusObject,
-  loadOBJ,
+  rgb,
   rgba,
 } from "../../src/objects";
 import basicControls from "../../src/controls/basic";
-import PhongMaterial from "../../src/materials/PhongMaterial";
 import { common } from "../../src/materials";
 
 const scene = new Scene("glcanvas");
@@ -46,10 +45,31 @@ scene.addShader(
   ),
 );
 
-scene.addMaterial(common.vertColor("0.8ambient+0.2diffuse+0.2specular"), "phong");
+const colors = {
+  Random: undefined,
+  Red: rgba(200, 0, 0, 1),
+  Green: rgba(0, 200, 0, 1),
+  Blue: rgba(0, 0, 200, 1),
+  White: rgba(255, 255, 255, 1),
+  Gray: rgba(128, 128, 128, 1),
+  Black: rgba(0, 0, 0, 1),
+  gold: rgb(255, 222, 33),
+  glassy: rgb(32, 15, 158),
+  wooden: rgb(132, 36, 12),
+  plastic: rgb(10, 61, 19),
+};
+
+scene.addMaterial(
+  common.vertColor("0.8ambient+0.2diffuse+0.2specular"),
+  "phong",
+);
 scene.addMaterial(common.ambientOnly("ambientOnly"), "phong");
 scene.addMaterial(common.diffuseOnly("diffuseOnly"), "phong");
 scene.addMaterial(common.specularOnly("specularOnly"), "phong");
+scene.addMaterial(common.metallic("gold", colors.gold), "phong");
+scene.addMaterial(common.glass("glassy", colors.glassy), "phong");
+scene.addMaterial(common.wood("wooden", colors.wooden), "phong");
+scene.addMaterial(common.plastic("plastic", colors.plastic), "phong");
 
 let prims = [];
 let doPrimSpin = true;
@@ -209,23 +229,18 @@ function setupInputControls() {
 
   scene.materials.forEach((mat) => {
     matSel.innerHTML += `<option value="${mat.label}">${mat.label}</option>`;
-  })
+  });
 
   matSel.addEventListener("input", (event) => {
     mat = event.target.value;
+    if (!!colors[mat]) {
+      primColor = colors[mat];
+      document.getElementById("colorSelector").value = mat;
+    }
     initSceneObjects(primSegments, primColor, shader, mat);
   });
 
   // setup color selector, will be useful for lighting
-  const colors = {
-    Random: undefined,
-    Red: rgba(200, 0, 0, 1),
-    Green: rgba(0, 200, 0, 1),
-    Blue: rgba(0, 0, 200, 1),
-    White: rgba(255, 255, 255, 1),
-    Gray: rgba(128, 128, 128, 1),
-    Black: rgba(0, 0, 0, 1),
-  };
   const colorSelector = document.getElementById("colorSelector");
   for (const key of Object.keys(colors)) {
     colorSelector.innerHTML += `<option value="${key}">${key}</option>`;

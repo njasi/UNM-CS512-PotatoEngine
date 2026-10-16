@@ -1,6 +1,12 @@
 import PhongMaterial from "./PhongMaterial";
 import { rgb } from "../objects";
 
+// vec3 scale but didnt feel like making a vec3 file
+const scaleColor = (colorValue, scale) => {
+  console.log("scaling color", colorValue, scale)
+  return colorValue.map((x) => x * scale)
+};
+
 /**
  * Given a material cfg return a new material
  * @param {rgb()} baseColor 3-tuple rgb color
@@ -15,9 +21,13 @@ export function generateMaterial(label, cfg) {
  * @param {rgb()} baseColor 3-tuple rgb color
  * @returns
  */
-export function metallic(baseColor) {
-  // TODO
-  return generateMaterial();
+export function metallic(label, baseColor) {
+  return generateMaterial(label, {
+    ka: scaleColor(baseColor, 0.2),
+    kd: scaleColor(baseColor, 0.5),
+    ks: scaleColor(baseColor, 0.9),
+    specularExp: 64,
+  });
 }
 
 /**
@@ -25,19 +35,30 @@ export function metallic(baseColor) {
  * @param {rgb()} baseColor 3-tuple rgb color
  * @returns
  */
-export function plastic(baseColor) {
-  // TODO
-  return generateMaterial();
+export function plastic(label, baseColor) {
+  return generateMaterial(label, {
+    ka: scaleColor(baseColor, 0.1),
+    kd: scaleColor(baseColor, 0.8),
+    ks: [0.5, 0.5, 0.5],
+    specularExp: 32,
+  });
 }
 
 /**
  * Given a base color generate a glass like material
+ * 
+ * This one makes sense on an otherwise clear material 
+ * 
  * @param {rgb()} baseColor 3-tuple rgb color
  * @returns
  */
-export function glass(baseColor) {
-  // TODO
-  return generateMaterial();
+export function glass(label, baseColor) {
+  return generateMaterial(label, {
+    ka: scaleColor(baseColor, 0.02),
+    kd: scaleColor(baseColor, 0.05),
+    ks: [0.9, 0.9, 0.9],
+    specularExp: 96,
+  });
 }
 
 /**
@@ -45,9 +66,13 @@ export function glass(baseColor) {
  * @param {rgb()} baseColor 3-tuple rgb color
  * @returns
  */
-export function wood(baseColor) {
-  // TODO
-  return generateMaterial();
+export function wood(label, baseColor) {
+  return generateMaterial(label, {
+    ka: scaleColor(baseColor, 0.15),
+    kd: scaleColor(baseColor, 0.75),
+    ks: [0.08, 0.08, 0.08],
+    specularExp: 12,
+  });
 }
 
 /**
@@ -92,7 +117,7 @@ export function diffuseOnly(label, kd = [1, 1, 1]) {
 }
 
 /**
- * only diffuse lighting is included
+ * only specular lighting is included
  * @param {*} label
  */
 export function specularOnly(label, ks = [1, 1, 1], exp = 16) {

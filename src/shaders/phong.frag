@@ -28,11 +28,6 @@ uniform Light uLights[MAX_LIGHTS];
 uniform Material mat;
 uniform int uLightCount;
 
-// placeholder material for until i setup material classes
-// Material mat = Material(vec3(0.35f, 0.35f, 0.35f), vec3(0.3f, 0.3f, 0.3f), vec3(0.4f, 0.4f, 0.4f), 16.f);
-// Material mat = Material(vec3(0.1, 0.1, 0.1), vec3(0.8, 0.8, 0.8), vec3(0.5, 0.5, 0.5), 32.f);
-// Material mat = Material(vec3(0.8, 0.8, 0.8), vec3(0.2, 0.2, 0.2), vec3(0.2, 0.2, 0.2), 32.f);
-
 // given the Light source, calculate the contribution
 // ambient light has 
 vec3 ambient() {
@@ -43,13 +38,13 @@ vec3 ambient() {
 vec3 phongShading(Light l) {
     vec3 N = normalize(vNormal);
     vec3 L = normalize(l.position - vPosition);
-    vec3 V = normalize(-vPosition);           // camera sits at the origin
+    vec3 V = normalize(-vPosition);
     vec3 R = reflect(-L, N);
 
     float diff = max(dot(N, L), 0.0f);
     float spec = pow(max(dot(V, R), 0.0f), mat.specularExp);
 
-    return vec3(mat.kd * diff + mat.ks * spec);
+    return l.intensity * l.color * vec3(mat.kd * diff + mat.ks * spec);
 }
 
 void main() {

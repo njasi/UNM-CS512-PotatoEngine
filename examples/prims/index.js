@@ -72,11 +72,15 @@ scene.addMaterial(common.glass("glassy", colors.glassy), "phong");
 scene.addMaterial(common.wood("wooden", colors.wooden), "phong");
 scene.addMaterial(common.plastic("plastic", colors.plastic), "phong");
 
-function setupLight(){
-  const l = new Light("whitelight", [0,1000,0])
-  scene.addLight(l)
-}
+const l = new Light("whitelight", [0, 0, -10]);
+const l2 = new Light("whitelight2", [50, 0, 0]);
 
+function setupLight() {
+  scene.addLight(l);
+  scene.addLight(l2);
+
+  l.intensity = 1;
+}
 
 let prims = [];
 let doPrimSpin = true;
@@ -89,9 +93,9 @@ let prim_spin = 0;
  */
 function initSceneObjects(
   segments = 16,
-  color = undefined,
-  shader = "basic",
-  mat = "0.8ambient+0.2diffuse+0.2specular",
+  color = colors.gold,
+  shader = "phong",
+  mat = "gold",
 ) {
   prims = [];
 
@@ -212,9 +216,9 @@ function setupInputControls() {
   setupPrimSelector();
 
   let primSegments = 16;
-  let primColor = undefined;
-  let shader = "basic";
-  let mat = "0.8ambient+0.2diffuse+0.2specular";
+  let primColor = colors.gold;
+  let shader = "phong";
+  let mat = "gold";
 
   document.getElementById("primSpin").addEventListener("input", (event) => {
     doPrimSpin = event.target.checked;
@@ -259,6 +263,30 @@ function setupInputControls() {
 }
 
 /**
+ * overall scene update function
+ * @param {*} dt 
+ */
+function updateScene(dt) {
+  setPrimsPositions();
+  if (
+    noneSelected ||
+    prim_angle + Math.PI / 90 < target_prim_angle ||
+    prim_angle - Math.PI / 90 >= target_prim_angle
+  ) {
+    prim_angle += Math.PI / (noneSelected ? 180 : 90);
+    prim_angle %= 2 * Math.PI;
+  }
+
+  if (doPrimSpin) {
+    prim_spin += Math.PI / 180;
+  }
+
+  // l.position[1] = 20 * Math.sin(scene.time / 1000);
+  // l2.position[0] = 20 * Math.sin(scene.time / 1000);
+  // l2.position[1] = 20 * Math.cos(scene.time / 1000);
+}
+
+/**
  * Main init function
  * - load the scene shaders
  * - init all objects
@@ -275,7 +303,7 @@ async function main() {
 
   scene.loadMaterials();
 
-  setupLight()
+  setupLight();
 
   initSceneObjects();
   try {
@@ -289,20 +317,11 @@ async function main() {
   basicControls.setupMouseControls(scene);
   basicControls.setupKeyboardControls(scene);
 
-  setInterval(() => {
-    setPrimsPositions();
-    if (
-      noneSelected ||
-      prim_angle + Math.PI / 90 < target_prim_angle ||
-      prim_angle - Math.PI / 90 >= target_prim_angle
-    ) {
-      prim_angle += Math.PI / (noneSelected ? 180 : 90);
-      prim_angle %= 2 * Math.PI;
-    }
+  // attach the update function
+  // rather than updates in many set intervals
+  scene.setUpdateCB(updateScene);
 
-    if (doPrimSpin) {
-      prim_spin += Math.PI / 180;
-    }
+  setInterval(() => {
     scene.render();
   }, 30);
 }

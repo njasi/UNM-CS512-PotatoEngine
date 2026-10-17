@@ -39,9 +39,10 @@ export default class Scene {
     this.rotationX = 0;
     this.rotationY = 0;
 
-    // corrected aspect, should keep things looking 1:1
+    // TODO add better camera settings...
     this.camera = new Camera(this.canvas.width / this.canvas.height);
 
+    this.updateCB = undefined
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
   }
@@ -302,10 +303,23 @@ export default class Scene {
   }
 
   /**
+   * attach a callback function to the scene to be run before every 
+   * render.
+   * @param {function} cb 
+   */
+  setUpdateCB(cb) {
+    this.updateCB = cb;
+    this.updateCB = this.updateCB.bind(this);
+  }
+
+  /**
    * Update the state of the scene
    * @param {*} dt timestep in seconds
    */
   update(dt) {
+    if(!!this.updateCB){
+      this.updateCB(dt)
+    }
     this.renderList.forEach((obj) => {
       obj.update(dt, this);
     });
@@ -357,6 +371,11 @@ export default class Scene {
       sceneRotation,
     );
 
+    // reset switch flags
+    // NOTE: if end up in a situation with only one program
+    // can remove the flag. might be worth a dynamic check
+    this.activeMaterial = undefined
+    this.activeProgram = undefined
     let i = 0;
     for (const [_, obj] of this.renderList) {
       const shaderProgram = this.getProgram(obj.programLabel);
@@ -373,14 +392,16 @@ export default class Scene {
         // on how lights fall off.
         if (shaderProgram.hasLight) {
           let i = 0;
+          // wonder if there is a faster batch update could
+          // do for light values
+          // well could make them an attribute and that would be really
+          // fast but then lose the structure
           for (const [label, light] of this.lights) {
-            console.log(light, this.gl)
-            light.update(this.gl, shaderProgram, i);
+            light.update(this.gl, shaderProgram, sceneRotation, i);
             i++;
           }
 
           if (!!shaderProgram.setLightCount) {
-            console.log("setting light count")
             shaderProgram.setLightCount(i, this.gl);
           }
         }

@@ -1,5 +1,6 @@
 import { rgba } from "../objects";
 import ShaderProgram from "../shaders/ShaderProgram";
+import { transformPoint } from "../util/transformations";
 
 export const LIGHT_POINT = 0;
 export const LIGHT_SPOT = 1;
@@ -68,13 +69,16 @@ export default class Light {
   /**
    * Update the value of the uniform for this light
    * @param {*} gl
+   * @param {mat4} transformation transformation to apply before sending point to shader
    */
-  updateUniforms(gl) {
+  updateUniforms(gl, transformation) {
+    const tPosition = transformPoint(this.position, transformation)
+
     gl.uniform3f(
       this.positionLoc,
-      this.position[0],
-      this.position[1],
-      this.position[2],
+      tPosition[0],
+      tPosition[1],
+      tPosition[2],
     );
 
     gl.uniform3f(this.colorLoc, this.color[0], this.color[1], this.color[2]);
@@ -90,10 +94,11 @@ export default class Light {
    * - then updates the uniform locs
    * @param {*} gl
    * @param {ShaderProgram} shader
+   * @param {mat4} transformation   transformation to apply before sending point to shader
    * @param {Number} index
    */
-  update(gl, shader, index) {
+  update(gl, shader, transformation, index) {
     this.updateLocs(gl, shader, index);
-    this.updateUniforms(gl);
+    this.updateUniforms(gl, transformation);
   }
 }

@@ -294,10 +294,32 @@ export function transformVertices(vertices, matrix) {
   return transformed;
 }
 
+/**
+ * Apply a mat4 transformation to a prim
+ * @param {*} prim 
+ * @param {*} matrix 
+ * @returns 
+ */
 export function transformPrimitive(prim, matrix) {
   const vertsTransformed = transformVertices(prim.vertices, matrix);
   prim.vertices = vertsTransformed;
   return prim;
+}
+
+
+/**
+ * Apply mat4 transformation to a xyz point
+ * @param {*} point 
+ * @param {*} m 
+ * @returns 
+ */
+export function transformPoint(point, m) {
+  const [x, y, z] = point;
+  return [
+    m[0] * x + m[4] * y + m[8] * z + m[12],
+    m[1] * x + m[5] * y + m[9] * z + m[13],
+    m[2] * x + m[6] * y + m[10] * z + m[14]
+  ];
 }
 
 // [optional] Helper function converting math format row-major matrices into a flat column-major array.

@@ -9,6 +9,7 @@ import {
   mat4Translate,
 } from "../../transformations";
 
+// order to int mappings
 const ROTMAP = {
   XYZ: 0,
   XZY: 1,
@@ -31,8 +32,8 @@ export default class BVHObject extends SceneObject {
   }
 
   /**
-   * Set object specific uniforms.
-   * In this case positon and rotation
+   * Set object specific uniform / attribute locations.
+   * In this case we add uBVHLoc to specify rotation order
    *
    * @param {Scene} scene the scene the object is in
    */
@@ -73,7 +74,7 @@ export default class BVHObject extends SceneObject {
    * Draw an object onto the canvas
    *
    * BVH object needs to flag that it uses bvh rotation
-   * for the shader
+   * for the shader then do normal draw
    *
    * @param {*} gl the webgl2 context from canvas
    */
@@ -92,12 +93,23 @@ export class BVHObjectRoot extends BVHObject {
   constructor() {
     super(...arguments);
 
+    // if the animation should play
     this.animationPlay = false;
+    // speed scale to play animation at
     this.animationSpeed = 1;
+    // current time in seconds of the animation
     this.animationTime = 0;
+    // if animation movements should be interpolated
     this.animationInterpolate = true;
+    // the list of all joints in this BVHObject
     this.jointList = [];
+    // the animation frame data loaded from the bvh file
     this.frames = [];
+    // animation metadata
+    //  motionInfo.Frames: how many frames in the animation
+    //  motionInfo.FrameTime: the duration of each frame
+    //  there can be more metadata; the bvh file format doesn't 
+    //  specify limitations here as far as i can tell
     this.motionInfo = {};
   }
 }

@@ -3,7 +3,7 @@ import { rgb } from "../objects";
 import Material from "./Material";
 
 /**
- * Convince Interface class for phong shader materials
+ * Convenience Interface class for phong shader materials
  */
 export default class PhongMaterial extends Material{
   /**

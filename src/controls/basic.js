@@ -3,7 +3,7 @@
  */
 
 /**
- * INitalize mouse interactions with the canvas
+ * Initialize mouse interactions with the canvas
  * - basically drag calculations let us rotate the scene
  *
  * @param {*} canvas The canvas element
@@ -36,7 +36,7 @@ export function setupMouseControls(scene) {
 }
 
 /**
- * Initalize keyboard controls
+ * Initialize keyboard controls
  * - w & s to move z
  * - arrows to move x & y
  */

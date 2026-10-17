@@ -47,7 +47,7 @@ export const rgb = (r, g, b) => {
 
 /**
  * Parse a hexcode string into rgba to use
- * should be convient when start actually working with
+ * should be convenient when start actually working with
  * color pallets like im supposed to later.
  *
  * @param {string} hexcode

@@ -15,12 +15,15 @@ export default class Scene {
       alert("WebGL2 not supported");
     }
 
-    // TODO replace objects & shaders with maps. will probably want lights too
+    // things present in the scene
     this.objects = new Map();
     this.renderList = new Map();
     this.lights = new Map();
     this.shaders = new Map();
     this.materials = new Map();
+
+    // background color of the scene
+    // TODO skybox
     this.background = rgba(64, 112, 255, 1);
 
     // start time and time elapsed
@@ -57,7 +60,7 @@ export default class Scene {
   }
 
   /**
-   * intialize the uniforms locators for all the materials
+   * initialize the uniforms locators for all the materials
    */
   loadMaterials() {
     // attach materials
@@ -150,7 +153,7 @@ export default class Scene {
   }
 
   /**
-   * Create a new program
+   * Create a new shader program
    * @param {*} label
    * @param {*} vertexShaderLabel
    * @param {*} fragmentShaderLabel
@@ -175,7 +178,7 @@ export default class Scene {
   }
 
   /**
-   * Get a program by its label
+   * Get a shader program by its label
    * @param {string} label
    * @returns ShaderProgram
    */
@@ -230,7 +233,7 @@ export default class Scene {
     this.objects.set(obj.label, obj);
     obj.loadBuffers(this.gl);
 
-    // TODO make setuniforms standard
+    // setUniforms is standard now, but leaving the check just in case
     if (!!obj.setUniforms) {
       obj.setUniforms(this);
     }
@@ -248,6 +251,7 @@ export default class Scene {
 
   /**
    * TODO probably some unbinding or something?
+   * TODO remove all of the children objects
    * @param {*} label
    */
   removeObject(label) {
@@ -311,6 +315,7 @@ export default class Scene {
     let sceneRotation = multiplyMat4(rotY, rotX);
 
     // NOTE isn't doing this math in js slow?
+    //      - is fine since once per render rather than once per vert
     // init model-view matrix as identity matrix
     let modelViewMatrix = this.camera.getViewMatrix();
     // get projection from camera
@@ -328,15 +333,16 @@ export default class Scene {
       const shaderProgram = this.getProgram(obj.programLabel);
       if (obj.programLabel != this.activeProgram) {
         shaderProgram.use(this.gl);
+        this.activeProgram = obj.programLabel;
+        this.activeMaterial = undefined;
       }
 
       if (
         obj.materialLabel != this.activeMaterial &&
         obj.materialLabel != undefined
       ) {
-        console.log("using material", obj.materialLabel);
         this.getMaterial(obj.materialLabel).updateUniforms(this.gl);
-        // this.activeMaterial = obj.materialLabel;
+        this.activeMaterial = obj.materialLabel;
       }
 
       // we only need to update these guys on the first loop iteration or on switch
@@ -346,6 +352,7 @@ export default class Scene {
           this.gl.uniform1f(shaderProgram.timeLoc, this.time / 1000);
         }
 
+        // set projection, view, transform matrices (scene rotation)
         if (shaderProgram.uPM !== null) {
           this.gl.uniformMatrix4fv(shaderProgram.uPM, false, projectionMatrix);
         }

@@ -22,23 +22,26 @@ import {
   mat4Translate,
   matMul,
 } from "../transformations";
+import PrimitiveObject from "./PrimitiveObject";
 
 export default class SceneObject {
+  static DEFAULT_OPTIONS = {};
+
   /**
-   * 
-   * @param {*} label 
-   * @param {*} vertices 
-   * @param {*} colors 
-   * @param {*} indices 
-   * @param {*} normals 
-   * @param {*} options 
-   * @param {*} options.parent
-   * @param {*} options.position
-   * @param {*} options.rotation
-   * @param {*} options.scale
-   * @param {*} options.shouldDraw
-   * @param {*} options.programLabel
-   * @param {*} options.materialLabel
+   * Make an scene object (basic object to render)
+   * @param {string} label
+   * @param {Float32Array} vertices
+   * @param {Float32Array} colors
+   * @param {Int16Array} indices
+   * @param {Float32Array} normals
+   * @param {*} options
+   * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
+   * @param {*} options.position                    initial position of the object
+   * @param {*} options.rotation                    initial rotation of the object
+   * @param {*} options.scale                       initial scale of the object
+   * @param {boolean} options.shouldDraw            if this object should be drawn
+   * @param {string} options.programLabel           the program to draw this object with
+   * @param {string} options.materialLabel          the material to use with this object
    */
   constructor(
     label,
@@ -94,6 +97,44 @@ export default class SceneObject {
     // attached in scene if not set at init
     this.programLabel = programLabel;
     this.materialLabel = materialLabel;
+  }
+
+  /**
+   * Helper method, create a scene object from a primitive
+   * @param {PrimitiveObject} prim
+   * @param {string} label
+   * @param {*} options
+   * @param {SceneObject} options.parent
+   * @param {*} options.position
+   * @param {*} options.rotation
+   * @param {*} options.scale
+   * @param {boolean} options.shouldDraw
+   * @param {string} options.programLabel
+   * @param {string} options.materialLabel
+   */
+  static fromPrim(
+    prim,
+    label = prim.label,
+    {
+      parent = undefined,
+      position = [0, 0, 0],
+      rotation = [0, 0, 0],
+      scale = [1, 1, 1],
+      shouldDraw = true,
+      programLabel = undefined,
+      materialLabel = undefined,
+    } = {},
+  ) {
+    const { vertices, normals, colors, indices } = prim.toTypedArray();
+    return new SceneObject(label, vertices, colors, indices, normals, {
+      parent,
+      position,
+      rotation,
+      scale,
+      shouldDraw,
+      programLabel,
+      materialLabel,
+    });
   }
 
   /**
@@ -156,8 +197,17 @@ export default class SceneObject {
   }
 
   /**
-   * Set object specific uniforms.
-   * In this case positon and rotation
+   * Set object specific uniform / attribute locations.
+   * Uniforms:
+   * - position
+   * - rotation
+   * - scale
+   * - world transformation
+   *
+   * Attributes:
+   * - positions
+   * - colors
+   * - normals
    *
    * @param {Scene} scene the scene the object is in
    */

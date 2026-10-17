@@ -299,14 +299,14 @@ function makeJoint(label, segments, thickness, color, root = false) {
  *
  * NOTE: joint names probably changes at somepoint
  *
- * @param {Joint} rootJoint     the root of the joint structure
- * @param {*} jointList    list of sequential joint names
- * @param {*} frames    the animation frames
- * @param {*} motionInfo  animation metadata
- * @param {number} thickness    the radius of object geometry
- * @param {number} segments the number of segments to use in object geometry
- * @param {rgba()} color    the color of all created objects
- * @param {string} prefix   the prefix to attach to all object labels
+ * @param {Joint} rootJoint   the root of the joint structure
+ * @param {*} jointList       list of sequential joint names
+ * @param {*} frames          the animation frames
+ * @param {*} motionInfo      animation metadata
+ * @param {number} thickness  the radius of object geometry
+ * @param {number} segments   the number of segments to use in object geometry
+ * @param {rgba()} color      the color of all created objects
+ * @param {string} prefix     the prefix to attach to all object labels
  * @returns
  */
 function bvhToSkeletonObject(
@@ -410,7 +410,8 @@ function makeBones(
     bone.rotation = [rotationX, rotationY, 0];
 
     jointObj.addChild(bone);
-    // might need a safty check, not sure if every joint is garunteed to have rotation channels
+    // might need a safty check, not sure if every joint is 
+    // guaranteed to have rotation channels
     jointObj.bvhRotationOrder = currJoint.channels
       .filter((e) => e.endsWith("rotation"))
       .map((e) => e.replace("rotation", ""));
@@ -454,8 +455,6 @@ function interpolateAngles(angles, ratio) {
  * Apply a frame to a single child
  * this will be some soft of spline from the previous frame to the current
  * frame based on the time. probably linear is easiest
- *
- * TODO actually do interpolatio
  *
  * @param {Joint} child   the child joint to animate
  * @param {Scene} scene   the animation scene

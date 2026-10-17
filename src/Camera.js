@@ -7,6 +7,10 @@ import {
   mat4Identity,
 } from "./transformations";
 
+
+/**
+ * Simple camera class, probably want some updates here for lighting
+ */
 export default class Camera {
   constructor(
     aspect,
@@ -31,10 +35,18 @@ export default class Camera {
     this.projection = this.createPerspectiveProjection();
   }
 
+  /**
+   * Calculate perspective projection matrix
+   * @returns 
+   */
   createPerspectiveProjection() {
     return perspective(this.fov, this.aspect, this.zNear, this.zFar);
   }
 
+  /**
+   * Calculate orthographic projection matrix
+   * @returns 
+   */
   createOrthographicProjection() {
     return matMul(
       box2Cube(
@@ -49,29 +61,53 @@ export default class Camera {
     );
   }
 
+  /**
+   * set projection matrix to perspective
+   */
   usePerspective() {
     this.projection = this.createPerspectiveProjection();
   }
 
+  /**
+   * set projection matrix to orthographic
+   */
   useOrthographic() {
     this.projection = this.createOrthographicProjection();
   }
 
+  /**
+   * Resize the viewport
+   * @param {*} aspect 
+   */
   resize(aspect) {
     this.aspect = aspect;
     this.projection = this.createOrthographicProjection();
   }
 
+  /**
+   * Move the position of the camera
+   * @param {*} x 
+   * @param {*} y 
+   * @param {*} z 
+   */
   move(x, y, z) {
     this.x += x;
     this.y += y;
     this.z += z;
   }
 
+  /**
+   * get the view matrix of the camera
+   * @returns 
+   */
   getViewMatrix() {
     return mat4Translate(mat4Identity(), [this.x, this.y, this.z]);
   }
 
+  /**
+   * get camera projection matrix
+   * @returns 
+   */
   getProjectionMatrix() {
     return this.projection;
   }

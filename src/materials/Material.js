@@ -1,5 +1,5 @@
 /**
- * Convince Interface class for shader materials
+ * Convenience Interface class for shader materials
  */
 export default class Material {
   /**

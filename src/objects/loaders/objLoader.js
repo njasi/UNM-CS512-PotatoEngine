@@ -1,4 +1,4 @@
-// todo load obj file? should be fairly doable
+// load an obj file
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
 
 import { makeSceneObjectGenerator } from "../helpers";
@@ -9,6 +9,11 @@ const LOADED_OBJECTS = {};
 
 const toNum = (x) => parseFloat(x);
 
+/**
+ * Parse an .obj file into the cache by url
+ * @param {*} url 
+ * @param {*} id 
+ */
 export async function cacheOBJ(url, id) {
   const response = await fetch(url);
   const text = await response.text();
@@ -55,6 +60,11 @@ export async function cacheOBJ(url, id) {
   });
 }
 
+/**
+ * Load an object from the cache by id
+ * @param {*} id 
+ * @returns 
+ */
 export function loadOBJ(id) {
   return structuredClone(LOADED_OBJECTS[id]);
 }

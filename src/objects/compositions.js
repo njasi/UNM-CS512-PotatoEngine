@@ -1,11 +1,9 @@
-// TODO generate shapes from a composition of primitives
-
-// raft
-// bunch of cylinders horizontally as body
-// rectangular prisms perpendicular to body logs as bindings?
-// one cylinder mast
-// one cylinder or prism crossbar
-// rectangular prism sail
+/**
+ * "Compositions" are just objects made of multiple primitives
+ * 
+ * - TODO update these to use the new PrimitiveObject class
+ * - TODO handle normals, texture coords
+ */
 
 import {
   mat4Identity,

@@ -2,6 +2,12 @@
  * Simple wrapper representation of a shader program
  */
 export default class ShaderProgram {
+  /**
+   * Create a new shader program
+   * @param {*} label 
+   * @param {*} program 
+   * @param {*} gl 
+   */
   constructor(label, program, gl) {
     this.label = label;
     this.program = program;
@@ -10,6 +16,9 @@ export default class ShaderProgram {
     //       values if we do this here, may need extensions for other custom shaders
     this.posLoc = gl.getAttribLocation(program, "aPosition");
     this.colorLoc = gl.getAttribLocation(program, "aColor");
+
+    // can also define locs per object if needed...
+    // materials work this way
 
     this.timeLoc = gl.getUniformLocation(program, "uTime");
     this.uMVM = gl.getUniformLocation(program, "uModelViewMatrix");

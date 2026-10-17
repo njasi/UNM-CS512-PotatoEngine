@@ -12,61 +12,177 @@ function normalizeV3(x, y, z) {
   return [x / len, y / len, z / len];
 }
 
-export function generateCube() {
-  // cube
+/**
+ * Generate a cube prim.
+ *
+ * - for now none of the options do anything
+ *   cause they are boring
+ * @param {*} options
+ * @param {number} options.x_c x coord center of the cube
+ * @param {number} options.y_c y coord center of the cube
+ * @param {number} options.z_c z coord center of the cube
+ * @param {number} options.l length of cube (z)
+ * @param {number} options.w width of cube (x)
+ * @param {number} options.h height of cube (y)
+ * @returns
+ */
+export function generateCube({
+  x_c = 0,
+  y_c = 0,
+  z_c = 0,
+  l = 1,
+  h = 1,
+  w = 1,
+} = {}) {
   const positions = [
     -1,
     -1,
-    -1, // 0
     1,
-    1,
-    -1,
-    -1, // 1
-    1,
-    1,
-    1,
-    -1, // 2
+    0,
     1,
     -1,
     1,
-    -1, // 3
+    0,
+    1,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    1, 
+    0, // front
     1,
     -1,
     -1,
-    1, // 4
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    -1,
+    1,
+    -1,
+    0,
     1,
     1,
     -1,
-    1, // 5
+    0, // back
+    -1,
+    1,
+    1,
+    0,
     1,
     1,
     1,
-    1, // 6
+    0,
+    1,
+    1,
+    -1,
+    0,
+    -1,
+    1,
+    -1, 
+    0, // top
+    -1,
+    -1,
+    -1,
+    0,
+    1,
+    -1,
+    -1,
+    0,
     1,
     -1,
     1,
-    1, // 7
+    0,
+    -1,
+    -1,
+    1, 
+    0, // bottom
     1,
+    -1,
+    1,
+    0, 
+    1,
+    -1,
+    -1,
+    0,
+    1,
+    1,
+    -1,
+    0,
+    1,
+    1,
+    1, 
+    0, // right
+    -1,
+    -1,
+    -1,
+    0, 
+    -1,
+    -1,
+    1,
+    0,
+    -1,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    -1,
+    0, // left
   ];
 
-  // faces
+  const faceNormals = [
+    [0, 0, 1],
+    [0, 0, -1],
+    [0, 1, 0],
+    [0, -1, 0],
+    [1, 0, 0],
+    [-1, 0, 0],
+  ];
+  const normals = faceNormals.flatMap((n) => [...n, ...n, ...n, ...n]);
+
   const indices = [
-    // Front
-    4, 5, 6, 4, 6, 7,
-    // Back
-    1, 0, 3, 1, 3, 2,
-    // Top
-    3, 7, 6, 3, 6, 2,
-    // Bottom
-    0, 1, 5, 0, 5, 4,
-    // Right
-    1, 2, 6, 1, 6, 5,
-    // Left
-    0, 4, 7, 0, 7, 3,
+    0,
+    1,
+    2,
+    0,
+    2,
+    3, // front
+    4,
+    5,
+    6,
+    4,
+    6,
+    7, // back
+    8,
+    9,
+    10,
+    8,
+    10,
+    11, // top
+    12,
+    13,
+    14,
+    12,
+    14,
+    15, // bottom
+    16,
+    17,
+    18,
+    16,
+    18,
+    19, // right
+    20,
+    21,
+    22,
+    20,
+    22,
+    23, // left
   ];
 
-  // sharp normals on cube will be annoying come back to this
-  return new PrimitiveObject(positions, { indices });
+  return new PrimitiveObject(positions, { normals, indices });
 }
 
 /**

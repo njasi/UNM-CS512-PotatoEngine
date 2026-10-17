@@ -3,6 +3,7 @@ import { PhongShaderProgram, Shader } from "../../src/shaders";
 import {
   cacheOBJ,
   generateConeObject,
+  generateCubeObject,
   generateCylinderObject,
   generateGridObject,
   generateNGonPrismObject,
@@ -168,6 +169,13 @@ function initSceneObjects(
   prims.push(teapot);
   scene.addObject(teapot, shader, mat);
 
+  scene.removeObject("testCube")
+  const cube = generateCubeObject("testCube", color);
+  prims.push(cube);
+  scene.addObject(cube, shader, mat);
+  console.log(cube);
+
+
   // // generateCube
   // scene.addObject(generateConeObject(), "basic");
   // scene.addObject(generateTorusObject(), "basic");
@@ -281,9 +289,9 @@ function updateScene(dt) {
     prim_spin += Math.PI / 180;
   }
 
-  // l.position[1] = 20 * Math.sin(scene.time / 1000);
-  // l2.position[0] = 20 * Math.sin(scene.time / 1000);
-  // l2.position[1] = 20 * Math.cos(scene.time / 1000);
+  l.position[1] = 20 * Math.sin(scene.time / 1000);
+  l2.position[0] = 20 * Math.sin(scene.time / 1000);
+  l2.position[1] = 20 * Math.cos(scene.time / 1000);
 }
 
 /**

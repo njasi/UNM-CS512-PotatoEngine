@@ -10,6 +10,7 @@ import {
   generateSphere,
   generateFillerColors,
   generateTorus,
+  generateCube,
 } from "./primitives";
 
 /**
@@ -89,7 +90,7 @@ export function makeSceneObjectGenerator(generatePrimitive) {
       new Float32Array(prim.vertices),
       new Float32Array(prim.colors),
       new Uint16Array(prim.indices),
-      new Float32Array(prim.normals)
+      new Float32Array(prim.normals),
     );
   };
 }
@@ -99,7 +100,7 @@ export function makeSceneObjectGenerator(generatePrimitive) {
  *
  * TODO cannon is more complicated since it has parts
  *      unless we make the whole things one part
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  */
 export const generateCannonObject = makeSceneObjectGenerator(generateCannon);
@@ -107,7 +108,7 @@ export const generateCannonObject = makeSceneObjectGenerator(generateCannon);
 /**
  * Generate a bomb object
  *
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  */
 export const generateBombObject = makeSceneObjectGenerator(generateBomb);
@@ -119,7 +120,7 @@ export const generateBombObject = makeSceneObjectGenerator(generateBomb);
  *    look of individual staves for free
  * 4 cylinders for the binding rings
  *
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  * @param {*} segments how many z-axis divisions there are
  * @param {*} r the radius of the base of the barrel
@@ -134,7 +135,7 @@ export const generateBarrelObject = makeSceneObjectGenerator(generateBarrel);
 
 /**
  * Generate a cone
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  * @param {*} segments how many divisions there are
  * @param {*} r the radius of the base of the cone
@@ -160,7 +161,7 @@ export const generateSphereObject = makeSceneObjectGenerator(generateSphere);
 
 /**
  * Generate a "Cylinder" object
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  * @param {*} segments how many divisions there are
  * @param {*} r radius of the cylinder
@@ -178,7 +179,7 @@ export const generateCylinderObject =
 
 /**
  * Generate a square grid centered on the origin
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  * @param {*} segments
  * @param {*} size
@@ -190,7 +191,7 @@ export const generateGridObject = makeSceneObjectGenerator(generateGrid);
 
 /**
  * Generate a n-gon prism
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  * @param {*} n the amount of sides on the n-gon
  * @param {*} r the radius of the circle the n-gon can be inscribed in
@@ -206,7 +207,7 @@ export const generateNGonPrismObject =
 /**
  * Generate a torus
  *
- * @param {*} name the name of the object
+ * @param {string} name the name of the object
  * @param {*} color the color the object should have
  * @param {*} segments how many divisions there are
  * @param {*} R the big radius of the torus
@@ -217,6 +218,24 @@ export const generateNGonPrismObject =
  * @returns
  */
 export const generateTorusObject = makeSceneObjectGenerator(generateTorus);
+
+/**
+ * Generate a cube scene object.
+ *
+ * - for now none of the options do anything
+ *   cause they are boring
+ * @param {string} name the name of the object
+ * @param {*} color the color the object should have
+ * @param {*} options
+ * @param {number} options.x_c x coord center of the cube
+ * @param {number} options.y_c y coord center of the cube
+ * @param {number} options.z_c z coord center of the cube
+ * @param {number} options.l length of cube (z)
+ * @param {number} options.w width of cube (x)
+ * @param {number} options.h height of cube (y)
+ * @returns
+ */
+export const generateCubeObject = makeSceneObjectGenerator(generateCube);
 
 /**
  * Calculate the center of mass of an object given its vertices

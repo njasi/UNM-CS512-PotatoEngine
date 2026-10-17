@@ -3,7 +3,6 @@ import { rgb } from "../objects";
 
 // vec3 scale but didnt feel like making a vec3 file
 const scaleColor = (colorValue, scale) => {
-  console.log("scaling color", colorValue, scale)
   return colorValue.map((x) => x * scale)
 };
 

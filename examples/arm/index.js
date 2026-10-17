@@ -1,14 +1,6 @@
 import Scene from "../../src/Scene";
 import Shader from "../../src/Shader";
-import {
-  generateBarrelObject,
-  generateBombObject,
-  generateCannonObject,
-  generateCylinderObject,
-  generateGridObject,
-  generateSphereObject,
-  rgba,
-} from "../../src/objects";
+import { generateCylinderObject, rgba } from "../../src/objects";
 
 import basicControls from "../../src/controls/basic";
 
@@ -57,10 +49,10 @@ let armConfig = {
 };
 
 /**
- * Update cannon rotation based on the cannon config dict
+ * Update arm rotation based on the config dict
  */
 function updateArm(armId) {
-  // TODO get cannon from scene and update it when we update config
+  // TODO get object from scene and update it when we update config
   const arm = scene.getObject("arm" + armId);
   arm.rotation[0] = (armConfig[armId].elevation / 180) * Math.PI;
   arm.rotation[1] = (armConfig[armId].yaw / 180) * Math.PI;
@@ -93,18 +85,9 @@ function setupInputControls(armId) {
 
 /**
  * Initalize all the objects in the starting scene
- * - 10 random barrels
- * - cannon
- * - pillar canon sits on
- * - water
+ * - the segments of the arm
  */
 function initSceneObjects() {
-  // scene.addObject(
-  //   generateGridObject("ground", rgba(7, 79, 1, 1), 20, 200),
-  //   "basic",
-  // );
-
-  // pillar for cannon to sit on
   const arm0 = generateCylinderObject(
     "arm0",
     rgba(255, 0, 0, 0),
@@ -117,7 +100,7 @@ function initSceneObjects() {
   );
   arm0.rotation[0] = Math.PI / 2;
   arm0.position[1] = 0;
-  scene.addObject(arm0, "basic");
+  scene.addObject(arm0, "basic", undefined);
 
   const arm1 = generateCylinderObject(
     "arm1",
@@ -130,7 +113,7 @@ function initSceneObjects() {
     5,
   );
   arm1.position[2] = 10;
-  scene.addObject(arm1, "basic", true);
+  scene.addObject(arm1, "basic", undefined, { child: true });
   arm0.addChild(arm1);
 
   const arm2 = generateCylinderObject(
@@ -144,10 +127,10 @@ function initSceneObjects() {
     5,
   );
   arm2.position[2] = 10;
-  scene.addObject(arm2, "basic", true);
+  scene.addObject(arm2, "basic", undefined, { child: true });
   arm1.addChild(arm2);
 
-    const arm3 = generateCylinderObject(
+  const arm3 = generateCylinderObject(
     "arm3",
     rgba(0, 255, 255, 0),
     32,
@@ -158,7 +141,7 @@ function initSceneObjects() {
     5,
   );
   arm3.position[2] = 10;
-  scene.addObject(arm3, "basic", true);
+  scene.addObject(arm3, "basic", undefined, { child: true });
   arm2.addChild(arm3);
 }
 
@@ -171,10 +154,6 @@ function initSceneObjects() {
  * - start animation loop
  */
 async function main() {
-  // TODO use obj in the demo?
-  // await cacheOBJ("./dist/utah_teapot.obj", "teapot");
-  // scene.addObject(generateOBJObject("teapot1", undefined, "teapot"));
-
   await scene.loadShaders();
 
   scene.addProgram("basic", "basicVertex", "basicFragment");

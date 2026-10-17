@@ -282,6 +282,7 @@ function makeJoint(label, segments, thickness, color, root = false) {
       new Float32Array(spherePrim.vertices),
       new Float32Array(colors),
       new Uint16Array(spherePrim.indices),
+      new Float32Array(spherePrim.normals),
     );
   }
 
@@ -290,6 +291,7 @@ function makeJoint(label, segments, thickness, color, root = false) {
     new Float32Array(spherePrim.vertices),
     new Float32Array(colors),
     new Uint16Array(spherePrim.indices),
+    new Float32Array(spherePrim.normals),
   );
 }
 
@@ -403,6 +405,7 @@ function makeBones(
       new Float32Array(bonePrim.vertices),
       new Float32Array(colors),
       new Uint16Array(bonePrim.indices),
+      new Float32Array(bonePrim.normals),
     );
 
     const rotationX = -Math.atan2(y, Math.hypot(x, z));
@@ -410,7 +413,7 @@ function makeBones(
     bone.rotation = [rotationX, rotationY, 0];
 
     jointObj.addChild(bone);
-    // might need a safty check, not sure if every joint is 
+    // might need a safty check, not sure if every joint is
     // guaranteed to have rotation channels
     jointObj.bvhRotationOrder = currJoint.channels
       .filter((e) => e.endsWith("rotation"))

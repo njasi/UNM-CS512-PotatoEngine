@@ -1,6 +1,6 @@
 /**
  * "Compositions" are just objects made of multiple primitives
- * 
+ *
  * - TODO update these to use the new PrimitiveObject class
  * - TODO handle normals, texture coords
  */
@@ -15,6 +15,7 @@ import {
   transformVertices,
 } from "../transformations";
 import { rgba } from "./helpers";
+import PrimitiveObject from "./PrimitiveObject";
 import {
   generateCylinder,
   generateFillerColors,
@@ -25,14 +26,16 @@ import {
 /**
  * Combine vert & ind lists together
  */
-export function combineParts(verts, inds, colors = undefined) {
+export function combineParts(verts, inds, normals, colors = undefined) {
   const resultVerts = [];
   const resultInds = [];
   const resultColors = [];
+  const resultNorms = [];
 
   for (let i = 0; i < verts.length; i++) {
     resultInds.push(...inds[i].map((ind) => ind + resultVerts.length / 4));
     resultVerts.push(...verts[i]);
+    resultNorms.push(...normals[i]);
     if (!!colors) {
       // if the prim already had color array we should use it
       if (!!colors[i] && Array.isArray(colors[i]) && colors[i].length > 4) {
@@ -45,7 +48,7 @@ export function combineParts(verts, inds, colors = undefined) {
     }
   }
 
-  return [resultVerts, resultInds, resultColors];
+  return [resultVerts, resultInds, resultNorms, resultColors];
 }
 
 /**
@@ -53,28 +56,30 @@ export function combineParts(verts, inds, colors = undefined) {
  *
  * if colors or colors[i] is undefined try to use color in prim[i]
  *
- * @param {*} prims list of primitives to combine
+ * @param {PrimitiveObject[]} prims list of primitives to combine
  * @param {*} colors colors to use for each primitive
  */
 export function combine(prims, colors) {
   const verts = [];
+  const norms = [];
   const inds = [];
   const cols = [];
 
   for (let i = 0; i < prims.length; i++) {
     verts.push(prims[i].vertices);
     inds.push(prims[i].indices);
+    norms.push(prims[i].normals);
     cols.push(!colors || !colors[i] ? prims[i].colors : colors[i]);
   }
 
-  const [v, i, c] = combineParts(verts, inds, cols);
+  const [v, i, n, c] = combineParts(verts, inds, norms, cols);
 
-  return {
+  return new PrimitiveObject(v, {
     indices: i,
-    vertices: v,
     colors: c,
+    normals: n,
     vertexCount: v.length / 4,
-  };
+  });
 }
 
 /**
@@ -161,6 +166,7 @@ export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
   let spokes = {
     vertices: [],
     indices: [],
+    normals: []
   };
 
   for (let i = 0; i < spokeCount; i++) {

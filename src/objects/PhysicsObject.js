@@ -89,7 +89,6 @@ export default class PhysicsObject extends SceneObject {
    * @param {*} scene
    */
   update(dt, scene) {
-    // console.log("updating physics object: ", this.label, this.position, dt)
     super.update(dt, scene);
 
     // update the position & rotation & apply gravity

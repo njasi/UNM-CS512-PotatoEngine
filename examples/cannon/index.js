@@ -1,19 +1,20 @@
 import Scene from "../../src/Scene";
 import Shader from "../../src/Shader";
 import {
-  generateBarrelObject,
-  generateBombObject,
+  setupKeyboardControls,
+  setupMouseControls,
+} from "../../src/controls/basic";
+import {
   generateCannonObject,
   generateCylinderObject,
-  generateGridObject,
+  generateGrid,
   generateSphereObject,
   rgba,
+  SceneObject,
 } from "../../src/objects";
 import FloatingObject from "../../src/objects/FloatingObject";
 import PhysicsObject from "../../src/objects/PhysicsObject";
 import { generateBarrel, generateBomb } from "../../src/objects/compositions";
-
-import { cacheOBJ, generateOBJObject } from "../../src/objects/objLoader";
 import { scaleVec4 } from "../../src/vec4";
 
 const canvas = document.getElementById("glcanvas");
@@ -41,15 +42,6 @@ scene.addShader(
     scene.gl.FRAGMENT_SHADER,
     "",
     "/src/shaders/fragment.frag",
-  ),
-);
-
-scene.addShader(
-  new Shader(
-    "waterVertex",
-    scene.gl.VERTEX_SHADER,
-    "",
-    "/src/shaders/water.vert",
   ),
 );
 
@@ -166,24 +158,25 @@ function fireCannon() {
     new Float32Array(bombPrim.vertices),
     new Float32Array(bombPrim.colors),
     new Uint16Array(bombPrim.indices),
-    undefined,
-    position,
-    rotation,
-    velocity,
-    rotVelocity,
-    9.81,
-    0.5,
-    true,
-    (bomb, other) => {
-      animateExplosion(bomb.position);
+    new Float32Array(bombPrim.normals),
+    {
+      position,
+      rotation,
+      velocity,
+      rotVelocity,
+      hitboxRadius: 0.5,
+      collidable: true,
+      onCollision: (bomb, other) => {
+        animateExplosion(bomb.position);
 
-      scene.removeObject(bomb.label);
-      scene.removeObject(other.label);
+        scene.removeObject(bomb.label);
+        scene.removeObject(other.label);
 
-      if (other.label.startsWith("barrel")) {
-        // todo increase score or something idk
-        addRandomBarrel();
-      }
+        if (other.label.startsWith("barrel")) {
+          // todo increase score or something idk
+          addRandomBarrel();
+        }
+      },
     },
   );
 
@@ -218,20 +211,23 @@ function addRandomBarrel() {
   ];
 
   barrelCount++;
+
+  const { vertices, indices, normals, colors } = barrelPrim.toTypedArray();
   const barrel = new FloatingObject(
     "barrel" + barrelCount,
-    new Float32Array(barrelPrim.vertices),
-    new Float32Array(barrelPrim.colors),
-    new Uint16Array(barrelPrim.indices),
-    undefined,
-    position,
-    rotation,
-    velocity,
-    rotVelocity,
+    vertices,
+    colors,
+    indices,
+    normals,
+    {
+      position,
+      rotation,
+      velocity,
+      rotVelocity,
+      hitboxRadius: 1.5,
+      waterFunction: (pos, time) => 0.4 * Math.sin(time),
+    },
   );
-
-  barrel.hitboxRadius = 1.5;
-  barrel.waterFunction = (pos, time) => 0.4 * Math.sin(time);
 
   scene.addObject(barrel, "basic");
 }
@@ -278,10 +274,13 @@ function initSceneObjects() {
     addRandomBarrel();
   }
   // add water
-  scene.addObject(
-    generateGridObject("water", rgba(1, 86, 239), 20, 200),
-    "water",
-  );
+  let water = generateGrid(20, 200);
+  water.generateColors(rgba(1, 86, 239));
+  water = SceneObject.fromPrim(water, "water");
+  water.setUpdateCB(function (_, scene) {
+    this.position[1] = 0.4 * Math.sin(scene.time / 1000);
+  });
+  scene.addObject(water, "basic");
 
   // pillar for cannon to sit on
   const pillar = generateCylinderObject(
@@ -303,73 +302,6 @@ function initSceneObjects() {
   cannon.position[1] = 1.8;
   cannon.rotation[0] = Math.PI / 4;
   scene.addObject(cannon, "basic");
-}
-
-/**
- * INitalize mouse interactions with the canvas
- * - basically drag calculations let us rotate the scene
- */
-function setupMouseControls() {
-  // Mouse and keyboard interactions
-  let mouseDown = false,
-    lastX,
-    lastY;
-
-  canvas.addEventListener("mousedown", (e) => {
-    mouseDown = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-  });
-  canvas.addEventListener("mouseup", () => (mouseDown = false));
-  canvas.addEventListener("mouseleave", () => (mouseDown = false));
-  canvas.addEventListener("mousemove", (e) => {
-    if (!mouseDown) return;
-    let dx = e.clientX - lastX;
-    let dy = e.clientY - lastY;
-
-    scene.rotationY += dx * 0.01;
-    scene.rotationX += dy * 0.01;
-
-    lastX = e.clientX;
-    lastY = e.clientY;
-  });
-}
-
-/**
- * Initalize keyboard controls
- * - w & s to move z
- * - arrows to move x & y
- */
-function setupKeyboardControls() {
-  document.addEventListener("keydown", (e) => {
-    const step = 0.2;
-
-    switch (e.key) {
-      case "ArrowUp":
-        scene.camera.move(0, -step, 0);
-        break;
-
-      case "ArrowDown":
-        scene.camera.move(0, step, 0);
-        break;
-
-      case "ArrowLeft":
-        scene.camera.move(step, 0, 0);
-        break;
-
-      case "ArrowRight":
-        scene.camera.move(-step, 0, 0);
-        break;
-
-      case "w":
-        scene.camera.move(0, 0, step);
-        break;
-
-      case "s":
-        scene.camera.move(0, 0, -step);
-        break;
-    }
-  });
 }
 
 /**
@@ -410,33 +342,22 @@ function setupInputControls() {
  * - start animation loop
  */
 async function main() {
-  // TODO use obj in the demo?
-  // await cacheOBJ("./dist/utah_teapot.obj", "teapot");
-  // scene.addObject(generateOBJObject("teapot1", undefined, "teapot"));
-
   await scene.loadShaders();
 
   scene.addProgram("basic", "basicVertex", "basicFragment");
-  scene.addProgram("water", "waterVertex", "basicFragment");
 
   initSceneObjects();
 
   const vertexShader = scene.getShader("basicVertex");
   const fragmentShader = scene.getShader("basicFragment");
-  const waterShader = scene.getShader("waterVertex");
 
   vertEditor.value = vertexShader.source;
-  waterEditor.value = waterShader.source;
   fragEditor.value = fragmentShader.source;
 
   scene.initBuffers();
 
-  // initShaderProgram();
-  // vertEditor.onkeyup = initShaderProgram;
-  // fragEditor.onkeyup = initShaderProgram;
-
-  setupMouseControls();
-  setupKeyboardControls();
+  setupKeyboardControls(scene);
+  setupMouseControls(scene);
   setupInputControls();
 
   // Initialize when page loads

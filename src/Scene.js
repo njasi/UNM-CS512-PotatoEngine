@@ -69,7 +69,7 @@ export default class Scene {
         const shaderProg = this.getProgram(mat.programLabel);
         mat.initUniforms(this.gl, shaderProg);
       } catch (error) {
-        console.log(mat);
+        console.error(mat);
         console.error(
           `Error initializing uniforms for material ${mat.label} in shader program ${mat.programLabel}`,
         );

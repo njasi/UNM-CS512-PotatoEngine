@@ -1,29 +1,39 @@
 const path = require("path");
 
-module.exports = {
+const examplesDir = path.resolve(__dirname, "examples");
+const exampleNames = ["bvh", "prims", "arm", "cannon"]
+
+const configs = exampleNames.map((name) => ({
+  name,
   mode: "development",
-  entry: "./examples/prims/index.js",
+  entry: path.join(examplesDir, name, "index.js"),
   output: {
-    filename: "bundle.js",
+    filename: `${name}/bundle.js`,
     path: path.resolve(__dirname, "dist"),
     publicPath: "/dist/",
   },
-  devServer: {
-    static: {
-      directory: path.resolve(__dirname),
-      watch: {
-        ignored: /dist/,
-      },
-    },
+}));
 
-    devMiddleware: {
-      writeToDisk: true,
+// tack on the dev server to the firs one
+// i think this means losing hot reloading for the other
+// ones but thats ok
+configs[0].devServer = {
+  static: {
+    directory: path.resolve(__dirname),
+    watch: {
+      ignored: /dist/,
     },
-
-    hot: true,
-    liveReload: true,
-    compress: true,
-    port: 8080,
-    open: false,
   },
+
+  devMiddleware: {
+    writeToDisk: true,
+  },
+
+  hot: true,
+  liveReload: true,
+  compress: true,
+  port: 8080,
+  open: false,
 };
+
+module.exports = configs;

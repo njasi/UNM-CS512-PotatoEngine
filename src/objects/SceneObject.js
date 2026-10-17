@@ -67,11 +67,6 @@ export default class SceneObject {
     this.indices = indices;
     this.normals = normals;
 
-    // console.log("normals:", this.normals, this.normals.length / 3);
-    // console.log("positions:", this.vertices, this.vertices.length / 4);
-    // console.log("colors:", this.colors, this.colors.length / 4);
-    // console.log("indices:", this.indices, this.indices.length);
-
     // TODO parent and children for hierarchy later
     this.parent = parent;
     this.children = [];
@@ -186,9 +181,11 @@ export default class SceneObject {
     gl.enableVertexAttribArray(this.posLoc);
     gl.vertexAttribPointer(this.posLoc, 4, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
-    gl.enableVertexAttribArray(this.normalLoc);
-    gl.vertexAttribPointer(this.normalLoc, 3, gl.FLOAT, false, 0, 0);
+    if(this.normalLoc !== -1){
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
+      gl.enableVertexAttribArray(this.normalLoc);
+      gl.vertexAttribPointer(this.normalLoc, 3, gl.FLOAT, false, 0, 0);
+    }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);
     gl.enableVertexAttribArray(this.colorLoc);

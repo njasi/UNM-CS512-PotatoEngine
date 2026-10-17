@@ -103,6 +103,14 @@ export default class Camera {
   getViewMatrix() {
     return mat4Translate(mat4Identity(), [this.x, this.y, this.z]);
   }
+  
+  /**
+   * get the view matrix of the camera
+   * @returns 
+   */
+  getViewMatrix() {
+    return mat4Translate(mat4Identity(), [this.x, this.y, this.z]);
+  }
 
   /**
    * get camera projection matrix

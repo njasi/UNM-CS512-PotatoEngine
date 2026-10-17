@@ -4,7 +4,7 @@ import { rgba } from "./objects";
 import SceneObject from "./objects/SceneObject";
 import Shader from "./shaders/Shader";
 import ShaderProgram from "./shaders/ShaderProgram";
-import { multiplyMat4, mat4Identity } from "./util/transformations";
+import { multiplyMat4, mat4Identity, mat4RotateY, mat4RotateX } from "./util/transformations";
 
 export default class Scene {
   constructor(canvasID) {
@@ -42,7 +42,7 @@ export default class Scene {
     // TODO add better camera settings...
     this.camera = new Camera(this.canvas.width / this.canvas.height);
 
-    this.updateCB = undefined
+    this.updateCB = undefined;
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
   }
@@ -303,9 +303,9 @@ export default class Scene {
   }
 
   /**
-   * attach a callback function to the scene to be run before every 
+   * attach a callback function to the scene to be run before every
    * render.
-   * @param {function} cb 
+   * @param {function} cb
    */
   setUpdateCB(cb) {
     this.updateCB = cb;
@@ -317,8 +317,8 @@ export default class Scene {
    * @param {*} dt timestep in seconds
    */
   update(dt) {
-    if(!!this.updateCB){
-      this.updateCB(dt)
+    if (!!this.updateCB) {
+      this.updateCB(dt);
     }
     this.renderList.forEach((obj) => {
       obj.update(dt, this);
@@ -347,35 +347,22 @@ export default class Scene {
     this.gl.clearColor(...this.background);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-    // rotation matrices
-    const cx = Math.cos(this.rotationY);
-    const sx = Math.sin(this.rotationY);
-    const cy = Math.cos(this.rotationX);
-    const sy = Math.sin(this.rotationX);
-    const rotX = [1, 0, 0, 0, 0, cy, sy, 0, 0, -sy, cy, 0, 0, 0, 0, 1];
-    const rotY = [cx, 0, -sx, 0, 0, 1, 0, 0, sx, 0, cx, 0, 0, 0, 0, 1];
+    let sceneRotation = mat4RotateX(mat4RotateY(mat4Identity(), this.rotationY), this.rotationX)
 
-    let sceneRotation = multiplyMat4(rotY, rotX);
-
-    // NOTE isn't doing this math in js slow?
-    //      - is fine since once per render rather than once per vert
-    // init model-view matrix as identity matrix
-    let modelViewMatrix = this.camera.getViewMatrix();
-    // get projection from camera
+    // get projection & model view info from camera
+    const modelViewMatrix = this.camera.getViewMatrix();
     const projectionMatrix = this.camera.getProjectionMatrix();
-    // init model transformation matrix as identity matrix
-    let modelTransformationMatrix = mat4Identity();
-    // object rotation
-    modelTransformationMatrix = multiplyMat4(
-      modelTransformationMatrix,
-      sceneRotation,
-    );
+    let modelTransformationMatrix = sceneRotation;
+
+    // transformation needed to correct light positions to correct space
+    // this will probably conflict if I ever want to attach a light to an object
+    const lightTransformation = multiplyMat4(sceneRotation, modelViewMatrix);
 
     // reset switch flags
     // NOTE: if end up in a situation with only one program
     // can remove the flag. might be worth a dynamic check
-    this.activeMaterial = undefined
-    this.activeProgram = undefined
+    this.activeMaterial = undefined;
+    this.activeProgram = undefined;
     let i = 0;
     for (const [_, obj] of this.renderList) {
       const shaderProgram = this.getProgram(obj.programLabel);
@@ -396,8 +383,8 @@ export default class Scene {
           // do for light values
           // well could make them an attribute and that would be really
           // fast but then lose the structure
-          for (const [label, light] of this.lights) {
-            light.update(this.gl, shaderProgram, sceneRotation, i);
+          for (const [_, light] of this.lights) {
+            light.update(this.gl, shaderProgram, lightTransformation, i);
             i++;
           }
 

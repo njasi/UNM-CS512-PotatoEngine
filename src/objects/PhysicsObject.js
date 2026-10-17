@@ -1,4 +1,4 @@
-import { vec4distance, scaleVec4, sumVec4 } from "../vec4";
+import { vec4distance, scaleVec4, sumVec4 } from "../util/vec4";
 import SceneObject from "./SceneObject";
 
 /**

@@ -1,5 +1,5 @@
 import Scene from "../../src/Scene";
-import Shader from "../../src/Shader";
+import { Shader } from "../../src/shaders";
 import {
   bandaiNamcoHideTail,
   cacheBVH,

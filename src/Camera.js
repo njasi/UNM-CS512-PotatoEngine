@@ -5,7 +5,7 @@ import {
   box2Cube,
   frustum2Box,
   mat4Identity,
-} from "./transformations";
+} from "./util/transformations";
 
 
 /**

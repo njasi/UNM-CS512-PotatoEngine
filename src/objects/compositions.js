@@ -13,7 +13,7 @@ import {
   matMul,
   transformPrimitive,
   transformVertices,
-} from "../transformations";
+} from "../util/transformations";
 import { rgba } from "./helpers";
 import PrimitiveObject from "./PrimitiveObject";
 import {

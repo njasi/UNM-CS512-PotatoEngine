@@ -1,5 +1,5 @@
 import Scene from "../../src/Scene";
-import Shader from "../../src/Shader";
+import { Shader } from "../../src/shaders";
 import {
   setupKeyboardControls,
   setupMouseControls,
@@ -15,7 +15,7 @@ import {
 import FloatingObject from "../../src/objects/FloatingObject";
 import PhysicsObject from "../../src/objects/PhysicsObject";
 import { generateBarrel, generateBomb } from "../../src/objects/compositions";
-import { scaleVec4 } from "../../src/vec4";
+import { scaleVec4 } from "../../src/util/vec4";
 
 const canvas = document.getElementById("glcanvas");
 const vertEditor = document.getElementById("vertEditor");

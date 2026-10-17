@@ -2,9 +2,9 @@ import Camera from "./Camera";
 import Material from "./materials/Material";
 import { rgba } from "./objects";
 import SceneObject from "./objects/SceneObject";
-import Shader from "./Shader";
-import ShaderProgram from "./ShaderProgram";
-import { multiplyMat4, mat4Identity } from "./transformations";
+import Shader from "./shaders/Shader";
+import ShaderProgram from "./shaders/ShaderProgram";
+import { multiplyMat4, mat4Identity } from "./util/transformations";
 
 export default class Scene {
   constructor(canvasID) {
@@ -153,13 +153,42 @@ export default class Scene {
   }
 
   /**
+   * Add a light to the scene
+   * @param {Light} light
+   */
+  addLight(light) {
+    this.lights.set(light.label, light);
+  }
+
+  /**
+   * Get a light by its label
+   * @param {string} label
+   * @returns
+   */
+  getLight(label) {
+    const light = this.lights.get(label);
+
+    if (!light) {
+      throw new Error(`Light "${label}" was not found`);
+    }
+
+    return light;
+  }
+
+  /**
    * Create a new shader program
    * @param {*} label
    * @param {*} vertexShaderLabel
    * @param {*} fragmentShaderLabel
+   * @param {typeof ShaderProgram} [wrapperClass=ShaderProgram]
    * @returns
    */
-  addProgram(label, vertexShaderLabel, fragmentShaderLabel) {
+  addProgram(
+    label,
+    vertexShaderLabel,
+    fragmentShaderLabel,
+    wrapperClass = ShaderProgram,
+  ) {
     const vertexShader = this.getShader(vertexShaderLabel);
     const fragmentShader = this.getShader(fragmentShaderLabel);
 
@@ -170,7 +199,7 @@ export default class Scene {
     }
 
     const program = this.createProgram(vertexShader, fragmentShader);
-    const shaderProgram = new ShaderProgram(label, program, this.gl);
+    const shaderProgram = new wrapperClass(label, program, this.gl);
 
     this.programs.set(label, shaderProgram);
 
@@ -335,9 +364,32 @@ export default class Scene {
         shaderProgram.use(this.gl);
         this.activeProgram = obj.programLabel;
         this.activeMaterial = undefined;
+
+        // iterate over our lights if shader program has them
+        // we only do this at shader switch since the lights
+        // wont move in a single call
+
+        // honestly this could be a per object thing depending
+        // on how lights fall off.
+        if (shaderProgram.hasLight) {
+          let i = 0;
+          for (const [label, light] of this.lights) {
+            console.log(light, this.gl)
+            light.update(this.gl, shaderProgram, i);
+            i++;
+          }
+
+          if (!!shaderProgram.setLightCount) {
+            console.log("setting light count")
+            shaderProgram.setLightCount(i, this.gl);
+          }
+        }
       }
 
+      // if shader uses mats and the active material is not this
+      // one then update it
       if (
+        shaderProgram.hasMaterial &&
         obj.materialLabel != this.activeMaterial &&
         obj.materialLabel != undefined
       ) {

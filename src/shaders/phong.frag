@@ -1,6 +1,6 @@
 #version 300 es
 precision mediump float;
-#define MAX_LIGHTS 8
+#define MAX_LIGHTS 16
 
 in vec3 vColor;
 in vec3 vPosition;
@@ -26,6 +26,7 @@ struct Material {
 
 uniform Light uLights[MAX_LIGHTS];
 uniform Material mat;
+uniform int uLightCount;
 
 // placeholder material for until i setup material classes
 // Material mat = Material(vec3(0.35f, 0.35f, 0.35f), vec3(0.3f, 0.3f, 0.3f), vec3(0.4f, 0.4f, 0.4f), 16.f);
@@ -57,7 +58,7 @@ void main() {
 
     // seesm like length of the array is alwasy the max i defined
     // so probably need to pass through a count uniform?
-    for(int i = 0; i < 1; i++) {
+    for(int i = 0; i < uLightCount; i++) {
         totalColor += phongShading(uLights[i]);
     }
 

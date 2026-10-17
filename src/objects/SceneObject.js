@@ -21,7 +21,7 @@ import {
   mat4Scale,
   mat4Translate,
   matMul,
-} from "../transformations";
+} from "../util/transformations";
 import PrimitiveObject from "./PrimitiveObject";
 
 export default class SceneObject {

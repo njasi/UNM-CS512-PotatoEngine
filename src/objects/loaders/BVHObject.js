@@ -7,7 +7,7 @@ import {
   mat4RotateZ,
   mat4Scale,
   mat4Translate,
-} from "../../transformations";
+} from "../../util/transformations";
 
 // order to int mappings
 const ROTMAP = {

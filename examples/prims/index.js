@@ -1,5 +1,5 @@
 import Scene from "../../src/Scene";
-import Shader from "../../src/Shader";
+import { PhongShaderProgram, Shader } from "../../src/shaders";
 import {
   cacheOBJ,
   generateConeObject,
@@ -14,6 +14,7 @@ import {
 } from "../../src/objects";
 import basicControls from "../../src/controls/basic";
 import { common } from "../../src/materials";
+import Light from "../../src/lights/Light";
 
 const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;
@@ -70,6 +71,12 @@ scene.addMaterial(common.metallic("gold", colors.gold), "phong");
 scene.addMaterial(common.glass("glassy", colors.glassy), "phong");
 scene.addMaterial(common.wood("wooden", colors.wooden), "phong");
 scene.addMaterial(common.plastic("plastic", colors.plastic), "phong");
+
+function setupLight(){
+  const l = new Light("whitelight", [0,1000,0])
+  scene.addLight(l)
+}
+
 
 let prims = [];
 let doPrimSpin = true;
@@ -261,13 +268,14 @@ function setupInputControls() {
  */
 async function main() {
   await scene.loadShaders();
-
   await cacheOBJ("./utah_teapot.obj", "teapot");
 
   scene.addProgram("basic", "basicVertex", "basicFragment");
-  scene.addProgram("phong", "basicVertex", "phongFragment");
+  scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
 
   scene.loadMaterials();
+
+  setupLight()
 
   initSceneObjects();
   try {

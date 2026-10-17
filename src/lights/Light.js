@@ -1,5 +1,5 @@
 import { rgba } from "../objects";
-import ShaderProgram from "../ShaderProgram";
+import ShaderProgram from "../shaders/ShaderProgram";
 
 export const LIGHT_POINT = 0;
 export const LIGHT_SPOT = 1;
@@ -94,6 +94,6 @@ export default class Light {
    */
   update(gl, shader, index) {
     this.updateLocs(gl, shader, index);
-    this.updateUniforms();
+    this.updateUniforms(gl);
   }
 }

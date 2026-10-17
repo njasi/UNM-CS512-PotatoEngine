@@ -173,14 +173,20 @@ export function generateCone(
 
   if (solid) {
     const bottomCenterIndex = vertices.length / 4;
-
     vertices.push(x_c, y_c, z_c, 1);
     normals.push(0, 0, -1);
 
-    for (let u = 0; u < segments; u++) {
-      const current = u;
-      const next = u + 1;
+    const capStart = vertices.length / 4;
 
+    for (let u = 0; u < segments; u++) {
+      const uRad = (2 * Math.PI * u) / segments;
+      vertices.push(x_c + r * Math.cos(uRad), y_c + r * Math.sin(uRad), z_c, 1);
+      normals.push(0, 0, -1);
+    }
+
+    for (let u = 0; u < segments; u++) {
+      const current = capStart + u;
+      const next = capStart + ((u + 1) % segments);
       indices.push(bottomCenterIndex, next, current);
     }
   }

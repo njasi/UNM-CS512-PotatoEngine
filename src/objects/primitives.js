@@ -255,7 +255,7 @@ export function generateCylinder(
       vertices.push(vertX, vertY, vertZ, 1);
 
       // NOTE: unsure if dRadius should be - or + based on this winding order
-      normals.push(...normalizeV3(Math.cos(uRad), Math.sin(uRad), dRadius));
+      normals.push(...normalizeV3(Math.cos(uRad), Math.sin(uRad), -dRadius));
     }
   }
 

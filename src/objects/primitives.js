@@ -49,7 +49,7 @@ export function generateCube({
     0,
     -1,
     1,
-    1, 
+    1,
     0, // front
     1,
     -1,
@@ -81,7 +81,7 @@ export function generateCube({
     0,
     -1,
     1,
-    -1, 
+    -1,
     0, // top
     -1,
     -1,
@@ -97,12 +97,12 @@ export function generateCube({
     0,
     -1,
     -1,
-    1, 
+    1,
     0, // bottom
     1,
     -1,
     1,
-    0, 
+    0,
     1,
     -1,
     -1,
@@ -113,12 +113,12 @@ export function generateCube({
     0,
     1,
     1,
-    1, 
+    1,
     0, // right
     -1,
     -1,
     -1,
-    0, 
+    0,
     -1,
     -1,
     1,
@@ -316,13 +316,20 @@ export function generateCone(
  * @param {*} n the amount of sides on the n-gon
  * @param {*} r the radius of the circle the n-gon can be inscribed in
  * @param {*} h the hight of the prism
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
+ * @param {*} options
+ * @param {*} options.x_c x coord of the center of the cylinder
+ * @param {*} options.y_c y coord of the center of the cylinder
+ * @param {*} options.z_c z coord of the center of the cylinder
  * @returns
  */
-export function generateNGonPrism(n, r, h, x_c, y_c, z_c) {
-  return generateCylinder(n, r, h, x_c, y_c, z_c, 0, true, 2);
+export function generateNGonPrism(n, r, h, { x_c = 0, y_c = 0, z_c = 0 } = {}) {
+  return generateCylinder(n, r, h, {
+    x_c,
+    y_c,
+    z_c,
+    segments_h: 2,
+    prism: true,
+  });
 }
 
 /**
@@ -331,24 +338,29 @@ export function generateNGonPrism(n, r, h, x_c, y_c, z_c) {
  * @param {*} segments how many divisions there are
  * @param {*} r radius of the cylinder
  * @param {*} h height of the cylinder
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
- * @param {*} bulge amount of "bulge" the cylinder should have
- * @param {*} solid if false, do not close the ends of the cylinder
- * @param {*} segments_h default 2 how many divisions there are along the z axis
+ * @param {*} options
+ * @param {*} options.x_c x coord of the center of the cylinder
+ * @param {*} options.y_c y coord of the center of the cylinder
+ * @param {*} options.z_c z coord of the center of the cylinder
+ * @param {*} options.bulge amount of "bulge" the cylinder should have
+ * @param {*} options.solid if false, do not close the ends of the cylinder
+ * @param {*} options.segments_h default 2 how many divisions there are along the z axis
+ * @param {*} options.prism, if true make the vertical segments have distinct normals from eachother
  * @returns
  */
 export function generateCylinder(
   segments,
   r,
   h,
-  x_c = 0,
-  y_c = 0,
-  z_c = 0,
-  bulge = 0,
-  solid = true,
-  segments_h = 2,
+  {
+    x_c = 0,
+    y_c = 0,
+    z_c = 0,
+    bulge = 0,
+    solid = true,
+    segments_h = 2,
+    prism = false,
+  } = {},
 ) {
   const vertices = [];
   const normals = [];
@@ -356,41 +368,104 @@ export function generateCylinder(
 
   segments_h = segments_h == undefined ? segments : segments_h;
 
-  for (let v = 0; v <= segments_h; v++) {
-    const vFrac = v / segments_h;
-    const vertZ = z_c - h / 2 + vFrac * h;
-    const bulgeAmt = 1 + bulge * Math.sin(vFrac * Math.PI);
+  if (prism) {
+    // generate 2 verts at once wth the same normals
+    // next set of verts overlaps, etc
+    // is just the same thing as the normal generation
+    for (let v = 0; v < segments_h; v++) {
+      const vFrac = v / segments_h;
+      const vFrac1 = (v + 1) / segments_h;
+      const vertZ0 = z_c - h / 2 + vFrac * h;
+      const vertZ1 = z_c - h / 2 + vFrac1 * h;
+      const bulgeAmt0 = 1 + bulge * Math.sin(vFrac * Math.PI);
+      const bulgeAmt1 = 1 + bulge * Math.sin(vFrac1 * Math.PI);
+      const trueRadius0 = bulgeAmt0 * r;
+      const trueRadius1 = bulgeAmt1 * r;
 
-    const trueRadius = r * bulgeAmt;
+      for (let u = 0; u < segments; u++) {
+        const uRad0 = (2 * Math.PI * u) / segments;
+        const uRad1 = (2 * Math.PI * (u + 1)) / segments;
+        const uRadMiddle = (uRad0 + uRad1) / 2;
+        const panelStart = vertices.length / 4;
 
-    let dRadius = 0;
-    if (h !== 0) {
-      dRadius = (r * bulge * Math.PI * Math.cos(vFrac * Math.PI)) / h;
+        let dRadius0 = 0;
+        let dRadius1 = 0;
+        if (h !== 0) {
+          dRadius0 = (r * bulge * Math.PI * Math.cos(vFrac * Math.PI)) / h;
+          dRadius1 = (r * bulge * Math.PI * Math.cos(vFrac1 * Math.PI)) / h;
+        }
+
+        const n0 = normalizeV3(
+          Math.cos(uRadMiddle),
+          Math.sin(uRadMiddle),
+          -dRadius0,
+        );
+        const n1 = normalizeV3(
+          Math.cos(uRadMiddle),
+          Math.sin(uRadMiddle),
+          -dRadius1,
+        );
+
+        for (const [radius, angle, z, normal] of [
+          [trueRadius0, uRad0, vertZ0, n0],
+          [trueRadius0, uRad1, vertZ0, n0],
+          [trueRadius1, uRad0, vertZ1, n1],
+          [trueRadius1, uRad1, vertZ1, n1],
+        ]) {
+          vertices.push(
+            x_c + radius * Math.cos(angle),
+            y_c + radius * Math.sin(angle),
+            z,
+            1,
+          );
+          normals.push(...normal);
+        }
+
+        indices.push(
+          panelStart,
+          panelStart + 1,
+          panelStart + 2,
+          panelStart + 1,
+          panelStart + 3,
+          panelStart + 2,
+        );
+      }
+    }
+  } else {
+    for (let v = 0; v <= segments_h; v++) {
+      const vFrac = v / segments_h;
+      const vertZ = z_c - h / 2 + vFrac * h;
+      const bulgeAmt = 1 + bulge * Math.sin(vFrac * Math.PI);
+
+      const trueRadius = r * bulgeAmt;
+
+      let dRadius = 0;
+      if (h !== 0) {
+        dRadius = (r * bulge * Math.PI * Math.cos(vFrac * Math.PI)) / h;
+      }
+
+      for (let u = 0; u <= segments; u++) {
+        const uRad = (2 * Math.PI * u) / segments;
+
+        const vertX = x_c + trueRadius * Math.cos(uRad);
+        const vertY = y_c + trueRadius * Math.sin(uRad);
+
+        vertices.push(vertX, vertY, vertZ, 1);
+        normals.push(...normalizeV3(Math.cos(uRad), Math.sin(uRad), -dRadius));
+      }
     }
 
-    for (let u = 0; u <= segments; u++) {
-      const uRad = (2 * Math.PI * u) / segments;
+    for (let v = 0; v < segments_h; v++) {
+      for (let u = 0; u < segments; u++) {
+        const i_0 = v * (segments + 1) + u;
+        const i_1 = i_0 + 1;
+        const i_2 = i_0 + segments + 1;
+        const i_3 = i_2 + 1;
 
-      const vertX = x_c + trueRadius * Math.cos(uRad);
-      const vertY = y_c + trueRadius * Math.sin(uRad);
-
-      vertices.push(vertX, vertY, vertZ, 1);
-
-      // NOTE: unsure if dRadius should be - or + based on this winding order
-      normals.push(...normalizeV3(Math.cos(uRad), Math.sin(uRad), -dRadius));
-    }
-  }
-
-  for (let v = 0; v < segments_h; v++) {
-    for (let u = 0; u < segments; u++) {
-      const i_0 = v * (segments + 1) + u;
-      const i_1 = i_0 + 1;
-      const i_2 = i_0 + segments + 1;
-      const i_3 = i_2 + 1;
-
-      // fixed to counter clockwise winding
-      // push the two triangle faces
-      indices.push(i_0, i_1, i_2, i_1, i_3, i_2);
+        // fixed to counter clockwise winding
+        // push the two triangle faces
+        indices.push(i_0, i_1, i_2, i_1, i_3, i_2);
+      }
     }
   }
 

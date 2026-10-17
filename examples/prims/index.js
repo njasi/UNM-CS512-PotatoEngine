@@ -112,12 +112,10 @@ function initSceneObjects(
     segments,
     1,
     1,
-    0,
-    0,
-    0,
-    0.25,
-    true,
-    segments,
+    {
+      bulge: 0.25,
+      segments_h: segments,
+    },
   );
   prims.push(cylBulge);
   scene.addObject(cylBulge, shader, mat);
@@ -169,12 +167,19 @@ function initSceneObjects(
   prims.push(teapot);
   scene.addObject(teapot, shader, mat);
 
-  scene.removeObject("testCube")
+  scene.removeObject("testCube");
   const cube = generateCubeObject("testCube", color);
   prims.push(cube);
   scene.addObject(cube, shader, mat);
-  console.log(cube);
 
+  scene.removeObject("testPrismBulge");
+  const barrel = generateCylinderObject("testPrismBulge", color, segments, 0.75, 2, {
+    bulge: 0.25,
+    segments_h: segments,
+    prism: true,
+  });
+  prims.push(barrel);
+  scene.addObject(barrel, shader, mat);
 
   // // generateCube
   // scene.addObject(generateConeObject(), "basic");
@@ -185,7 +190,7 @@ function initSceneObjects(
  * Rotate the prims according to the selected primitive
  */
 function setPrimsPositions() {
-  const radius = prims.length;
+  const radius = prims.length * 0.75;
   for (let i = 0; i < prims.length; i++) {
     const offset = (2 * Math.PI * i) / prims.length;
 
@@ -272,7 +277,7 @@ function setupInputControls() {
 
 /**
  * overall scene update function
- * @param {*} dt 
+ * @param {*} dt
  */
 function updateScene(dt) {
   setPrimsPositions();
@@ -289,9 +294,9 @@ function updateScene(dt) {
     prim_spin += Math.PI / 180;
   }
 
-  l.position[1] = 20 * Math.sin(scene.time / 1000);
-  l2.position[0] = 20 * Math.sin(scene.time / 1000);
-  l2.position[1] = 20 * Math.cos(scene.time / 1000);
+  // l.position[1] = 20 * Math.sin(scene.time / 1000);
+  // l2.position[0] = 20 * Math.sin(scene.time / 1000);
+  // l2.position[1] = 20 * Math.cos(scene.time / 1000);
 }
 
 /**

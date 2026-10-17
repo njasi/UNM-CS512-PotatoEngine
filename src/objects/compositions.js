@@ -108,17 +108,13 @@ export function generateBarrel(
   bulge = 0.4,
   staves = 10,
 ) {
-  let body = generateCylinder(
-    staves,
-    r,
-    h,
+  let body = generateCylinder(staves, r, h, {
     x_c,
     y_c,
     z_c,
     bulge,
-    true,
-    segments,
-  );
+    segments_h: segments,
+  });
   body.colors = generateFillerColors(
     body.vertexCount,
     rgba(150, 111, 51, 1),
@@ -135,12 +131,11 @@ export function generateBarrel(
       staves,
       r + r * (bulge + 0.07) * Math.sin(brace_r_angle),
       0.1 * h,
-      x_c,
-      y_c,
-      brace_z,
-      0,
-      true,
-      2,
+      {
+        x_c,
+        y_c,
+        z_c: brace_z,
+      },
     );
 
     body = combine([body, brace], [undefined, rgba(51, 51, 51, 1)]);
@@ -166,23 +161,17 @@ export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
   let spokes = {
     vertices: [],
     indices: [],
-    normals: []
+    normals: [],
   };
 
   for (let i = 0; i < spokeCount; i++) {
     // TODO wtf is goin on here with the transformations
     // why does setting z_c make the cylinders fly in every direction
-    let spoketmp = generateCylinder(
-      segments,
-      r / 2,
-      R * 2,
-      -z_c,
+    let spoketmp = generateCylinder(segments, r / 2, R * 2, {
+      x_c: -z_c,
       y_c,
-      0, //z_c
-      0,
-      false,
-      2,
-    );
+      solid: false,
+    });
 
     // rotate the spoke
     const id = mat4Identity();
@@ -204,17 +193,9 @@ export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
  */
 export function generateCannon(barrelLength = 3) {
   // generate all the individual parts
-  const shaft = generateCylinder(
-    20,
-    1,
-    barrelLength,
-    0,
-    0,
-    -barrelLength / 2,
-    0,
-    true,
-    2,
-  );
+  const shaft = generateCylinder(20, 1, barrelLength, {
+    z_c: -barrelLength / 2,
+  });
   const end = generateSphere(20, 1, 0, 0, 0);
   let fuseHolder = generateCylinder(16, 0.2, 0.2);
   let fuse = generateCylinder(10, 0.1, 0.4);

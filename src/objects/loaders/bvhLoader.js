@@ -388,17 +388,11 @@ function makeBones(
     }
 
     // hmm might need to make joints like the root joint thats empty
-    const bonePrim = generateCylinder(
-      segments,
-      thickness,
-      dist,
-      0,
-      0,
-      dist / 2,
-      0.75,
-      true,
-      8,
-    );
+    const bonePrim = generateCylinder(segments, thickness, dist, {
+      z_c: dist / 2,
+      bulge: 0.75,
+      segments_h: 8,
+    });
     const colors = generateFillerColors(bonePrim.vertexCount, color, true);
     const bone = new SceneObject(
       prefix + currJoint.label + "-" + childJoint.label,

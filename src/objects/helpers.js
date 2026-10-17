@@ -166,12 +166,14 @@ export const generateSphereObject = makeSceneObjectGenerator(generateSphere);
  * @param {*} segments how many divisions there are
  * @param {*} r radius of the cylinder
  * @param {*} h height of the cylinder
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
- * @param {*} bulge amount of "bulge" the cylinder should have
- * @param {*} solid if false, do not close the ends of the cylinder
- * @param {*} segments_h, how many divisions there are along the z axis
+ * @param {*} options
+ * @param {*} options.x_c x coord of the center of the cylinder
+ * @param {*} options.y_c y coord of the center of the cylinder
+ * @param {*} options.z_c z coord of the center of the cylinder
+ * @param {*} options.bulge amount of "bulge" the cylinder should have
+ * @param {*} options.solid if false, do not close the ends of the cylinder
+ * @param {*} options.segments_h default 2 how many divisions there are along the z axis
+ * @param {*} options.prism, if true make the vertical segments have distinct normals from eachother
  * @returns
  */
 export const generateCylinderObject =

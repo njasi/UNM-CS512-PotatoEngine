@@ -15,7 +15,7 @@ import {
 import basicControls from "../../src/controls/basic";
 import { common } from "../../src/materials";
 import Light from "../../src/lights/Light";
-import { rgb, rgba } from "../../src/util/color";
+import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 
 const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;
@@ -79,8 +79,6 @@ const l2 = new Light("whitelight2", [50, 0, 0]);
 function setupLight() {
   scene.addLight(l);
   scene.addLight(l2);
-
-  l.intensity = 1;
 }
 
 let prims = [];
@@ -173,17 +171,20 @@ function initSceneObjects(
   scene.addObject(cube, shader, mat);
 
   scene.removeObject("testPrismBulge");
-  const barrel = generateCylinderObject("testPrismBulge", color, segments, 0.75, 2, {
-    bulge: 0.25,
-    segments_h: segments,
-    prism: true,
-  });
+  const barrel = generateCylinderObject(
+    "testPrismBulge",
+    color,
+    segments,
+    0.75,
+    2,
+    {
+      bulge: 0.25,
+      segments_h: segments,
+      prism: true,
+    },
+  );
   prims.push(barrel);
   scene.addObject(barrel, shader, mat);
-
-  // // generateCube
-  // scene.addObject(generateConeObject(), "basic");
-  // scene.addObject(generateTorusObject(), "basic");
 }
 
 /**
@@ -294,9 +295,10 @@ function updateScene(dt) {
     prim_spin += Math.PI / 180;
   }
 
-  // l.position[1] = 20 * Math.sin(scene.time / 1000);
-  // l2.position[0] = 20 * Math.sin(scene.time / 1000);
-  // l2.position[1] = 20 * Math.cos(scene.time / 1000);
+  l.position[1] = 20 * Math.sin(scene.time / 1000);
+  l2.position[0] = 20 * Math.sin(scene.time / 1000);
+  l2.position[1] = 20 * Math.cos(scene.time / 1000);
+  l2.color = hsvrad(scene.time / 1000, 1, 1);
 }
 
 /**

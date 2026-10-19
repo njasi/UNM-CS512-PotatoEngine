@@ -1,8 +1,9 @@
 import Scene from "../../src/Scene";
 import { Shader } from "../../src/shaders";
-import { generateCylinderObject, rgba } from "../../src/objects";
+import { generateCylinderObject } from "../../src/objects";
 
 import basicControls from "../../src/controls/basic";
+import { rgba } from "../../src/util/color";
 
 const canvas = document.getElementById("glcanvas");
 

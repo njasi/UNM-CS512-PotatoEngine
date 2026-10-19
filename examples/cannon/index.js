@@ -9,9 +9,9 @@ import {
   generateCylinderObject,
   generateGrid,
   generateSphereObject,
-  rgba,
   SceneObject,
 } from "../../src/objects";
+import { rgba } from "../../src/util/color";
 import FloatingObject from "../../src/objects/FloatingObject";
 import PhysicsObject from "../../src/objects/PhysicsObject";
 import { generateBarrel, generateBomb } from "../../src/objects/compositions";

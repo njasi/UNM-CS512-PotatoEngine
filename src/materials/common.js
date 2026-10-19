@@ -1,5 +1,5 @@
 import PhongMaterial from "./PhongMaterial";
-import { rgb } from "../objects";
+import { rgb } from "../util/color";
 
 // vec3 scale but didnt feel like making a vec3 file
 const scaleColor = (colorValue, scale) => {

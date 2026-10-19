@@ -4,9 +4,9 @@ import {
   bandaiNamcoHideTail,
   cacheBVH,
   loadBVH,
-  rgba,
   sceneAddBVH,
 } from "../../src/objects";
+import { rgba } from "../../src/util/color";
 import basicControls from "../../src/controls/basic";
 
 const scene = new Scene("glcanvas");

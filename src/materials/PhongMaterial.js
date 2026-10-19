@@ -1,5 +1,5 @@
 import ShaderProgram from "../shaders/ShaderProgram";
-import { rgb } from "../objects";
+import { rgb } from "../util/color";
 import Material from "./Material";
 
 /**

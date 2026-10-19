@@ -14,7 +14,7 @@ import {
   transformPrimitive,
   transformVertices,
 } from "../util/transformations";
-import { rgba } from "./helpers";
+import { rgba } from "../util/color";
 import PrimitiveObject from "./PrimitiveObject";
 import {
   generateCylinder,

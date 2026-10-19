@@ -1,6 +1,6 @@
 import Camera from "./Camera";
 import Material from "./materials/Material";
-import { rgba } from "./objects";
+import { rgba } from "./util/color";
 import SceneObject from "./objects/SceneObject";
 import Shader from "./shaders/Shader";
 import ShaderProgram from "./shaders/ShaderProgram";

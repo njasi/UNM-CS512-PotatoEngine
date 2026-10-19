@@ -10,12 +10,12 @@ import {
   generateOBJObject,
   generateSphereObject,
   generateTorusObject,
-  rgb,
-  rgba,
 } from "../../src/objects";
+
 import basicControls from "../../src/controls/basic";
 import { common } from "../../src/materials";
 import Light from "../../src/lights/Light";
+import { rgb, rgba } from "../../src/util/color";
 
 const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;

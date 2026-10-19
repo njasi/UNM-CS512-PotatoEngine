@@ -1,4 +1,5 @@
-import { rgba } from "../objects";
+import { rgba } from "../util/color";
+
 import ShaderProgram from "../shaders/ShaderProgram";
 import { transformPoint } from "../util/transformations";
 

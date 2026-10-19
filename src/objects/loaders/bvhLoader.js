@@ -29,7 +29,8 @@
  *      (this is handled by the hierarchical model setup already we just need to set the offset per child)
  */
 
-import { rgba } from "../helpers";
+import { rgba } from "../../util/color";
+
 import {
   generateCylinder,
   generateFillerColors,

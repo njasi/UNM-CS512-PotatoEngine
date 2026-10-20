@@ -4,7 +4,12 @@ import { rgba } from "./util/color";
 import SceneObject from "./objects/SceneObject";
 import Shader from "./shaders/Shader";
 import ShaderProgram from "./shaders/ShaderProgram";
-import { multiplyMat4, mat4Identity, mat4RotateY, mat4RotateX } from "./util/transformations";
+import {
+  multiplyMat4,
+  mat4Identity,
+  mat4RotateY,
+  mat4RotateX,
+} from "./util/transformations";
 
 export default class Scene {
   constructor(canvasID) {
@@ -325,6 +330,57 @@ export default class Scene {
     });
   }
 
+  _updateShaderLights(shaderProgram, lightTransformation) {
+    // iterate over our lights if shader program has them
+    // we only do this at shader switch since the lights
+    // wont move in a single call
+
+    // honestly this could be a per object thing depending
+    // on how lights fall off.
+    if (shaderProgram.hasLight) {
+      let i = 0;
+      // wonder if there is a faster batch update could
+      // do for light values
+      // well could make them an attribute and that would be really
+      // fast but then lose the structure
+      for (const [_, light] of this.lights) {
+        light.update(this.gl, shaderProgram, lightTransformation, i);
+        i++;
+      }
+
+      if (!!shaderProgram.setLightCount) {
+        shaderProgram.setLightCount(i, this.gl);
+      }
+    }
+  }
+
+  _updateShaderGeneralLocs(
+    shaderProgram,
+    projectionMatrix,
+    modelViewMatrix,
+    modelTransformationMatrix
+  ) {
+    // set time in seconds
+    if (shaderProgram.timeLoc !== null) {
+      this.gl.uniform1f(shaderProgram.timeLoc, this.time / 1000);
+    }
+
+    // set projection, view, transform matrices (scene rotation)
+    if (shaderProgram.uPM !== null) {
+      this.gl.uniformMatrix4fv(shaderProgram.uPM, false, projectionMatrix);
+    }
+    if (shaderProgram.uMVM !== null) {
+      this.gl.uniformMatrix4fv(shaderProgram.uMVM, false, modelViewMatrix);
+    }
+    if (shaderProgram.uMTM !== null) {
+      this.gl.uniformMatrix4fv(
+        shaderProgram.uMTM,
+        false,
+        modelTransformationMatrix,
+      );
+    }
+  }
+
   /**
    * Render the scene
    */
@@ -347,7 +403,10 @@ export default class Scene {
     this.gl.clearColor(...this.background);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-    let sceneRotation = mat4RotateX(mat4RotateY(mat4Identity(), this.rotationY), this.rotationX)
+    let sceneRotation = mat4RotateX(
+      mat4RotateY(mat4Identity(), this.rotationY),
+      this.rotationX,
+    );
 
     // get projection & model view info from camera
     const modelViewMatrix = this.camera.getViewMatrix();
@@ -366,32 +425,26 @@ export default class Scene {
     let i = 0;
     for (const [_, obj] of this.renderList) {
       const shaderProgram = this.getProgram(obj.programLabel);
+
+      // if we are rendering with a new program switch over
       if (obj.programLabel != this.activeProgram) {
+        console.log("loading");
+
         shaderProgram.use(this.gl);
+
+        // TODO: I should really move these functions into the shader class
+        //       like the material class with its updateUniforms call
+        this._updateShaderGeneralLocs(
+          shaderProgram,
+          projectionMatrix,
+          modelViewMatrix,
+          modelTransformationMatrix,
+        );
+        this._updateShaderLights(shaderProgram, lightTransformation);
+
+        //
         this.activeProgram = obj.programLabel;
         this.activeMaterial = undefined;
-
-        // iterate over our lights if shader program has them
-        // we only do this at shader switch since the lights
-        // wont move in a single call
-
-        // honestly this could be a per object thing depending
-        // on how lights fall off.
-        if (shaderProgram.hasLight) {
-          let i = 0;
-          // wonder if there is a faster batch update could
-          // do for light values
-          // well could make them an attribute and that would be really
-          // fast but then lose the structure
-          for (const [_, light] of this.lights) {
-            light.update(this.gl, shaderProgram, lightTransformation, i);
-            i++;
-          }
-
-          if (!!shaderProgram.setLightCount) {
-            shaderProgram.setLightCount(i, this.gl);
-          }
-        }
       }
 
       // if shader uses mats and the active material is not this
@@ -405,30 +458,6 @@ export default class Scene {
         this.activeMaterial = obj.materialLabel;
       }
 
-      // we only need to update these guys on the first loop iteration or on switch
-      if (i == 0 || obj.programLabel != this.activeProgram) {
-        // set time in seconds
-        if (shaderProgram.timeLoc !== null) {
-          this.gl.uniform1f(shaderProgram.timeLoc, this.time / 1000);
-        }
-
-        // set projection, view, transform matrices (scene rotation)
-        if (shaderProgram.uPM !== null) {
-          this.gl.uniformMatrix4fv(shaderProgram.uPM, false, projectionMatrix);
-        }
-        if (shaderProgram.uMVM !== null) {
-          this.gl.uniformMatrix4fv(shaderProgram.uMVM, false, modelViewMatrix);
-        }
-        if (shaderProgram.uMTM !== null) {
-          this.gl.uniformMatrix4fv(
-            shaderProgram.uMTM,
-            false,
-            modelTransformationMatrix,
-          );
-        }
-      }
-
-      // obj.bindBuffers(this.gl, shaderProgram.posLoc, shaderProgram.colorLoc);
       obj.draw(this.gl);
 
       i++;

@@ -65,6 +65,15 @@ scene.addMaterial(
   common.vertColor("0.8ambient+0.2diffuse+0.2specular"),
   "phong",
 );
+scene.addMaterial(
+  common.generateMaterial("0.4ambient+0.6diffuse+0.4specular", {
+    ka: [0.4, 0.4, 0.4],
+    kd: [0.6, 0.6, 0.6],
+    ks: [0.4, 0.4, 0.4],
+    specularExp: 1
+  }),
+  "phong",
+);
 scene.addMaterial(common.ambientOnly("ambientOnly"), "phong");
 scene.addMaterial(common.diffuseOnly("diffuseOnly"), "phong");
 scene.addMaterial(common.specularOnly("specularOnly"), "phong");
@@ -296,8 +305,8 @@ function updateScene(dt) {
   }
 
   l.position[1] = 20 * Math.sin(scene.time / 1000);
-  l2.position[0] = 20 * Math.sin(scene.time / 1000);
-  l2.position[1] = 20 * Math.cos(scene.time / 1000);
+  // l2.position[0] = 20 * Math.sin(scene.time / 1000);
+  // l2.position[1] = 20 * Math.cos(scene.time / 1000);
   l2.color = hsvrad(scene.time / 1000, 1, 1);
 }
 

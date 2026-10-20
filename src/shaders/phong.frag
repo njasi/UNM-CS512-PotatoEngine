@@ -57,5 +57,5 @@ void main() {
         totalColor += phongShading(uLights[i]);
     }
 
-    fragColor = vec4(totalColor, 1.0f);
+    fragColor = vec4(totalColor, 0.5);
 }

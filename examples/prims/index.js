@@ -70,7 +70,7 @@ scene.addMaterial(
     ka: [0.4, 0.4, 0.4],
     kd: [0.6, 0.6, 0.6],
     ks: [0.4, 0.4, 0.4],
-    specularExp: 1
+    specularExp: 1,
   }),
   "phong",
 );
@@ -169,7 +169,7 @@ function initSceneObjects(
   scene.addObject(torus, shader, mat);
 
   scene.removeObject("testTeapot");
-  const teapot = generateOBJObject("teapot", color, "teapot");
+  const teapot = generateOBJObject("testTeapot", color, "teapot");
   teapot.scale = [0.5, 0.5, 0.5];
   prims.push(teapot);
   scene.addObject(teapot, shader, mat);

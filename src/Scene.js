@@ -53,6 +53,10 @@ export default class Scene {
     this.updateCB = undefined;
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
+
+    // baisc render passes    
+    renderers.addBasicRenderPass(this)
+    renderers.addTransparentRenderPass(this)
   }
 
   /**

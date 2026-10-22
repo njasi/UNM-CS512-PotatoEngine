@@ -16,6 +16,9 @@ export default class Light {
    * @param {*} options.color
    * @param {*} options.intensity
    * @param {*} options.type
+   * @param {number} [options.attA=1] Light attenuation constant value
+   * @param {number} [options.attB=0.09] Light attenuation linear value
+   * @param {number} [options.attC=0.032] Light attenuation quadratic value
    */
   constructor(
     label,
@@ -24,6 +27,9 @@ export default class Light {
       color = rgba(255, 255, 255, 1),
       intensity = 1.0,
       type = LIGHT_POINT,
+      attA = 1,
+      attB = 0.09,
+      attC = 0.032,
     } = {},
   ) {
     this.label = label;
@@ -32,11 +38,17 @@ export default class Light {
     this.intensity = intensity;
     // probably turn type into an int enum later
     this.type = type;
+    this.attA = attA;
+    this.attB = attB;
+    this.attC = attC;
 
     this.positionLoc = undefined;
     this.colorLoc = undefined;
     this.intensityLoc = undefined;
     this.typeLoc = undefined;
+    this.attALoc = undefined;
+    this.attBLoc = undefined;
+    this.attCLoc = undefined;
   }
 
   /**
@@ -65,6 +77,18 @@ export default class Light {
       shader.program,
       `uLights[${index}].type`,
     );
+    this.attALoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].attA`,
+    );
+    this.attBLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].attB`,
+    );
+    this.attCLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].attC`,
+    );
   }
 
   /**
@@ -73,20 +97,19 @@ export default class Light {
    * @param {mat4} transformation transformation to apply before sending point to shader
    */
   updateUniforms(gl, transformation) {
-    const tPosition = transformPoint(this.position, transformation)
+    const tPosition = transformPoint(this.position, transformation);
 
-    gl.uniform3f(
-      this.positionLoc,
-      tPosition[0],
-      tPosition[1],
-      tPosition[2],
-    );
+    gl.uniform3f(this.positionLoc, tPosition[0], tPosition[1], tPosition[2]);
 
     gl.uniform3f(this.colorLoc, this.color[0], this.color[1], this.color[2]);
 
     gl.uniform1f(this.intensityLoc, this.intensity);
 
     gl.uniform1i(this.typeLoc, this.type);
+
+    gl.uniform1f(this.attALoc, this.attA);
+    gl.uniform1f(this.attBLoc, this.attB);
+    gl.uniform1f(this.attCLoc, this.attC);
   }
 
   /**

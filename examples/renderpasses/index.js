@@ -15,13 +15,13 @@ const scene = new Scene("glcanvas");
 scene.camera.move(0, 0, -10);
 scene.rotationX += Math.PI / 6;
 
+const l = new Light("whitelight", [0, 5, 5]);
 function addLights() {
-  const l = new Light("whitelight", [0, 5, 5]);
   l.intensity = 1.5;
-  const l2 = new Light("whitelight2", [0, -5, 0]);
+  // const l2 = new Light("whitelight2", [0, -5, 0]);
   // const l3 = new Light("whitelight3", [0, 10, 0]);
   scene.addLight(l);
-  scene.addLight(l2);
+  // scene.addLight(l2);
   //   scene.addLight(l3);
 }
 
@@ -146,6 +146,8 @@ async function main() {
   basicControls.setupKeyboardControls(scene);
 
   setInterval(() => {
+    l.color = hsv(scene.time / 12, 1, 1);
+    l.intensity =6
     scene.render();
   }, 30);
 }

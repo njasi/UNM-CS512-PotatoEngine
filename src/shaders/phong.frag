@@ -15,6 +15,10 @@ struct Light {
     int type;
     // for spotlights & directional lights
     vec3 direction;
+    // light attenuation
+    float attA;
+    float attB;
+    float attC;
 };
 
 struct Material {
@@ -38,14 +42,17 @@ vec3 ambient() {
 // calculate the overall phong lighting value for one light
 vec3 phongShading(Light l) {
     vec3 N = normalize(vNormal);
-    vec3 L = normalize(l.position - vPosition);
+    vec3 L = l.position - vPosition;
+    float d = length(L);
+    L = normalize(L);
     vec3 V = normalize(-vPosition);
     vec3 R = reflect(-L, N);
 
     float diff = max(dot(N, L), 0.0f);
     float spec = pow(max(dot(V, R), 0.0f), mat.specularExp);
+    float fatt = 1.0f / (l.attA + l.attB * d + l.attC * d * d);
 
-    return l.intensity * l.color * vec3(mat.kd * diff + mat.ks * spec);
+    return fatt * l.intensity * l.color * vec3(mat.kd * diff + mat.ks * spec);
 }
 
 void main() {

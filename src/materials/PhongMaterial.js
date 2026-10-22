@@ -5,7 +5,7 @@ import Material from "./Material";
 /**
  * Convenience Interface class for phong shader materials
  */
-export default class PhongMaterial extends Material{
+export default class PhongMaterial extends Material {
   /**
    * Create a (phong shader) material interface object.
    * @param {rgb()} ka
@@ -13,17 +13,19 @@ export default class PhongMaterial extends Material{
    * @param {rgb()} ks
    * @param {float} specularExp
    */
-  constructor(label, ka, kd, ks, specularExp) {
-    super(label)
+  constructor(label, ka, kd, ks, specularExp, alpha = 1) {
+    super(label);
     this.ka = ka;
     this.kd = kd;
     this.ks = ks;
     this.specularExp = specularExp;
+    this.alpha = alpha;
 
     this.kaLoc = undefined;
     this.kdLoc = undefined;
     this.ksLoc = undefined;
     this.specularExpLoc = undefined;
+    this.alphaLoc = undefined;
   }
 
   /**
@@ -32,7 +34,7 @@ export default class PhongMaterial extends Material{
    * @param {ShaderProgram} shader
    */
   initUniforms(gl, shader) {
-    super.initUniforms()
+    super.initUniforms();
     this.kaLoc = gl.getUniformLocation(shader.program, "mat.ka");
     this.kdLoc = gl.getUniformLocation(shader.program, "mat.kd");
     this.ksLoc = gl.getUniformLocation(shader.program, "mat.ks");
@@ -40,6 +42,7 @@ export default class PhongMaterial extends Material{
       shader.program,
       "mat.specularExp",
     );
+    this.alphaLoc = gl.getUniformLocation(shader.program, "mat.alpha");
   }
 
   /**
@@ -47,10 +50,11 @@ export default class PhongMaterial extends Material{
    * @param {*} gl
    */
   updateUniforms(gl) {
-    super.updateUniforms()
+    super.updateUniforms();
     gl.uniform3f(this.kaLoc, this.ka[0], this.ka[1], this.ka[2]);
     gl.uniform3f(this.kdLoc, this.kd[0], this.kd[1], this.kd[2]);
     gl.uniform3f(this.ksLoc, this.ks[0], this.ks[1], this.ks[2]);
     gl.uniform1f(this.specularExpLoc, this.specularExp);
+    gl.uniform1f(this.alphaLoc, this.alpha);
   }
 }

@@ -22,6 +22,7 @@ struct Material {
     vec3 kd;
     vec3 ks;
     float specularExp;
+    float alpha;
 };
 
 uniform Light uLights[MAX_LIGHTS];
@@ -57,5 +58,5 @@ void main() {
         totalColor += phongShading(uLights[i]);
     }
 
-    fragColor = vec4(totalColor, 0.5);
+    fragColor = vec4(totalColor, mat.alpha);
 }

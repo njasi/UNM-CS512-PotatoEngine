@@ -12,7 +12,7 @@ const scaleColor = (colorValue, scale) => {
  * @returns
  */
 export function generateMaterial(label, cfg) {
-  return new PhongMaterial(label, cfg.ka, cfg.kd, cfg.ks, cfg.specularExp);
+  return new PhongMaterial(label, cfg.ka, cfg.kd, cfg.ks, cfg.specularExp, cfg.alpha);
 }
 
 /**

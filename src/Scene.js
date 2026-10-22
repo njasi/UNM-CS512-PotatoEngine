@@ -54,9 +54,9 @@ export default class Scene {
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
 
-    // baisc render passes    
-    renderers.addBasicRenderPass(this)
-    renderers.addTransparentRenderPass(this)
+    // baisc render passes
+    renderers.addBasicRenderPass(this);
+    renderers.addTransparentRenderPass(this);
   }
 
   /**
@@ -288,12 +288,13 @@ export default class Scene {
    * @param {string} materialLabel the label for the object's material
    * @param {boolean} options.child if the object is a child, if so is not added to scenes render list, the parent renders it
    * @param {string[]} options.passes the render passes to use this object in (default ["basic"])
+   * @param {string[]} options.addChildren if true, adds children to the scene
    */
   addObject(
     obj,
     programLabel = obj.programLabel,
     materialLabel = obj.materialLabel,
-    { child = false, passes = ["basic"] } = {},
+    { child = false, passes = ["basic"], addChildren = false } = {},
   ) {
     if (!programLabel) {
       throw new Error(
@@ -321,6 +322,16 @@ export default class Scene {
     if (!!obj.setUniforms) {
       obj.setUniforms(this);
     }
+
+    if (addChildren) {
+      for (const child of obj.children) {
+        this.addObject(child, programLabel, materialLabel, {
+          child,
+          passes,
+          addChildren,
+        });
+      }
+    }
   }
 
   /**
@@ -336,17 +347,25 @@ export default class Scene {
   /**
    * TODO probably some unbinding or something?
    * TODO remove all of the children objects
-   * 
+   *
    * Removes the object from all renderpasses in the scene as well
    * @param {*} label
+   * @param {Object} [options]
+   * @param {boolean} [options.removeChildren=false] if true will remove children as well
    */
-  removeObject(label) {
+  removeObject(label, { removeChildren = false } = {}) {
     const obj = this.getObject(label);
     this.objects.delete(label);
     this.renderList.delete(label);
 
     for (const pass of this.passes.values()) {
       pass.removeObject(obj);
+    }
+
+    if (removeChildren) {
+      for (const child of obj.children) {
+        this.removeObject(child.label, { removeChildren });
+      }
     }
   }
 

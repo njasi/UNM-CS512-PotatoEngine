@@ -10,6 +10,8 @@ import {
   mat4RotateY,
   mat4RotateX,
 } from "./util/transformations";
+import RenderPass from "./renderers/RenderPass";
+import { renderers } from ".";
 
 export default class Scene {
   constructor(canvasID) {
@@ -26,6 +28,7 @@ export default class Scene {
     this.lights = new Map();
     this.shaders = new Map();
     this.materials = new Map();
+    this.passes = new Map();
 
     // background color of the scene
     // TODO skybox
@@ -228,6 +231,40 @@ export default class Scene {
   }
 
   /**
+   * Add a renderpass to the scene
+   * @param {*} pass
+   * @returns
+   */
+  addRenderPass(pass) {
+    if (this.passes.has(pass.label)) {
+      throw new Error(`Render pass "${pass.label}" already exists`);
+    }
+
+    this.passes.set(pass.label, pass);
+    return pass;
+  }
+
+  /**
+   * Get a renderpass from the scene by its label
+   * @param {string} label the label of the renderpass
+   * @returns
+   */
+  getRenderPass(label) {
+    const pass = this.passes.get(label);
+    if (!pass) throw new Error(`Render pass "${label}" was not found`);
+    return pass;
+  }
+
+  /**
+   * Remove a renderpass from the scene by its label
+   * @param {string} label the label of the renderpass
+   * @returns
+   */
+  removeRenderPass(label) {
+    return this.passes.delete(label);
+  }
+
+  /**
    * Initialize the buffers for every SceneObject
    */
   initBuffers() {
@@ -246,12 +283,13 @@ export default class Scene {
    * @param {string} programLabel the label for the shader program to use with this object
    * @param {string} materialLabel the label for the object's material
    * @param {boolean} options.child if the object is a child, if so is not added to scenes render list, the parent renders it
+   * @param {string[]} options.passes the render passes to use this object in (default ["basic"])
    */
   addObject(
     obj,
     programLabel = obj.programLabel,
     materialLabel = obj.materialLabel,
-    { child = false } = false,
+    { child = false, passes = ["basic"] } = {},
   ) {
     if (!programLabel) {
       throw new Error(
@@ -262,8 +300,15 @@ export default class Scene {
     obj.programLabel = programLabel;
     obj.materialLabel = materialLabel;
 
+    // children are rendered by their parent, this didnt cause any issue previously
+    // but it might cause issues with render passes?
     if (!child) {
       this.renderList.set(obj.label, obj);
+
+      // TODO: dont forget to remove objects from passes when we remove from scene
+      for (const passLabel of passes) {
+        this.getRenderPass(passLabel).addObject(obj);
+      }
     }
     this.objects.set(obj.label, obj);
     obj.loadBuffers(this.gl);
@@ -287,11 +332,33 @@ export default class Scene {
   /**
    * TODO probably some unbinding or something?
    * TODO remove all of the children objects
+   * 
+   * Removes the object from all renderpasses in the scene as well
    * @param {*} label
    */
   removeObject(label) {
+    const obj = this.getObject(label);
     this.objects.delete(label);
     this.renderList.delete(label);
+
+    for (const pass of this.passes.values()) {
+      pass.removeObject(obj);
+    }
+  }
+
+  /**
+   * Updated the passes that this object belongs to
+   * @param {*} obj
+   * @param {*} passLabels
+   */
+  setObjectPasses(obj, passLabels) {
+    for (const pass of this.passes.values()) {
+      pass.removeObject(obj);
+    }
+
+    for (const label of passLabels) {
+      this.getRenderPass(label).addObject(obj);
+    }
   }
 
   /**
@@ -358,7 +425,7 @@ export default class Scene {
     shaderProgram,
     projectionMatrix,
     modelViewMatrix,
-    modelTransformationMatrix
+    modelTransformationMatrix,
   ) {
     // set time in seconds
     if (shaderProgram.timeLoc !== null) {
@@ -382,53 +449,38 @@ export default class Scene {
   }
 
   /**
-   * Render the scene
+   * view, projection, scene transform
+   *
+   * might need these in render passes so sectioning out...
    */
-  render() {
-    const nextTime = Date.now() - this.startTime;
-
-    const dt = nextTime - this.time;
-    this.update(dt / 1000);
-
-    this.time = nextTime;
-
-    // delta time since start in ms
-
-    if (!this.gl) {
-      console.error("Scene has no WebGL context");
-      return;
-    }
-
-    this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.clearColor(...this.background);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
+  _calculateMatrices() {
     let sceneRotation = mat4RotateX(
       mat4RotateY(mat4Identity(), this.rotationY),
       this.rotationX,
     );
 
     // get projection & model view info from camera
-    const modelViewMatrix = this.camera.getViewMatrix();
-    const projectionMatrix = this.camera.getProjectionMatrix();
-    let modelTransformationMatrix = sceneRotation;
+    const viewTransform = this.camera.getViewMatrix();
+    const projectionTransform = this.camera.getProjectionMatrix();
+    let sceneTransform = sceneRotation;
 
-    // transformation needed to correct light positions to correct space
-    // this will probably conflict if I ever want to attach a light to an object
-    const lightTransformation = multiplyMat4(sceneRotation, modelViewMatrix);
+    return { viewTransform, projectionTransform, sceneTransform };
+  }
 
-    // reset switch flags
-    // NOTE: if end up in a situation with only one program
-    // can remove the flag. might be worth a dynamic check
-    this.activeMaterial = undefined;
-    this.activeProgram = undefined;
-    let i = 0;
-    for (const [_, obj] of this.renderList) {
+  /**
+   * Render a set of objects
+   * @param {*} objects
+   * @param {*} pass
+   * @param {*} matrices
+   */
+  _renderPass(pass, matrices) {
+    const objects = pass.getObjects();
+    for (const obj of objects) {
       const shaderProgram = this.getProgram(obj.programLabel);
 
       // if we are rendering with a new program switch over
       if (obj.programLabel != this.activeProgram) {
-        console.log("loading");
+        // console.log("loading");
 
         shaderProgram.use(this.gl);
 
@@ -436,9 +488,17 @@ export default class Scene {
         //       like the material class with its updateUniforms call
         this._updateShaderGeneralLocs(
           shaderProgram,
-          projectionMatrix,
-          modelViewMatrix,
-          modelTransformationMatrix,
+          matrices.projectionTransform,
+          matrices.viewTransform,
+          matrices.sceneTransform,
+        );
+
+        // transformation needed to correct light positions to correct space
+        // this will probably conflict if I ever want to attach a light to an object
+        // TODO these probably get moved into the shader passes?
+        const lightTransformation = multiplyMat4(
+          matrices.viewTransform,
+          matrices.sceneTransform,
         );
         this._updateShaderLights(shaderProgram, lightTransformation);
 
@@ -459,8 +519,49 @@ export default class Scene {
       }
 
       obj.draw(this.gl);
-
-      i++;
     }
+  }
+
+  /**
+   * Render the scene
+   */
+  render() {
+    const nextTime = Date.now() - this.startTime;
+
+    const dt = nextTime - this.time;
+    this.update(dt / 1000);
+
+    this.time = nextTime;
+
+    // delta time since start in ms
+
+    if (!this.gl) {
+      console.error("Scene has no WebGL context");
+      return;
+    }
+
+    // TODO figure out how to move into pass & pass.begin etc
+    // this.gl.enable(this.gl.DEPTH_TEST);
+    // this.gl.clearColor(...this.background);
+    // this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+    const matrices = this._calculateMatrices();
+
+    for (const [label, pass] of this.passes) {
+      pass.attach(this);
+
+      // reset switch flags
+      // NOTE: if end up in a situation with only one program
+      // can remove the flag. might be worth a dynamic check
+      this.activeMaterial = undefined;
+      this.activeProgram = undefined;
+
+      this._renderPass(pass, matrices);
+
+      pass.detach(this);
+    }
+
+    // unbind the framebuffer if we end with one
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
   }
 }

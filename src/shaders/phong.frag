@@ -8,6 +8,10 @@ in vec3 vNormal;
 
 out vec4 fragColor;
 
+const int LIGHT_POINT = 0;
+const int LIGHT_SPOT = 1;
+const int LIGHT_DIRECTIONAL = 2;
+
 struct Light {
     vec3 position;
     vec3 color;
@@ -15,6 +19,9 @@ struct Light {
     int type;
     // for spotlights & directional lights
     vec3 direction;
+    // for spotlight
+    float spotCutoff;
+    float spotExponent;
     // light attenuation
     float attA;
     float attB;
@@ -42,15 +49,27 @@ vec3 ambient() {
 // calculate the overall phong lighting value for one light
 vec3 phongShading(Light l) {
     vec3 N = normalize(vNormal);
-    vec3 L = l.position - vPosition;
-    float d = length(L);
-    L = normalize(L);
+    vec3 L;
+    float fatt = 1.f;
+
+    if(l.type == LIGHT_POINT) {
+        L = l.position - vPosition;
+        float d = length(L);
+        L = normalize(L);
+        fatt = 1.0f / (l.attA + l.attB * d + l.attC * d * d);
+    } else {
+        if(l.type == LIGHT_DIRECTIONAL) {
+            L = normalize(-l.direction);
+        } else {
+
+        }
+    }
+
     vec3 V = normalize(-vPosition);
     vec3 R = reflect(-L, N);
 
     float diff = max(dot(N, L), 0.0f);
     float spec = pow(max(dot(V, R), 0.0f), mat.specularExp);
-    float fatt = 1.0f / (l.attA + l.attB * d + l.attC * d * d);
 
     return fatt * l.intensity * l.color * vec3(mat.kd * diff + mat.ks * spec);
 }

@@ -30,6 +30,7 @@ export default class Light {
       attA = 1,
       attB = 0.09,
       attC = 0.032,
+      direction = [0, 0, 0],
     } = {},
   ) {
     this.label = label;
@@ -42,6 +43,8 @@ export default class Light {
     this.attB = attB;
     this.attC = attC;
 
+    this.direction = direction;
+
     this.positionLoc = undefined;
     this.colorLoc = undefined;
     this.intensityLoc = undefined;
@@ -49,6 +52,7 @@ export default class Light {
     this.attALoc = undefined;
     this.attBLoc = undefined;
     this.attCLoc = undefined;
+    this.directionLoc = undefined;
   }
 
   /**
@@ -89,6 +93,10 @@ export default class Light {
       shader.program,
       `uLights[${index}].attC`,
     );
+    this.directionLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].direction`,
+    );
   }
 
   /**
@@ -110,6 +118,16 @@ export default class Light {
     gl.uniform1f(this.attALoc, this.attA);
     gl.uniform1f(this.attBLoc, this.attB);
     gl.uniform1f(this.attCLoc, this.attC);
+
+    const origin = transformPoint([0, 0, 0], transformation);
+    const endpoint = transformPoint(this.direction, transformation);
+
+    gl.uniform3f(
+      this.directionLoc,
+      endpoint[0] - origin[0],
+      endpoint[1] - origin[1],
+      endpoint[2] - origin[2],
+    );
   }
 
   /**

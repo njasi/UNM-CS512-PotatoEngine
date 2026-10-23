@@ -8,7 +8,7 @@ import {
 
 import basicControls from "../../src/controls/basic";
 import { common } from "../../src/materials";
-import Light, { LIGHT_DIRECTIONAL } from "../../src/lights/Light";
+import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 
 const scene = new Scene("glcanvas");
@@ -22,10 +22,16 @@ function addLights() {
     type: LIGHT_DIRECTIONAL,
     direction: [-1, -1, 0],
   });
-  // const l3 = new Light("whitelight3", [0, 10, 0]);
+  const l3 = new Light("whitelight3", [0, 5, 5], {
+    type: LIGHT_SPOT,
+    direction: [-1, -1, -1],
+    intensity:10,
+    spotExponent:20,
+    cutoff:Math.PI/2
+  });
   scene.addLight(l);
   scene.addLight(l2);
-  //   scene.addLight(l3);
+  scene.addLight(l3);
 }
 
 function addShaders() {

@@ -31,6 +31,8 @@ export default class Light {
       attB = 0.09,
       attC = 0.032,
       direction = [0, 0, 0],
+      cutoff = Math.PI / 4,
+      spotExponent = 20,
     } = {},
   ) {
     this.label = label;
@@ -39,11 +41,15 @@ export default class Light {
     this.intensity = intensity;
     // probably turn type into an int enum later
     this.type = type;
+    // light attenuation for point and spot
     this.attA = attA;
     this.attB = attB;
     this.attC = attC;
-
+    // spot and directional light
     this.direction = direction;
+    // spot
+    this.cutoff = cutoff;
+    this.spotExponent = spotExponent;
 
     this.positionLoc = undefined;
     this.colorLoc = undefined;
@@ -53,6 +59,8 @@ export default class Light {
     this.attBLoc = undefined;
     this.attCLoc = undefined;
     this.directionLoc = undefined;
+    this.cutoffLoc = undefined;
+    this.spotExponentLoc = undefined;
   }
 
   /**
@@ -97,6 +105,14 @@ export default class Light {
       shader.program,
       `uLights[${index}].direction`,
     );
+    this.cutoffLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].cutoff`,
+    );
+    this.spotExponentLoc = gl.getUniformLocation(
+      shader.program,
+      `uLights[${index}].spotExponent`,
+    );
   }
 
   /**
@@ -128,6 +144,9 @@ export default class Light {
       endpoint[1] - origin[1],
       endpoint[2] - origin[2],
     );
+
+    gl.uniform1f(this.cutoffLoc, this.cutoff);
+    gl.uniform1f(this.spotExponentLoc, this.spotExponent);
   }
 
   /**

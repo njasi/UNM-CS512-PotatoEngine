@@ -14,13 +14,14 @@ const int LIGHT_DIRECTIONAL = 2;
 
 struct Light {
     vec3 position;
+    // TODO separate the color into channels?
     vec3 color;
     float intensity;
     int type;
     // for spotlights & directional lights
     vec3 direction;
     // for spotlight
-    float spotCutoff;
+    float cutoff;
     float spotExponent;
     // light attenuation
     float attA;
@@ -52,16 +53,23 @@ vec3 phongShading(Light l) {
     vec3 L;
     float fatt = 1.f;
 
-    if(l.type == LIGHT_POINT) {
-        L = l.position - vPosition;
-        float d = length(L);
-        L = normalize(L);
-        fatt = 1.0f / (l.attA + l.attB * d + l.attC * d * d);
+    if(l.type == LIGHT_DIRECTIONAL) {
+        L = normalize(-l.direction);
     } else {
-        if(l.type == LIGHT_DIRECTIONAL) {
-            L = normalize(-l.direction);
-        } else {
+        vec3 _L = l.position - vPosition;
+        float d = length(_L);
+        L = normalize(_L);
+        fatt = 1.0f / (l.attA + l.attB * d + l.attC * d * d);
 
+        if(l.type == LIGHT_SPOT) {
+            float spotCos = dot(normalize(l.direction), normalize(-_L));
+            float cutoffCos = cos(l.cutoff);
+
+            if(spotCos < cutoffCos) {
+                fatt = 0.0f;
+            } else {
+                fatt *= pow(max(spotCos, 0.0f), l.spotExponent);
+            }
         }
     }
 

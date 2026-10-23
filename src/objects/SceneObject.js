@@ -205,6 +205,7 @@ export default class SceneObject {
       }
     }
   }
+  
   /**
    * Set object specific uniform / attribute locations.
    * Uniforms:

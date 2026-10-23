@@ -383,6 +383,7 @@ export default class Scene {
 
     if (removeChildren) {
       for (const child of obj.children) {
+        console.log("removing child")
         this.removeObject(child.label, { removeChildren });
       }
     }

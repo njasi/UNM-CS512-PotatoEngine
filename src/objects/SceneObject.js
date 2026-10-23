@@ -181,7 +181,7 @@ export default class SceneObject {
     gl.enableVertexAttribArray(this.posLoc);
     gl.vertexAttribPointer(this.posLoc, 4, gl.FLOAT, false, 0, 0);
 
-    if(this.normalLoc !== -1){
+    if (this.normalLoc !== -1) {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
       gl.enableVertexAttribArray(this.normalLoc);
       gl.vertexAttribPointer(this.normalLoc, 3, gl.FLOAT, false, 0, 0);
@@ -249,8 +249,9 @@ export default class SceneObject {
    * Draw an object onto the canvas
    *
    * @param {*} gl the webgl2 context from canvas
+   * @param {Scene} [scene=undefined]
    */
-  draw(gl) {
+  draw(gl, scene = undefined) {
     if (!this.shouldDraw) {
       return;
     }
@@ -276,8 +277,18 @@ export default class SceneObject {
 
     // draw the object by the index order
     gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
+    let prevMat = this.materialLabel;
     for (const child of this.children) {
-      child.draw(gl);
+      if (
+        child.materialLabel &&
+        (child.materialLabel != this.materialLabel ||
+          child.materialLabel != prevMat)
+      ) {
+        prevMat = child.materialLabel
+        const mat = scene.getMaterial(child.materialLabel);
+        mat.updateUniforms(gl)
+      }
+      child.draw(gl, scene);
     }
   }
 

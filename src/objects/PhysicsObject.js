@@ -129,6 +129,6 @@ export default class PhysicsObject extends SceneObject {
    * @param {*} gl the webgl2 context from canvas
    */
   draw(gl) {
-    super.draw(gl);
+    super.draw(gl, arguments[1]);
   }
 }

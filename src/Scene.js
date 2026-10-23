@@ -325,11 +325,16 @@ export default class Scene {
 
     if (addChildren) {
       for (const child of obj.children) {
-        this.addObject(child, programLabel, materialLabel, {
+        this.addObject(
           child,
-          passes,
-          addChildren,
-        });
+          programLabel,
+          child.materialLabel || materialLabel,
+          {
+            child,
+            passes,
+            addChildren,
+          },
+        );
       }
     }
   }
@@ -541,7 +546,7 @@ export default class Scene {
         this.activeMaterial = obj.materialLabel;
       }
 
-      obj.draw(this.gl);
+      obj.draw(this.gl, this);
     }
   }
 

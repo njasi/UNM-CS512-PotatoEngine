@@ -103,10 +103,15 @@ function initSceneObjects(
   scene.addObject(cube, shader, mat);
   cube.position = [3, 1, 0];
 
+  const sphereChild = generateSphereObject("testSphereChild", color, segments, 1);
+  sphereChild.position = [-3, 1, 0];
+  sphereChild.materialLabel = "ambientOnly";
+
   scene.removeObject("testSphere");
   const sphere = generateSphereObject("testSphere", color, segments, 1);
+  sphere.addChild(sphereChild)
   prims.push(sphere);
-  scene.addObject(sphere, shader, "glass", { passes: ["transparent"] });
+  scene.addObject(sphere, shader, "glass", { passes: ["transparent"], addChildren:true });
   sphere.position = [-3, 1, 0];
 
   scene.removeObject("lightPosition");

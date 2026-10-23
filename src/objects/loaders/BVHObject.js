@@ -80,7 +80,7 @@ export default class BVHObject extends SceneObject {
    */
   draw(gl) {
     gl.uniform1i(this.uBVHLoc, ROTMAP[this.bvhRotationOrder]);
-    super.draw(gl);
+    super.draw(gl, arguments[1]);
     gl.uniform1i(this.uBVHLoc, 0);
   }
 }

@@ -174,6 +174,15 @@ export default class Scene {
   }
 
   /**
+   * Remove a light from the scene by its label
+   * @param {string} label the label of the light
+   * @returns
+   */
+  removeLight(label) {
+    return this.lights.delete(label);
+  }
+
+  /**
    * Get a light by its label
    * @param {string} label
    * @returns

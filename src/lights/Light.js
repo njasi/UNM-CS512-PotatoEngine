@@ -1,5 +1,6 @@
 import { rgba } from "../util/color";
 
+
 import ShaderProgram from "../shaders/ShaderProgram";
 import { transformPoint } from "../util/transformations";
 
@@ -19,6 +20,9 @@ export default class Light {
    * @param {number} [options.attA=1] Light attenuation constant value
    * @param {number} [options.attB=0.09] Light attenuation linear value
    * @param {number} [options.attC=0.032] Light attenuation quadratic value
+   * @param {number[]} [options.direction=[0, 0, 0]] direction of the light, for spot & directional lights
+   * @param {number} [options.cutoff=Math.PI / 4] cutoff for spotlights
+   * @param {number} [options.spotExponent=20] spotlight exponent
    */
   constructor(
     label,

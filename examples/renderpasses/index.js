@@ -25,9 +25,9 @@ function addLights() {
   const l3 = new Light("whitelight3", [0, 5, 5], {
     type: LIGHT_SPOT,
     direction: [-1, -1, -1],
-    intensity:10,
-    spotExponent:20,
-    cutoff:Math.PI/2
+    intensity: 10,
+    spotExponent: 20,
+    cutoff: Math.PI / 2,
   });
   scene.addLight(l);
   scene.addLight(l2);

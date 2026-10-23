@@ -286,6 +286,7 @@ export default class SceneObject {
       ) {
         prevMat = child.materialLabel
         const mat = scene.getMaterial(child.materialLabel);
+        scene.activeMaterial = child.materialLabel
         mat.updateUniforms(gl)
       }
       child.draw(gl, scene);

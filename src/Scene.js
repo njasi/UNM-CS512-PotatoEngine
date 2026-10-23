@@ -369,6 +369,11 @@ export default class Scene {
    */
   removeObject(label, { removeChildren = false } = {}) {
     const obj = this.getObject(label);
+
+    if(!obj){
+      return
+    }
+
     this.objects.delete(label);
     this.renderList.delete(label);
 
@@ -381,6 +386,8 @@ export default class Scene {
         this.removeObject(child.label, { removeChildren });
       }
     }
+
+    obj.cleanBuffers(this.gl);
   }
 
   /**

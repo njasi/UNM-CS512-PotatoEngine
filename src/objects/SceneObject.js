@@ -194,6 +194,18 @@ export default class SceneObject {
   }
 
   /**
+   * Free the buffers of the object
+   * @param {*} gl
+   */
+  cleanBuffers(gl) {
+    for (const key of ["vbo", "cbo", "nbo", "ibo"]) {
+      if (this[key]) {
+        gl.deleteBuffer(this[key]);
+        this[key] = undefined;
+      }
+    }
+  }
+  /**
    * Set object specific uniform / attribute locations.
    * Uniforms:
    * - position
@@ -284,10 +296,10 @@ export default class SceneObject {
         (child.materialLabel != this.materialLabel ||
           child.materialLabel != prevMat)
       ) {
-        prevMat = child.materialLabel
+        prevMat = child.materialLabel;
         const mat = scene.getMaterial(child.materialLabel);
-        scene.activeMaterial = child.materialLabel
-        mat.updateUniforms(gl)
+        scene.activeMaterial = child.materialLabel;
+        mat.updateUniforms(gl);
       }
       child.draw(gl, scene);
     }

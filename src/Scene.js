@@ -370,8 +370,8 @@ export default class Scene {
   removeObject(label, { removeChildren = false } = {}) {
     const obj = this.getObject(label);
 
-    if(!obj){
-      return
+    if (!obj) {
+      return;
     }
 
     this.objects.delete(label);
@@ -383,7 +383,6 @@ export default class Scene {
 
     if (removeChildren) {
       for (const child of obj.children) {
-        console.log("removing child")
         this.removeObject(child.label, { removeChildren });
       }
     }
@@ -450,19 +449,9 @@ export default class Scene {
     // honestly this could be a per object thing depending
     // on how lights fall off.
     if (shaderProgram.hasLight) {
-      let i = 0;
-      // wonder if there is a faster batch update could
-      // do for light values
-      // well could make them an attribute and that would be really
-      // fast but then lose the structure
-      for (const [_, light] of this.lights) {
-        light.update(this.gl, shaderProgram, lightTransformation, i);
-        i++;
-      }
-
-      if (!!shaderProgram.setLightCount) {
-        shaderProgram.setLightCount(i, this.gl);
-      }
+      const lights = [...this.lights.values()];
+      shaderProgram.updateLights(this.gl, lightTransformation, lights)
+      shaderProgram.setLightCount(this.gl, this.lights.size);
     }
   }
 

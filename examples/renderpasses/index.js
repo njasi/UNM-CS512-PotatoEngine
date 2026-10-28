@@ -17,21 +17,33 @@ scene.rotationX += Math.PI / 6;
 
 const l = new Light("rainbowlight", [0, 5, 5]);
 function addLights() {
-  l.intensity = 1.5;
-  const l2 = new Light("directionalLight", [0, 0, 0], {
-    type: LIGHT_DIRECTIONAL,
-    direction: [-1, -1, 0],
-  });
-  const l3 = new Light("whitelight3", [0, 5, 5], {
-    type: LIGHT_SPOT,
-    direction: [-1, -1, -1],
-    intensity: 10,
-    spotExponent: 20,
-    cutoff: Math.PI / 2,
-  });
+  l.intensity = 1;
+
+  for (let i = 0; i < 20; i++) {
+    const light = new Light(
+      `stressTestLight${i}`,
+      [Math.random() * 20 - 10, Math.random() * 5, Math.random() * 20 - 10],
+      {
+        intensity: Math.random(),
+        color: [Math.random(), Math.random(), Math.random()],
+      },
+    );
+    scene.addLight(light);
+  }
+  // const l2 = new Light("directionalLight", [0, 0, 0], {
+  //   type: LIGHT_DIRECTIONAL,
+  //   direction: [-1, -1, 0],
+  // });
+  // const l3 = new Light("whitelight3", [0, 5, 5], {
+  //   type: LIGHT_SPOT,
+  //   direction: [-1, -1, -1],
+  //   intensity: 10,
+  //   spotExponent: 20,
+  //   cutoff: Math.PI / 2,
+  // });
   scene.addLight(l);
-  scene.addLight(l2);
-  scene.addLight(l3);
+  // scene.addLight(l2);
+  // scene.addLight(l3);
 }
 
 function addShaders() {
@@ -103,15 +115,23 @@ function initSceneObjects(
   scene.addObject(cube, shader, mat);
   cube.position = [3, 1, 0];
 
-  const sphereChild = generateSphereObject("testSphereChild", color, segments, 1);
+  const sphereChild = generateSphereObject(
+    "testSphereChild",
+    color,
+    segments,
+    1,
+  );
   sphereChild.position = [-3, 1, 0];
   sphereChild.materialLabel = "ambientOnly";
 
   scene.removeObject("testSphere");
   const sphere = generateSphereObject("testSphere", color, segments, 1);
-  sphere.addChild(sphereChild)
+  sphere.addChild(sphereChild);
   prims.push(sphere);
-  scene.addObject(sphere, shader, "glass", { passes: ["transparent"], addChildren:true });
+  scene.addObject(sphere, shader, "glass", {
+    passes: ["transparent"],
+    addChildren: true,
+  });
   sphere.position = [-3, 1, 0];
 
   scene.removeObject("lightPosition");
@@ -161,7 +181,7 @@ async function main() {
 
   setInterval(() => {
     l.color = hsv(scene.time / 12, 1, 1);
-    l.intensity = 6;
+    // l.intensity = 6;
     scene.render();
   }, 30);
 }

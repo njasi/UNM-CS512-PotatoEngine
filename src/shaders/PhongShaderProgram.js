@@ -21,7 +21,7 @@ export default class PhongShaderProgram extends ShaderProgram {
     label,
     program,
     gl,
-    { maxLights = 64, hasLight = true, hasMaterial = true },
+    { maxLights = 64, hasLight = true, hasMaterial = true } = {},
   ) {
     super(label, program, gl);
     this.hasLight = hasLight;

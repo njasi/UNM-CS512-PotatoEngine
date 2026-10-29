@@ -88,19 +88,52 @@ class Joint {
  * Parse a bvh file into more understandable format for later
  *
  * if id already in cache dont load again
+ *
+ * on progress is a messy progress listener made by opening the request as a
+ * stream... would be nicer to have a builtin here...
  * @param {*} url
  * @param {*} id
+ * @param {function} onProgress
  */
-export async function cacheBVH(url, id) {
-  if (!!LOADED_BVH[id]) {
-    return;
-  }
+export async function cacheBVH(url, id, onProgress) {
+  if (LOADED_BVH[id]) return;
 
   const response = await fetch(url);
-  const text = await response.text();
+
+  const rawTotal = response.headers.get("content-length");
+  const parsedTotal = rawTotal ? Number(rawTotal) : NaN;
+  const total =
+    Number.isFinite(parsedTotal) && parsedTotal > 0 ? parsedTotal : null;
+
+  if (!response.body) {
+    throw new Error("This response does not provide a readable stream");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let loaded = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    loaded += value.byteLength;
+    text += decoder.decode(value, { stream: true });
+
+    onProgress?.({
+      loaded,
+      total,
+      percent:
+        total === null
+          ? null
+          : Math.min(100, Math.round((loaded / total) * 100)),
+    });
+  }
+
+  text += decoder.decode(); // Flush any remaining decoded text
 
   const loadedBVH = parseBVH(text);
-
   LOADED_BVH[id] = loadedBVH;
 }
 

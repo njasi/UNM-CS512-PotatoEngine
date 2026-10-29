@@ -127,7 +127,8 @@ function initSceneObjects(
     1,
   );
   sphereChild.position = [-3, 1, 0];
-  sphereChild.materialLabel = "ambientOnly";
+  sphereChild.materialLabel = "gold";
+  sphereChild.passes = ["basic"]
 
   scene.removeObject("testSphere");
   const sphere = generateSphereObject("testSphere", color, segments, 1);

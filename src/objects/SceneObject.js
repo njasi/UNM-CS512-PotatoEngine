@@ -44,6 +44,8 @@ export default class SceneObject {
    * @param {string} options.materialLabel          the material to use with this object
    * @param {string} options.lightingCenter         the center of the object to calculate light culling with
    * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
+   * @param {string} options.child                  if the object is a child
+   * @param {string} options.passed                 the renderpasses to render this object with
    */
   constructor(
     label,
@@ -61,6 +63,8 @@ export default class SceneObject {
       materialLabel = undefined,
       lightingCenter = [0, 0, 0],
       lightingRadius = 1,
+      child = false,
+      passes = undefined
     } = {},
   ) {
     this.label = label;
@@ -75,8 +79,11 @@ export default class SceneObject {
     this.parent = parent;
     this.children = [];
 
-    this.lightingCenter = lightingCenter
-    this.lightingRadius = lightingRadius
+    this.lightingCenter = lightingCenter;
+    this.lightingRadius = lightingRadius;
+
+    this.child = child;
+    this.passes = passes
 
     // transformation matrix to track?
     this.M = undefined;
@@ -139,7 +146,7 @@ export default class SceneObject {
       programLabel,
       materialLabel,
       lightingCenter,
-      lightingRadius
+      lightingRadius,
     });
   }
 
@@ -301,20 +308,6 @@ export default class SceneObject {
 
     // draw the object by the index order
     gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    let prevMat = this.materialLabel;
-    for (const child of this.children) {
-      if (
-        child.materialLabel &&
-        (child.materialLabel != this.materialLabel ||
-          child.materialLabel != prevMat)
-      ) {
-        prevMat = child.materialLabel;
-        const mat = scene.getMaterial(child.materialLabel);
-        scene.activeMaterial = child.materialLabel;
-        mat.updateUniforms(gl);
-      }
-      child.draw(gl, scene);
-    }
   }
 
   // attach this to the callback passed so we can reference the object

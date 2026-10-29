@@ -24,7 +24,7 @@ export default class Scene {
 
     // things present in the scene
     this.objects = new Map();
-    this.renderList = new Map();
+    this.updateList = new Map();
     this.lights = new Map();
     this.shaders = new Map();
     this.materials = new Map();
@@ -303,7 +303,11 @@ export default class Scene {
     obj,
     programLabel = obj.programLabel,
     materialLabel = obj.materialLabel,
-    { child = false, passes = ["basic"], addChildren = false } = {},
+    {
+      child = obj.child,
+      passes = obj.child || ["basic"],
+      addChildren = false,
+    } = {},
   ) {
     if (!programLabel) {
       throw new Error(
@@ -313,18 +317,21 @@ export default class Scene {
 
     obj.programLabel = programLabel;
     obj.materialLabel = materialLabel;
+    obj.child = child;
 
-    // children are rendered by their parent, this didnt cause any issue previously
-    // but it might cause issues with render passes?
+    // rendering handled by the render passes now,
+    // we just use this to track updates now
     if (!child) {
-      this.renderList.set(obj.label, obj);
-
-      // TODO: dont forget to remove objects from passes when we remove from scene
-      for (const passLabel of passes) {
-        this.getRenderPass(passLabel).addObject(obj);
-      }
+      this.updateList.set(obj.label, obj);
     }
+
     this.objects.set(obj.label, obj);
+
+    // TODO: dont forget to remove objects from passes when we remove from scene
+    for (const passLabel of passes) {
+      this.getRenderPass(passLabel).addObject(obj);
+    }
+
     obj.loadBuffers(this.gl);
 
     // setUniforms is standard now, but leaving the check just in case
@@ -339,8 +346,8 @@ export default class Scene {
           programLabel,
           child.materialLabel || materialLabel,
           {
-            child,
-            passes,
+            child: true,
+            passes: child.passes || passes,
             addChildren,
           },
         );
@@ -375,7 +382,7 @@ export default class Scene {
     }
 
     this.objects.delete(label);
-    this.renderList.delete(label);
+    this.updateList.delete(label);
 
     for (const pass of this.passes.values()) {
       pass.removeObject(obj);
@@ -436,8 +443,10 @@ export default class Scene {
     if (!!this.updateCB) {
       this.updateCB(dt);
     }
-    this.renderList.forEach((obj) => {
-      obj.update(dt, this);
+    this.updateList.forEach((obj) => {
+      if (!obj.child) {
+        obj.update(dt, this);
+      }
     });
   }
 
@@ -515,7 +524,6 @@ export default class Scene {
 
       // if we are rendering with a new program switch over
       if (obj.programLabel != this.activeProgram) {
-        // console.log("loading");
 
         shaderProgram.use(this.gl);
 
@@ -553,7 +561,9 @@ export default class Scene {
         this.activeMaterial = obj.materialLabel;
       }
 
-      shaderProgram.updateLightMask(this.gl, obj, lights);
+      if (shaderProgram.hasLight) {
+        shaderProgram.updateLightMask(this.gl, obj, lights);
+      }
 
       obj.draw(this.gl, this);
     }
@@ -576,11 +586,6 @@ export default class Scene {
       console.error("Scene has no WebGL context");
       return;
     }
-
-    // TODO figure out how to move into pass & pass.begin etc
-    // this.gl.enable(this.gl.DEPTH_TEST);
-    // this.gl.clearColor(...this.background);
-    // this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
     const matrices = this._calculateMatrices();
 

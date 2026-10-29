@@ -82,8 +82,8 @@ scene.addMaterial(common.glass("glassy", colors.glassy), "phong");
 scene.addMaterial(common.wood("wooden", colors.wooden), "phong");
 scene.addMaterial(common.plastic("plastic", colors.plastic), "phong");
 
-const l = new Light("whitelight", [0, 0, -10]);
-const l2 = new Light("whitelight2", [50, 0, 0]);
+const l = new Light("whitelight", [0, 0, -10], { intensity: 10 });
+const l2 = new Light("whitelight2", [50, 0, 0], { intensity: 10 });
 
 function setupLight() {
   scene.addLight(l);

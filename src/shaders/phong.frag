@@ -32,7 +32,17 @@ layout(std140) uniform LightBlock {
     // dirX, dirY, dirZ, spotExponent
     vec4 directionExponent[MAX_LIGHTS];
 };
+
 uniform int uLightCount;
+uniform uint uLightMask[4];
+
+// test if a light is enabled in the bitmap
+bool isLightEnabled(int i) {
+    uint word = uLightMask[i / 32];
+    uint bit = 1u << uint(i % 32);
+
+    return (word & bit) != 0u;
+}
 
 // given the Light source, calculate the contribution
 // ambient light has 
@@ -93,6 +103,10 @@ void main() {
     // plank objects in the rails... 
     // Although chunking the scenes might be more reasonable but annoying to make idk...
     for(int i = 0; i < uLightCount; i++) {
+        if(!isLightEnabled(i)) {
+            continue;
+        }
+        
         vec3 position = positionType[i].xyz;
         int type = int(positionType[i].w);
 

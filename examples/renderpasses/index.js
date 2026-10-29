@@ -19,10 +19,15 @@ const l = new Light("rainbowlight", [0, 5, 5]);
 function addLights() {
   l.intensity = 1;
 
-  for (let i = 0; i < 20; i++) {
+  const range = 1000;
+  for (let i = 0; i < 63; i++) {
     const light = new Light(
       `stressTestLight${i}`,
-      [Math.random() * 20 - 10, Math.random() * 5, Math.random() * 20 - 10],
+      [
+        Math.random() * range - range / 2,
+        Math.random() * 5,
+        Math.random() * range - range / 2,
+      ],
       {
         intensity: Math.random(),
         color: [Math.random(), Math.random(), Math.random()],
@@ -152,6 +157,13 @@ function initSceneObjects(
   );
   prims.push(ground);
   scene.addObject(ground, shader, "flat");
+
+  // test culling
+  ground.lightingRadius = 20;
+  sphere.lightingRadius = 1;
+  sphere2.lightingRadius = 1;
+  sphereChild.lightingRadius = 1;
+  cube.lightingRadius = 2;
 }
 
 /**

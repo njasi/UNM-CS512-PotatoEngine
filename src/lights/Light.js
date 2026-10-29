@@ -1,9 +1,5 @@
 import { rgba } from "../util/color";
 
-
-import ShaderProgram from "../shaders/ShaderProgram";
-import { transformPoint } from "../util/transformations";
-
 export const LIGHT_POINT = 0;
 export const LIGHT_SPOT = 1;
 export const LIGHT_DIRECTIONAL = 2;
@@ -23,6 +19,7 @@ export default class Light {
    * @param {number[]} [options.direction=[0, 0, 0]] direction of the light, for spot & directional lights
    * @param {number} [options.cutoff=Math.PI / 4] cutoff for spotlights
    * @param {number} [options.spotExponent=20] spotlight exponent
+   * @param {number} [options.cullingCutoff=0.05] lighting contribution cuttoff after which the light is culled  
    */
   constructor(
     label,
@@ -37,6 +34,7 @@ export default class Light {
       direction = [0, 0, 0],
       cutoff = Math.PI / 4,
       spotExponent = 20,
+      cullingCutoff = 0.05,
     } = {},
   ) {
     this.label = label;
@@ -49,121 +47,23 @@ export default class Light {
     this.attA = attA;
     this.attB = attB;
     this.attC = attC;
+
+    // calculate light culling radius based on attenuation
+    // TODO recalculate on value changes if needed
+    //      notably changes in intensity are likely to be an issue
+    this.radius =
+      (this.intensity *
+        (-attB * cullingCutoff +
+          Math.sqrt(
+            attB * attB * cullingCutoff * cullingCutoff -
+              4 * attC * cullingCutoff * (attA * cullingCutoff - 1),
+          ))) /
+      (2 * attC * cullingCutoff);
+
     // spot and directional light
     this.direction = direction;
     // spot
     this.cutoff = cutoff;
     this.spotExponent = spotExponent;
-
-    this.positionLoc = undefined;
-    this.colorLoc = undefined;
-    this.intensityLoc = undefined;
-    this.typeLoc = undefined;
-    this.attALoc = undefined;
-    this.attBLoc = undefined;
-    this.attCLoc = undefined;
-    this.directionLoc = undefined;
-    this.cutoffLoc = undefined;
-    this.spotExponentLoc = undefined;
-  }
-
-  /**
-   * Update the light's loc values
-   * - access the ith element in uLights and grab the
-   *   respective properties
-   *
-   * @param {*} gl
-   * @param {ShaderProgram} shader
-   * @param {Number} index
-   */
-  updateLocs(gl, shader, index) {
-    this.positionLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].position`,
-    );
-    this.colorLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].color`,
-    );
-    this.intensityLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].intensity`,
-    );
-    this.typeLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].type`,
-    );
-    this.attALoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].attA`,
-    );
-    this.attBLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].attB`,
-    );
-    this.attCLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].attC`,
-    );
-    this.directionLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].direction`,
-    );
-    this.cutoffLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].cutoff`,
-    );
-    this.spotExponentLoc = gl.getUniformLocation(
-      shader.program,
-      `uLights[${index}].spotExponent`,
-    );
-  }
-
-  /**
-   * Update the value of the uniform for this light
-   * @param {*} gl
-   * @param {mat4} transformation transformation to apply before sending point to shader
-   */
-  updateUniforms(gl, transformation) {
-    const tPosition = transformPoint(this.position, transformation);
-
-    gl.uniform3f(this.positionLoc, tPosition[0], tPosition[1], tPosition[2]);
-
-    gl.uniform3f(this.colorLoc, this.color[0], this.color[1], this.color[2]);
-
-    gl.uniform1f(this.intensityLoc, this.intensity);
-
-    gl.uniform1i(this.typeLoc, this.type);
-
-    gl.uniform1f(this.attALoc, this.attA);
-    gl.uniform1f(this.attBLoc, this.attB);
-    gl.uniform1f(this.attCLoc, this.attC);
-
-    const origin = transformPoint([0, 0, 0], transformation);
-    const endpoint = transformPoint(this.direction, transformation);
-
-    gl.uniform3f(
-      this.directionLoc,
-      endpoint[0] - origin[0],
-      endpoint[1] - origin[1],
-      endpoint[2] - origin[2],
-    );
-
-    gl.uniform1f(this.cutoffLoc, this.cutoff);
-    gl.uniform1f(this.spotExponentLoc, this.spotExponent);
-  }
-
-  /**
-   * Update the light for the given shader
-   * - refinds the locations (for if the indexes have changed)
-   * - then updates the uniform locs
-   * @param {*} gl
-   * @param {ShaderProgram} shader
-   * @param {mat4} transformation   transformation to apply before sending point to shader
-   * @param {Number} index
-   */
-  update(gl, shader, transformation, index) {
-    this.updateLocs(gl, shader, index);
-    this.updateUniforms(gl, transformation);
   }
 }

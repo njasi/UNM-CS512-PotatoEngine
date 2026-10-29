@@ -42,6 +42,8 @@ export default class SceneObject {
    * @param {boolean} options.shouldDraw            if this object should be drawn
    * @param {string} options.programLabel           the program to draw this object with
    * @param {string} options.materialLabel          the material to use with this object
+   * @param {string} options.lightingCenter         the center of the object to calculate light culling with
+   * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
    */
   constructor(
     label,
@@ -57,6 +59,8 @@ export default class SceneObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      lightingCenter = [0, 0, 0],
+      lightingRadius = 1,
     } = {},
   ) {
     this.label = label;
@@ -70,6 +74,9 @@ export default class SceneObject {
     // TODO parent and children for hierarchy later
     this.parent = parent;
     this.children = [];
+
+    this.lightingCenter = lightingCenter
+    this.lightingRadius = lightingRadius
 
     // transformation matrix to track?
     this.M = undefined;
@@ -118,6 +125,8 @@ export default class SceneObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      lightingCenter = [0, 0, 0],
+      lightingRadius = 1,
     } = {},
   ) {
     const { vertices, normals, colors, indices } = prim.toTypedArray();
@@ -129,6 +138,8 @@ export default class SceneObject {
       shouldDraw,
       programLabel,
       materialLabel,
+      lightingCenter,
+      lightingRadius
     });
   }
 
@@ -205,7 +216,7 @@ export default class SceneObject {
       }
     }
   }
-  
+
   /**
    * Set object specific uniform / attribute locations.
    * Uniforms:

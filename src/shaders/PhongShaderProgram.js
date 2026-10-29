@@ -1,3 +1,4 @@
+import { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../lights/Light";
 import { transformPoint } from "../util/transformations";
 import ShaderProgram from "./ShaderProgram";
 
@@ -30,6 +31,8 @@ export default class PhongShaderProgram extends ShaderProgram {
 
     this.uLightCount = gl.getUniformLocation(this.program, "uLightCount");
     this.lightBuffer;
+
+    this.uLightMask = gl.getUniformLocation(this.program, "uLightMask[0]");
 
     this._initLightBuffer(gl, this.maxLights);
   }
@@ -172,5 +175,67 @@ export default class PhongShaderProgram extends ShaderProgram {
     }
 
     this._uploadLightData(gl, lightTransformation, lights);
+  }
+
+  /**
+   * Given an object and the lights array calculate which
+   * lights should interact with the object\
+   * 
+   * could also be good to cap the number of lights that 
+   * interact with a single object although this would 
+   * cause issues with large objects probably
+   *
+   * - for point lights this should be attenuation based
+   * - spot lights should be based off of the angle and distance
+   * - directional lights are global and probably should not be culled
+   *
+   * @param {*} obj
+   * @param {*} lights
+   * @returns
+   */
+  _buildLightMask(obj, lights) {
+    const mask = new Uint32Array(4);
+    
+    // enable all lights if there arent bounds on the object
+    if (!obj.lightingCenter) {
+      mask.fill(0xffffffff);
+      return mask;
+    }
+
+    const center = obj.lightingCenter;
+    const radius = obj.lightingRadius;
+
+    for (let i = 0; i < lights.length; i++) {
+      const light = lights[i];
+
+      // directional lights (& spot lights for now since i dont want to math) effect everything
+      if (light.type === LIGHT_DIRECTIONAL || light.type == LIGHT_SPOT) {
+        mask[i >>> 5] |= 1 << (i & 31);
+        continue;
+      }
+
+      const dx = light.position[0] - center[0];
+      const dy = light.position[1] - center[1];
+      const dz = light.position[2] - center[2];
+
+      const maxDistance = light.radius + radius;
+
+      if (dx * dx + dy * dy + dz * dz <= maxDistance * maxDistance) {
+        mask[i >>> 5] |= 1 << (i & 31);
+      }
+    }
+
+    return mask;
+  }
+
+  /**
+   * Update the light mask for a given object
+   * @param {*} gl
+   * @param {*} obj
+   * @param {*} lights
+   */
+  updateLightMask(gl, obj, lights) {
+    const mask = this._buildLightMask(obj, lights);
+    gl.uniform1uiv(this.uLightMask, mask);
   }
 }

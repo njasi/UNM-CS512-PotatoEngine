@@ -450,7 +450,7 @@ export default class Scene {
     // on how lights fall off.
     if (shaderProgram.hasLight) {
       const lights = [...this.lights.values()];
-      shaderProgram.updateLights(this.gl, lightTransformation, lights)
+      shaderProgram.updateLights(this.gl, lightTransformation, lights);
       shaderProgram.setLightCount(this.gl, this.lights.size);
     }
   }
@@ -509,6 +509,7 @@ export default class Scene {
    */
   _renderPass(pass, matrices) {
     const objects = pass.getObjects();
+    const lights = [...this.lights.values()];
     for (const obj of objects) {
       const shaderProgram = this.getProgram(obj.programLabel);
 
@@ -551,6 +552,8 @@ export default class Scene {
         this.getMaterial(obj.materialLabel).updateUniforms(this.gl);
         this.activeMaterial = obj.materialLabel;
       }
+
+      shaderProgram.updateLightMask(this.gl, obj, lights);
 
       obj.draw(this.gl, this);
     }

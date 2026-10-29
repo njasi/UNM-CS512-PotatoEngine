@@ -105,8 +105,6 @@ export async function cacheBVH(url, id, onProgress) {
   const total =
     Number.isFinite(parsedTotal) && parsedTotal > 0 ? parsedTotal : null;
 
-  console.log("rt,pt,t:", rawTotal, parsedTotal, total);
-
   if (!response.body) {
     throw new Error("This response does not provide a readable stream");
   }

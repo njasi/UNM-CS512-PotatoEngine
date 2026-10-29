@@ -46,6 +46,8 @@ export default class SceneObject {
    * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
    * @param {string} options.child                  if the object is a child
    * @param {string} options.passed                 the renderpasses to render this object with
+   * @param {string} options.tangents
+   * @param {string} options.texCoords
    */
   constructor(
     label,
@@ -53,8 +55,6 @@ export default class SceneObject {
     colors,
     indices,
     normals,
-    tangents,
-    texCoords,
     {
       parent = undefined,
       position = [0, 0, 0],
@@ -66,7 +66,9 @@ export default class SceneObject {
       lightingCenter = [0, 0, 0],
       lightingRadius = 1,
       child = false,
-      passes = undefined
+      passes = undefined,
+      tangents = undefined,
+      texCoords = undefined,
     } = {},
   ) {
     this.label = label;
@@ -85,7 +87,7 @@ export default class SceneObject {
     this.lightingRadius = lightingRadius;
 
     this.child = child;
-    this.passes = passes
+    this.passes = passes;
 
     // transformation matrix to track?
     this.M = undefined;
@@ -140,7 +142,8 @@ export default class SceneObject {
       lightingRadius = 1,
     } = {},
   ) {
-    const { vertices, normals, colors, indices } = prim.toTypedArray();
+    const { vertices, normals, colors, indices, tangents, texCoords } =
+      prim.toTypedArray();
     return new SceneObject(label, vertices, colors, indices, normals, {
       parent,
       position,
@@ -151,6 +154,8 @@ export default class SceneObject {
       materialLabel,
       lightingCenter,
       lightingRadius,
+      tangents,
+      texCoords,
     });
   }
 
@@ -192,6 +197,10 @@ export default class SceneObject {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.tbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.tan, gl.STATIC_DRAW);
 
+    this.xbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.tbo);
+    gl.bufferData(gl.ARRAY_BUFFER, this.tan, gl.STATIC_DRAW);
+
     this.ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
@@ -213,6 +222,18 @@ export default class SceneObject {
       gl.vertexAttribPointer(this.normalLoc, 3, gl.FLOAT, false, 0, 0);
     }
 
+    if (this.tangentLoc !== -1) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.tbo);
+      gl.enableVertexAttribArray(this.tangentLoc);
+      gl.vertexAttribPointer(this.tangentLoc, 3, gl.FLOAT, false, 0, 0);
+    }
+
+    if (this.texCoordLoc !== -1) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.xbo);
+      gl.enableVertexAttribArray(this.texCoordLoc);
+      gl.vertexAttribPointer(this.texCoordLoc, 3, gl.FLOAT, false, 0, 0);
+    }
+
     gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);
     gl.enableVertexAttribArray(this.colorLoc);
     gl.vertexAttribPointer(this.colorLoc, 4, gl.FLOAT, false, 0, 0);
@@ -224,10 +245,14 @@ export default class SceneObject {
    * @param {*} gl
    */
   cleanBuffers(gl) {
-    for (const key of ["vbo", "cbo", "nbo", "ibo"]) {
+    for (const key of ["vbo", "cbo", "nbo", "ibo", "tbo", "xbo"]) {
       if (this[key]) {
-        gl.deleteBuffer(this[key]);
-        this[key] = undefined;
+        try {
+          gl.deleteBuffer(this[key]);
+          this[key] = undefined;
+        } catch (error) {
+          console.error(`Failed to clean buffer ${key} for ${this.label}.`)
+        }
       }
     }
   }

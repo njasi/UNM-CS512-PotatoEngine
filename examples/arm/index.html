@@ -1,158 +1,175 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>UNM CS 512 Arm Example</title>
-    <!-- load styles from the main site if we online -->
-    <link href="/public/styles.css" rel="stylesheet" />
-    <script defer src="/dist/arm/bundle.js"></script>
-  </head>
 
-  <body>
+<head>
+  <meta charset="utf-8" />
+  <title>UNM CS 512 Arm Example</title>
+  <!-- load styles from the main site if we online -->
+  <link href="/public/styles.css" rel="stylesheet" />
+  <script defer src="/dist/arm/bundle.js"></script>
+
+  <link href="/common/styles.css" rel="stylesheet" />
+  <link href="/common/navbar.css" rel="stylesheet" />
+  <script defer src="/common/navbar.js"></script>
+
+  <style>
+    .controls {
+      justify-content: space-around !important;
+
+    }
+
+    .slider-group {
+      width: 44%;
+      padding: 2%;
+      background-color: var(--background);
+    }
+
+    .slider-group span {
+      width: 40%;
+    }
+    .slider-group h2 {
+      margin-top: 0;
+    }
+  </style>
+
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-surface">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">UNM CS 512</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              Homework
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink" id="dropdown-homework"></ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              Side Projects
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink" id="dropdown-projects"></ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main>
     <h1>Arm Example</h1>
-    <main>
-      <div style="display: flex; justify-content: center">
-        <canvas id="glcanvas" width="800" height="450"></canvas>
+    <div>
+      <div id="demo">
+        <div class="canvas-wrapper" style="display: flex; justify-content: center">
+          <canvas id="glcanvas" width="800" height="450"></canvas>
+        </div>
         <div class="controls">
-          <p>Arm0</p>
-          <label class="slider-control">
-            <span>
-              <strong>Elevation</strong>
-              <output><span id="elevation0Value">45</span>°</output>
-            </span>
+          <div class="slider-group">
 
-            <input
-              id="elevation0"
-              name="elevation"
-              type="range"
-              min="-180"
-              max="180"
-              value="45"
-              class="metal-slider elevation-slider"
-            />
-          </label>
+            <h2>Arm0 Controls</h2>
+            <label class="slider-control">
+              <span>
+                <strong>Elevation</strong>
+                <output><span id="elevation0Value">45</span>°</output>
+              </span>
 
-          <label class="slider-control">
-            <span>
-              <strong>Yaw</strong>
-              <output><span id="yaw0Value">0</span>°</output>
-            </span>
+              <input id="elevation0" name="elevation" type="range" min="-180" max="180" value="45"
+                class="metal-slider elevation-slider" />
+            </label>
 
-            <input
-              id="yaw0"
-              name="yaw"
-              type="range"
-              min="-180"
-              max="180"
-              value="0"
-              class="metal-slider direction-slider"
-            />
-          </label>
-          <p>Arm1</p>
-          <label class="slider-control">
-            <span>
-              <strong>Elevation</strong>
-              <output><span id="elevation1Value">45</span>°</output>
-            </span>
+            <label class="slider-control">
+              <span>
+                <strong>Yaw</strong>
+                <output><span id="yaw0Value">0</span>°</output>
+              </span>
 
-            <input
-              id="elevation1"
-              name="elevation"
-              type="range"
-              min="-180"
-              max="180"
-              value="45"
-              class="metal-slider elevation-slider"
-            />
-          </label>
+              <input id="yaw0" name="yaw" type="range" min="-180" max="180" value="0"
+                class="metal-slider direction-slider" />
+            </label>
+          </div>
 
-          <label class="slider-control">
-            <span>
-              <strong>Yaw</strong>
-              <output><span id="yaw1Value">0</span>°</output>
-            </span>
+          <div class="slider-group">
 
-            <input
-              id="yaw1"
-              name="yaw"
-              type="range"
-              min="-180"
-              max="180"
-              value="0"
-              class="metal-slider direction-slider"
-            />
-          </label>
-          <p>Arm2</p>
-          <label class="slider-control">
-            <span>
-              <strong>Elevation</strong>
-              <output><span id="elevation2Value">45</span>°</output>
-            </span>
+            <h2>Arm1 Controls</h2>
+            <label class="slider-control">
+              <span>
+                <strong>Elevation</strong>
+                <output><span id="elevation1Value">45</span>°</output>
+              </span>
 
-            <input
-              id="elevation2"
-              name="elevation"
-              type="range"
-              min="-180"
-              max="180"
-              value="45"
-              class="metal-slider elevation-slider"
-            />
-          </label>
+              <input id="elevation1" name="elevation" type="range" min="-180" max="180" value="45"
+                class="metal-slider elevation-slider" />
+            </label>
 
-          <label class="slider-control">
-            <span>
-              <strong>Yaw</strong>
-              <output><span id="yaw2Value">0</span>°</output>
-            </span>
+            <label class="slider-control">
+              <span>
+                <strong>Yaw</strong>
+                <output><span id="yaw1Value">0</span>°</output>
+              </span>
 
-            <input
-              id="yaw2"
-              name="yaw"
-              type="range"
-              min="-180"
-              max="180"
-              value="0"
-              class="metal-slider direction-slider"
-            />
-          </label>
+              <input id="yaw1" name="yaw" type="range" min="-180" max="180" value="0"
+                class="metal-slider direction-slider" />
+            </label>
+          </div>
 
-          <p>Arm3</p>
-          <label class="slider-control">
-            <span>
-              <strong>Elevation</strong>
-              <output><span id="elevation3Value">45</span>°</output>
-            </span>
+          <div class="slider-group">
 
-            <input
-              id="elevation3"
-              name="elevation"
-              type="range"
-              min="-180"
-              max="180"
-              value="45"
-              class="metal-slider elevation-slider"
-            />
-          </label>
+            <h2>Arm2 Controls</h2>
+            <label class="slider-control">
+              <span>
+                <strong>Elevation</strong>
+                <output><span id="elevation2Value">45</span>°</output>
+              </span>
 
-          <label class="slider-control">
-            <span>
-              <strong>Yaw</strong>
-              <output><span id="yaw3Value">0</span>°</output>
-            </span>
+              <input id="elevation2" name="elevation" type="range" min="-180" max="180" value="45"
+                class="metal-slider elevation-slider" />
+            </label>
 
-            <input
-              id="yaw3"
-              name="yaw"
-              type="range"
-              min="-180"
-              max="180"
-              value="0"
-              class="metal-slider direction-slider"
-            />
-          </label>
+            <label class="slider-control">
+              <span>
+                <strong>Yaw</strong>
+                <output><span id="yaw2Value">0</span>°</output>
+              </span>
+
+              <input id="yaw2" name="yaw" type="range" min="-180" max="180" value="0"
+                class="metal-slider direction-slider" />
+            </label>
+          </div>
+
+          <div class="slider-group">
+
+            <h2>Arm3 Controls</h2>
+            <label class="slider-control">
+              <span>
+                <strong>Elevation</strong>
+                <output><span id="elevation3Value">45</span>°</output>
+              </span>
+
+              <input id="elevation3" name="elevation" type="range" min="-180" max="180" value="45"
+                class="metal-slider elevation-slider" />
+            </label>
+
+            <label class="slider-control">
+              <span>
+                <strong>Yaw</strong>
+                <output><span id="yaw3Value">0</span>°</output>
+              </span>
+
+              <input id="yaw3" name="yaw" type="range" min="-180" max="180" value="0"
+                class="metal-slider direction-slider" />
+            </label>
+          </div>
         </div>
       </div>
-    </main>
-  </body>
+    </div>
+
+  </main>
+</body>
+
 </html>

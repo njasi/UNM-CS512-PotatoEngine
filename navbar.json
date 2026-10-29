@@ -1,0 +1,55 @@
+{
+    "homework": [
+        {
+            "label": "HW1: Glass Shatter",
+            "link": "https://cs512.njasi.com/homework/hw1"
+        },
+        {
+            "label": "HW2: Glass Shatter 2",
+            "link": "https://cs512.njasi.com/homework/hw2"
+        },
+        {
+            "label": "HW3: Cannon Minigame",
+            "link": "https://cs512.njasi.com/homework/hw3"
+        },
+        {
+            "label": "HW4: BVH Loader",
+            "link": "https://cs512.njasi.com/homework/hw4"
+        },
+        {
+            "label": "HW5: Primitive Surfers",
+            "link": "https://cs512.njasi.com/homework/hw5"
+        }
+    ],
+    "projects": [
+        {
+            "label": "Potato Engine",
+            "link": "https://github.com/njasi/UNM-CS512-PotatoEngine"
+        },
+        {
+            "label": "OBJ Loader",
+            "link": "https://cs512.njasi.com/projects/sp1/"
+        },
+        {
+            "label": "Hiearchical Arm Test",
+            "link": "/examples/arm/index.html"
+        },
+        {
+            "label": "Bvh Loader Test",
+            "link": "/examples/bvh/index.html"
+        },
+        {
+            "label": "Cannon Test",
+            "link": "/examples/cannon/index.html"
+        },
+        {
+            "label": "Primitive / Lighting Test",
+            "link": "/examples/prims/index.html"
+        },
+        {
+            "label": "Renderpass / Lighting Test",
+            "link": "/examples/renderpasses/index.html"
+        }
+    ],
+    "misc": []
+}

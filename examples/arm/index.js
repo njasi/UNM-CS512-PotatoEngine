@@ -89,44 +89,23 @@ function setupInputControls(armId) {
  * - the segments of the arm
  */
 function initSceneObjects() {
-  const arm0 = generateCylinderObject(
-    "arm0",
-    rgba(255, 0, 0, 0),
-    32,
-    2.5,
-    10,
-    0,
-    0,
-    5,
-  );
+  const arm0 = generateCylinderObject("arm0", rgba(255, 0, 0, 0), 32, 2.5, 10, {
+    z_c: 5,
+  });
   arm0.rotation[0] = Math.PI / 2;
   arm0.position[1] = 0;
   scene.addObject(arm0, "basic", undefined);
 
-  const arm1 = generateCylinderObject(
-    "arm1",
-    rgba(0, 255, 0, 0),
-    32,
-    2.5,
-    10,
-    0,
-    0,
-    5,
-  );
+  const arm1 = generateCylinderObject("arm1", rgba(0, 255, 0, 0), 32, 2.5, 10, {
+    z_c: 5,
+  });
   arm1.position[2] = 10;
   scene.addObject(arm1, "basic", undefined, { child: true });
   arm0.addChild(arm1);
 
-  const arm2 = generateCylinderObject(
-    "arm2",
-    rgba(0, 0, 255, 0),
-    32,
-    2.5,
-    10,
-    0,
-    0,
-    5,
-  );
+  const arm2 = generateCylinderObject("arm2", rgba(0, 0, 255, 0), 32, 2.5, 10, {
+    z_c: 5,
+  });
   arm2.position[2] = 10;
   scene.addObject(arm2, "basic", undefined, { child: true });
   arm1.addChild(arm2);
@@ -137,9 +116,7 @@ function initSceneObjects() {
     32,
     2.5,
     10,
-    0,
-    0,
-    5,
+    { z_c: 5 },
   );
   arm3.position[2] = 10;
   scene.addObject(arm3, "basic", undefined, { child: true });

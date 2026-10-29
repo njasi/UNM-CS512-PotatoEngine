@@ -16,11 +16,20 @@ scene.camera.move(0, 0, -10);
 scene.rotationX += Math.PI / 6;
 
 const l = new Light("rainbowlight", [0, 5, 5]);
+
+const l3 = new Light("whitelight3", [0, 5, -5], {
+  type: LIGHT_SPOT,
+  direction: [-1, -1, 1],
+  intensity: 5,
+  spotExponent: 20,
+  cutoff: Math.PI / 2,
+});
+
 function addLights() {
   l.intensity = 1;
 
-  const range = 1000;
-  for (let i = 0; i < 63; i++) {
+  const range = 100;
+  for (let i = 0; i < 61; i++) {
     const light = new Light(
       `stressTestLight${i}`,
       [
@@ -35,20 +44,14 @@ function addLights() {
     );
     scene.addLight(light);
   }
-  // const l2 = new Light("directionalLight", [0, 0, 0], {
-  //   type: LIGHT_DIRECTIONAL,
-  //   direction: [-1, -1, 0],
-  // });
-  // const l3 = new Light("whitelight3", [0, 5, 5], {
-  //   type: LIGHT_SPOT,
-  //   direction: [-1, -1, -1],
-  //   intensity: 10,
-  //   spotExponent: 20,
-  //   cutoff: Math.PI / 2,
-  // });
+  const l2 = new Light("directionalLight", [0, 0, 0], {
+    type: LIGHT_DIRECTIONAL,
+    direction: [1, -1, 0],
+    intensity: 0.5,
+  });
   scene.addLight(l);
-  // scene.addLight(l2);
-  // scene.addLight(l3);
+  scene.addLight(l2);
+  scene.addLight(l3);
 }
 
 function addShaders() {
@@ -128,7 +131,7 @@ function initSceneObjects(
   );
   sphereChild.position = [-3, 1, 0];
   sphereChild.materialLabel = "gold";
-  sphereChild.passes = ["basic"]
+  sphereChild.passes = ["basic"];
 
   scene.removeObject("testSphere");
   const sphere = generateSphereObject("testSphere", color, segments, 1);
@@ -194,6 +197,10 @@ async function main() {
 
   setInterval(() => {
     l.color = hsv(scene.time / 12, 1, 1);
+    l3.position[0] = 5 * Math.sin(scene.time / 360);
+    l3.position[2] = 4 * Math.sin(scene.time / 1000);
+    l3.direction[0] = Math.sin(scene.time / 240);
+    l3.direction[2] = Math.cos(scene.time / 240);
     // l.intensity = 6;
     scene.render();
   }, 30);

@@ -1,7 +1,7 @@
 const path = require("path");
 
 const examplesDir = path.resolve(__dirname, "examples");
-const exampleNames = ["bvh", "prims", "arm", "cannon", "renderpasses"]
+const exampleNames = ["bvh", "prims", "arm", "cannon", "renderpasses"];
 
 const configs = exampleNames.map((name) => ({
   name,
@@ -18,6 +18,7 @@ const configs = exampleNames.map((name) => ({
 // i think this means losing hot reloading for the other
 // ones but thats ok
 configs[0].devServer = {
+  compress: false,
   static: {
     directory: path.resolve(__dirname),
     watch: {

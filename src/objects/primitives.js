@@ -143,6 +143,23 @@ export function generateCube({
   ];
   const normals = faceNormals.flatMap((n) => [...n, ...n, ...n, ...n]);
 
+  // Tangent; bitangent = cross(N, T)
+  const faceTangents = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [1, 0, 0],
+    [1, 0, 0],
+    [0, 0, -1],
+    [0, 0, 1],
+  ];
+  const tangents = new Float32Array(
+    faceTangents.flatMap((t) => [...t, ...t, ...t, ...t]),
+  );
+
+  const texCoords = new Float32Array(
+    faceNormals.flatMap(() => [0, 0, 1, 0, 1, 1, 0, 1]),
+  );
+
   const indices = [
     0,
     1,
@@ -182,7 +199,12 @@ export function generateCube({
     23, // left
   ];
 
-  return new PrimitiveObject(positions, { normals, indices });
+  return new PrimitiveObject(positions, {
+    normals,
+    indices,
+    tangents,
+    texCoords,
+  });
 }
 
 /**

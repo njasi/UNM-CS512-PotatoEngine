@@ -18,7 +18,10 @@ export default class PrimitiveObject {
    * @param {*} [options.normals]
    * @param {*} [options.colors]
    * @param {*} [options.indices]
+   * @param {*} [options.tangents]
+   * @param {*} [options.texCoords]
    * @param {*} [options.vertexCount]
+   * @param {*} [options.indexCount]
    */
   constructor(
     vertices,
@@ -26,6 +29,8 @@ export default class PrimitiveObject {
       normals = [],
       colors = [],
       indices = [],
+      tangents = [],
+      texCoords = [],
       vertexCount = vertices.length / 4,
       indexCount = indices.length,
     } = {},
@@ -34,8 +39,10 @@ export default class PrimitiveObject {
     this.normals = normals;
     this.colors = colors;
     this.indices = indices;
+    this.tangents = tangents;
+    this.texCoords = texCoords;
     this.vertexCount = vertexCount;
-    this.indexCount = indexCount
+    this.indexCount = indexCount;
   }
 
   /**
@@ -63,6 +70,8 @@ export default class PrimitiveObject {
       normals: new Float32Array(this.normals),
       colors: new Float32Array(this.colors),
       indices: new Uint16Array(this.indices),
+      tangents: new Float32Array(this.tangents),
+      texCoords: new Float32Array(this.texCoords),
     };
   }
 }

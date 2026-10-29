@@ -53,6 +53,8 @@ export default class SceneObject {
     colors,
     indices,
     normals,
+    tangents,
+    texCoords,
     {
       parent = undefined,
       position = [0, 0, 0],
@@ -93,6 +95,8 @@ export default class SceneObject {
     this.cbo = undefined;
     this.ibo = undefined;
     this.nbo = undefined;
+    this.tbo = undefined;
+    this.xbo = undefined;
 
     // attach update function here, such as an explosion growing
     this.updateCB = undefined;
@@ -184,6 +188,10 @@ export default class SceneObject {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.nbo);
     gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
 
+    this.tbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.tbo);
+    gl.bufferData(gl.ARRAY_BUFFER, this.tan, gl.STATIC_DRAW);
+
     this.ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
@@ -252,6 +260,8 @@ export default class SceneObject {
     this.posLoc = scene.gl.getAttribLocation(shader.program, "aPosition");
     this.colorLoc = scene.gl.getAttribLocation(shader.program, "aColor");
     this.normalLoc = scene.gl.getAttribLocation(shader.program, "aNormal");
+    this.tangentLoc = scene.gl.getAttribLocation(shader.program, "aTangent");
+    this.texCoordLoc = scene.gl.getAttribLocation(shader.program, "aTexCoord");
   }
 
   /**

@@ -1,1 +1,1 @@
-export {default as Light} from "./Light"
+export { default as Light } from "./Light";

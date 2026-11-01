@@ -1,16 +1,26 @@
-// The perspective matrix is built as a product of three factors:
-//
-//     M_per = M_orth * P * F
-//
-//   M_orth: Normalization from box to cube [l,r][b,t][n,f] -> [-1,1]^3
-//   P: Perspective warping, from frustum to box
-//   F: z-axis flip.
+/** 
+ * @module util/transformations 
+ * @description Transformation helpers taken from the provided sample code
+ * for the most part they allow transformation on Float32Arrays of verticies
+ * or Array(number) but there are some helpers meant to act on the 
+ * primitive object types directly
+*/
 
-// Warpping the frustum into the box [l,r][b,t][n,f]
-//   [ n  0   0    0  ]
-//   [ 0  n   0    0  ]
-//   [ 0  0  f+n  -fn ]
-//   [ 0  0   1    0  ]
+import PrimitiveObject from "../objects/PrimitiveObject";
+
+/**
+ * <pre>
+ * Wrapping the frustum into the box [l,r][b,t][n,f]
+ *   [ n  0   0    0  ]
+ *   [ 0  n   0    0  ]
+ *   [ 0  0  f+n  -fn ]
+ *   [ 0  0   1    0  ]
+ * </pre>
+ * 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The frustum view matrix
+ */
 export function frustum2Box(near, far) {
   return new Float32Array([
     near,
@@ -32,11 +42,24 @@ export function frustum2Box(near, far) {
   ]);
 }
 
-// mapping box [l,r][b,t][n,f] onto the normalized cube [-1,1]^3.
-//   [ 2/(r-l)    0        0      -(r+l)/(r-l) ]
-//   [    0    2/(t-b)     0      -(t+b)/(t-b) ]
-//   [    0       0     2/(f-n)   -(f+n)/(f-n) ]
-//   [    0       0        0            1      ]
+
+/**
+ * <pre>
+ * mapping box [l,r][b,t][n,f] onto the normalized cube [-1,1]^3.
+ *   [ 2/(r-l)    0        0      -(r+l)/(r-l) ]
+ *   [    0    2/(t-b)     0      -(t+b)/(t-b) ]
+ *   [    0       0     2/(f-n)   -(f+n)/(f-n) ]
+ *   [    0       0        0            1      ]
+ * </pre>
+ * 
+ * @param {*} left 
+ * @param {*} right 
+ * @param {*} bottom 
+ * @param {*} top 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} Normalization cube matrix
+ */
 export function box2Cube(left, right, bottom, top, near, far) {
   const rl = 1 / (right - left),
     tb = 1 / (top - bottom),
@@ -61,13 +84,23 @@ export function box2Cube(left, right, bottom, top, near, far) {
   ]);
 }
 
-//Camera Looks down -z, near/far passed as positive distances into the
-//+z-forward convention P and M_orth are written in
+/**
+ * Camera Looks down -z, near/far passed as positive distances into the
+ * +z-forward convention P and M_orth are written in
+ * 
+ * @returns {Float32Array} z flip matrix (identity with -1 for z)
+ */
 export function flipZ() {
   return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]);
 }
 
-// Matrix multiplication
+/**
+ * Basic Float32Array mat4 matrix multiplication
+ * 
+ * @param {Float32Array} a 
+ * @param {Float32Array} b 
+ * @returns {Float32Array} the product of the two matricies
+ */
 export function multiplyMat4(a, b) {
   let r = new Float32Array(16);
   for (let i = 0; i < 4; i++)
@@ -81,13 +114,38 @@ export function multiplyMat4(a, b) {
   return r;
 }
 
-// Multiply matrices left to right, e.g. matMul(A, B, C) is A * B * C.
-// JavaScript has no operator overloading, GLSL does overload `*` for mat4
+/**
+ * Multiply matrices left to right, e.g. matMul(A, B, C) is A * B * C.
+ * JavaScript has no operator overloading, GLSL does overload `*` for mat4
+ * 
+ * @param  {...any} matrices 
+ * @returns {Float32Array} the product of all matricies
+ */
 export function matMul(...matrices) {
   return matrices.reduce(multiplyMat4);
 }
 
-// General perspective frustum
+/**
+ * General perspective frustum
+ * 
+ * The perspective matrix is built as a product of three factors:
+ *
+ * <pre>
+ *   M_per = M_orth * P * F
+ *
+ *   M_orth: Normalization from box to cube [l,r][b,t][n,f] -> [-1,1]^3
+ *   P: Perspective warping, from frustum to box
+ *   F: z-axis flip.
+ * </pre>
+ * 
+ * @param {*} left 
+ * @param {*} right 
+ * @param {*} bottom 
+ * @param {*} top 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The frustum matrix
+ */
 export function frustum(left, right, bottom, top, near, far) {
   const M_orth = box2Cube(left, right, bottom, top, near, far);
   const P = frustum2Box(near, far);
@@ -95,14 +153,32 @@ export function frustum(left, right, bottom, top, near, far) {
   return matMul(M_orth, P, F); // M_per = M_orth * Perspective Warping * FlipZ
 }
 
-// Symmetric frustum from vertical field of view. fov in radians.
+/**
+ * Symmetric frustum from vertical field of view. fov in radians.
+ * 
+ * @param {*} fov 
+ * @param {*} aspect 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The symmetric frustum marix
+ */
 export function perspective(fov, aspect, near, far) {
   const top = near * Math.tan(fov / 2);
   const right = top * aspect;
   return frustum(-right, right, -top, top, near, far);
 }
 
-// Orthographic matrix
+/**
+ * Orthographic matrix
+ * 
+ * @param {*} left 
+ * @param {*} right 
+ * @param {*} bottom 
+ * @param {*} top 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The orthographic projection matrix
+ */
 export function ortho(left, right, bottom, top, near, far) {
   const lr = 1 / (left - right),
     bt = 1 / (bottom - top),
@@ -127,12 +203,21 @@ export function ortho(left, right, bottom, top, near, far) {
   ]);
 }
 
-// Identity matrix
+/**
+ * Identity matrix
+ * @returns {Float32Array} the mat4 identity matrix
+ */
 export function mat4Identity() {
   return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 }
 
-// Matrix translation
+/**
+ * Matrix translation
+ * 
+ * @param {Float32Array} matrix matrix to apply translation to
+ * @param {number[]} translation three tuple x,y,z translation
+ * @returns {Float32Array} translated matrix
+ */
 export function mat4Translate(matrix, translation) {
   const result = new Float32Array(matrix);
   result[12] =
@@ -157,8 +242,13 @@ export function mat4Translate(matrix, translation) {
     matrix[15];
   return result;
 }
-
-// Matrix rotation around X axis
+/**
+ * Matrix rotation around X axis
+ * 
+ * @param {Float32Array} matrix matrix to apply rotation to
+ * @param {number} angle rotation angle
+ * @returns {Float32Array} the matrix with the rotation applied
+ */
 export function mat4RotateX(matrix, angle) {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
@@ -185,7 +275,13 @@ export function mat4RotateX(matrix, angle) {
   return result;
 }
 
-// Matrix rotation around Y axis
+/**
+ * Matrix rotation around Y axis
+ * 
+ * @param {Float32Array} matrix matrix to apply rotation to
+ * @param {number} angle rotation angle
+ * @returns {Float32Array} the matrix with the rotation applied
+ */
 export function mat4RotateY(matrix, angle) {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
@@ -212,8 +308,13 @@ export function mat4RotateY(matrix, angle) {
   return result;
 }
 
-// Matrix rotation around Z axis
-// did I mess this up? doesnt seem quite right
+/**
+ * Matrix rotation around Z axis
+ * 
+ * @param {Float32Array} matrix matrix to apply rotation to
+ * @param {number} angle rotation angle
+ * @returns {Float32Array} the matrix with the rotation applied
+ */
 export function mat4RotateZ(matrix, angle) {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
@@ -243,10 +344,11 @@ export function mat4RotateZ(matrix, angle) {
 }
 
 /**
- * Matrix scaling
- * @param {*} matrix
- * @param {*} scale
- * @returns
+ * Matrix scaling 
+ * 
+ * @param {Float32Array} matrix matrix to apply scale to
+ * @param {number[]} scale the scale values to apply x,y,z
+ * @returns {Float32Array} the matrix with the scale operation applied
  */
 export function mat4Scale(matrix, scale) {
   const [sx, sy, sz] = scale;
@@ -265,9 +367,9 @@ export function mat4Scale(matrix, scale) {
 /**
  * Apply a transformation matrix to a array of vertices
  *
- * @param {Array(Number)} vertices
- * @param {Float32Array} matrix
- * @returns
+ * @param {Array(number)} vertices verticies to transform
+ * @param {Float32Array} matrix transformation to apply
+ * @returns {Array(number)} transformed verticies
  */
 export function transformVertices(vertices, matrix) {
   const transformed = Array(vertices.length);
@@ -295,10 +397,15 @@ export function transformVertices(vertices, matrix) {
 }
 
 /**
- * Apply a mat4 transformation to a prim
- * @param {*} prim 
- * @param {*} matrix 
- * @returns 
+ * Apply a mat4 transformation to a primative object.
+ * 
+ * NOTE: this may have to be updated since its from before primitive 
+ * objects were their own class so semantics have changed a bit.
+ * Will still work if careful though.
+ * 
+ * @param {PrimitiveObject} prim 
+ * @param {Float32Array} matrix the transformation to apply
+ * @returns {PrimitiveObject} the updated primitive
  */
 export function transformPrimitive(prim, matrix) {
   const vertsTransformed = transformVertices(prim.vertices, matrix);
@@ -309,9 +416,9 @@ export function transformPrimitive(prim, matrix) {
 
 /**
  * Apply mat4 transformation to a xyz point
- * @param {*} point 
- * @param {*} m 
- * @returns 
+ * @param {number[]} point three tuple point x,y,z
+ * @param {Float32Array} m 
+ * @returns {number[]} the transformed point three tuple x,y,z
  */
 export function transformPoint(point, m) {
   const [x, y, z] = point;

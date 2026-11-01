@@ -1,12 +1,15 @@
 /**
- * Basic controls for movement based on the provided source from HW3
+ * @module controls/basic
+ * @description Basic controls for movement based on the provided source from HW3
  */
+
+import { Scene } from "..";
 
 /**
  * Initialize mouse interactions with the canvas
  * - basically drag calculations let us rotate the scene
  *
- * @param {*} canvas The canvas element
+ * @param {Scene} scene The scene to attach the controls to
  */
 export function setupMouseControls(scene) {
   const canvas = scene.canvas;
@@ -39,6 +42,8 @@ export function setupMouseControls(scene) {
  * Initialize keyboard controls
  * - w & s to move z
  * - arrows to move x & y
+ *
+ * @param {Scene} scene The scene to attach the controls to
  */
 export function setupKeyboardControls(scene) {
   document.addEventListener("keydown", (e) => {

@@ -1,5 +1,7 @@
+/**
+ * @module Scene
+ */
 import Camera from "./Camera";
-import Material from "./materials/Material";
 import { rgba } from "./util/color";
 import SceneObject from "./objects/SceneObject";
 import Shader from "./shaders/Shader";
@@ -12,8 +14,27 @@ import {
 } from "./util/transformations";
 import RenderPass from "./renderers/RenderPass";
 import { renderers } from ".";
+import { Texture2D, Material } from "./materials";
 
+/**
+ * Overall state management for a scene
+ *
+ * Helps track:
+ * - Objects
+ * - Shaders / Programs
+ * - Materials
+ * - Textures
+ * - Lights
+ * - RenderPasses
+ *
+ * @class
+ * @alias module:Scene
+ */
 export default class Scene {
+  /**
+   * Create a new scene using the provided canvas as the context
+   * @param {string} canvasID the id of the canvas element
+   */
   constructor(canvasID) {
     this.canvas = document.getElementById(canvasID);
     this.gl = this.canvas.getContext("webgl2");
@@ -22,12 +43,20 @@ export default class Scene {
       alert("WebGL2 not supported");
     }
 
+    this.loader = undefined;
+    this.loaderMessage = undefined;
+    try {
+      this.loader = document.getElementById("loader-wrapper");
+      this.loaderMessage = document.getElementById("spinner-text");
+    } catch {}
+
     // things present in the scene
     this.objects = new Map();
     this.updateList = new Map();
     this.lights = new Map();
     this.shaders = new Map();
     this.materials = new Map();
+    this.textures = new Map();
     this.passes = new Map();
 
     // background color of the scene
@@ -59,245 +88,23 @@ export default class Scene {
     renderers.addTransparentRenderPass(this);
   }
 
-  /**
-   * Load our shaders and setup
-   */
-  async loadShaders() {
-    await Promise.all(
-      [...this.shaders].map(([key, shader]) => shader.loadRemote()),
-    );
-
-    this.shaders.forEach((shader) => {
-      shader.create(this.gl);
-    });
-  }
+  ///////////////////////
+  // OBJECT MANAGEMENT //
+  ///////////////////////
 
   /**
-   * initialize the uniforms locators for all the materials
-   */
-  loadMaterials() {
-    // attach materials
-    this.materials.forEach((mat) => {
-      try {
-        const shaderProg = this.getProgram(mat.programLabel);
-        mat.initUniforms(this.gl, shaderProg);
-      } catch (error) {
-        console.error(mat);
-        console.error(
-          `Error initializing uniforms for material ${mat.label} in shader program ${mat.programLabel}`,
-        );
-        console.error(error);
-      }
-    });
-  }
-
-  /**
-   * create the shaders and combined gl shader program
-   *
-   * @param {*} vertexShader
-   * @param {*} fragmentShader
-   * @returns
-   */
-  createProgram(vertexShader, fragmentShader) {
-    const program = this.gl.createProgram();
-
-    this.gl.attachShader(program, vertexShader.shader);
-    this.gl.attachShader(program, fragmentShader.shader);
-    this.gl.linkProgram(program);
-
-    if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
-      this.gl.deleteProgram(program);
-      throw new Error(
-        `Failed to link shader program: ${this.gl.getProgramInfoLog(program)}`,
-      );
-    }
-
-    return program;
-  }
-
-  /**
-   * Add a shader to the scene
-   * @param {Shader} shader
-   */
-  addShader(shader) {
-    this.shaders.set(shader.label, shader);
-  }
-
-  /**
-   * Get a shader by its label
-   * @param {*} label
-   * @returns
-   */
-  getShader(label) {
-    const shader = this.shaders.get(label);
-
-    if (!shader) {
-      throw new Error(`Shader "${label}" was not found`);
-    }
-
-    return shader;
-  }
-
-  /**
-   * Add a material to the scene
-   * - setup its uniforms when we init shaders later
-   *
-   * @param {Material} material the material wrapper
-   * @param {ShaderProgram} shader the shader program to use this material in
-   */
-  addMaterial(material, program) {
-    material.programLabel = program;
-    this.materials.set(material.label, material);
-  }
-
-  /**
-   * Get a shader by its label
-   * @param {*} label
-   * @returns
-   */
-  getMaterial(label) {
-    const material = this.materials.get(label);
-
-    if (!material) {
-      throw new Error(`Material "${label}" was not found`);
-    }
-
-    return material;
-  }
-
-  /**
-   * Add a light to the scene
-   * @param {Light} light
-   */
-  addLight(light) {
-    this.lights.set(light.label, light);
-  }
-
-  /**
-   * Remove a light from the scene by its label
-   * @param {string} label the label of the light
-   * @returns
-   */
-  removeLight(label) {
-    return this.lights.delete(label);
-  }
-
-  /**
-   * Get a light by its label
-   * @param {string} label
-   * @returns
-   */
-  getLight(label) {
-    const light = this.lights.get(label);
-
-    if (!light) {
-      throw new Error(`Light "${label}" was not found`);
-    }
-
-    return light;
-  }
-
-  /**
-   * Create a new shader program
-   * @param {*} label
-   * @param {*} vertexShaderLabel
-   * @param {*} fragmentShaderLabel
-   * @param {typeof ShaderProgram} [wrapperClass=ShaderProgram]
-   * @returns
-   */
-  addProgram(
-    label,
-    vertexShaderLabel,
-    fragmentShaderLabel,
-    wrapperClass = ShaderProgram,
-  ) {
-    const vertexShader = this.getShader(vertexShaderLabel);
-    const fragmentShader = this.getShader(fragmentShaderLabel);
-
-    if (!vertexShader.shader || !fragmentShader.shader) {
-      throw new Error(
-        `Shaders for program "${label}" must be compiled before creating the program`,
-      );
-    }
-
-    const program = this.createProgram(vertexShader, fragmentShader);
-    const shaderProgram = new wrapperClass(label, program, this.gl);
-
-    this.programs.set(label, shaderProgram);
-
-    return shaderProgram;
-  }
-
-  /**
-   * Get a shader program by its label
-   * @param {string} label
-   * @returns ShaderProgram
-   */
-  getProgram(label) {
-    const shaderProgram = this.programs.get(label);
-
-    if (!shaderProgram) {
-      throw new Error(`Shader program "${label}" was not found`);
-    }
-
-    return shaderProgram;
-  }
-
-  /**
-   * Add a renderpass to the scene
-   * @param {*} pass
-   * @returns
-   */
-  addRenderPass(pass) {
-    if (this.passes.has(pass.label)) {
-      throw new Error(`Render pass "${pass.label}" already exists`);
-    }
-
-    this.passes.set(pass.label, pass);
-    return pass;
-  }
-
-  /**
-   * Get a renderpass from the scene by its label
-   * @param {string} label the label of the renderpass
-   * @returns
-   */
-  getRenderPass(label) {
-    const pass = this.passes.get(label);
-    if (!pass) throw new Error(`Render pass "${label}" was not found`);
-    return pass;
-  }
-
-  /**
-   * Remove a renderpass from the scene by its label
-   * @param {string} label the label of the renderpass
-   * @returns
-   */
-  removeRenderPass(label) {
-    return this.passes.delete(label);
-  }
-
-  /**
-   * Initialize the buffers for every SceneObject
-   */
-  initBuffers() {
-    this.objects.forEach((obj) => {
-      obj.loadBuffers(this.gl);
-    });
-  }
-
-  /**
-   * Add an object to the scene
+   * Add an object to the scene.
    *
    * - need an additional call to SceneObject.loadBuffers
    *   when adding, not sure if that is something
-   *   that should live in here though. Added for now
+   *   that should live in here though. Added for now...
+   *
    * @param {SceneObject} obj the object to add
    * @param {string} programLabel the label for the shader program to use with this object
    * @param {string} materialLabel the label for the object's material
    * @param {boolean} options.child if the object is a child, if so is not added to scenes render list, the parent renders it
    * @param {string[]} options.passes the render passes to use this object in (default ["basic"])
-   * @param {string[]} options.addChildren if true, adds children to the scene
+   * @param {boolean} options.addChildren if true, adds children to the scene
    */
   addObject(
     obj,
@@ -305,7 +112,7 @@ export default class Scene {
     materialLabel = obj.materialLabel,
     {
       child = obj.child,
-      passes = obj.child || ["basic"],
+      passes = obj.passes || ["basic"],
       addChildren = false,
     } = {},
   ) {
@@ -358,19 +165,16 @@ export default class Scene {
   /**
    * Get an object by its label
    *
-   * TODO: should really update the objects colleciton to a map instead of a list
-   * @param {string} label
+   * @param {string} label the label of the object
    */
   getObject(label) {
     return this.objects.get(label);
   }
 
   /**
-   * TODO probably some unbinding or something?
-   * TODO remove all of the children objects
-   *
-   * Removes the object from all renderpasses in the scene as well
-   * @param {*} label
+   * Removes the object from all renderpasses in the scene as well.
+   * Additionally cleans up the buffers related to the object
+   * @param {string} label the label of the object to remove
    * @param {Object} [options]
    * @param {boolean} [options.removeChildren=false] if true will remove children as well
    */
@@ -399,8 +203,8 @@ export default class Scene {
 
   /**
    * Updated the passes that this object belongs to
-   * @param {*} obj
-   * @param {*} passLabels
+   * @param {SceneObject} obj the object we want to update the passes of
+   * @param {string[]} passLabels the passes to render this object in
    */
   setObjectPasses(obj, passLabels) {
     for (const pass of this.passes.values()) {
@@ -412,18 +216,293 @@ export default class Scene {
     }
   }
 
+  ///////////////////////
+  // SHADER MANAGEMENT //
+  ///////////////////////
+
   /**
-   * Set the scene rotation.
-   *
-   * NOTE this is not camera rotation,
-   *      it is full rotation of the objects in the scene
-   * @param {*} x
-   * @param {*} y
+   * Load our shaders and setup, called internally by load()
+   * only use if doing something weird
    */
-  setRotation(x, y) {
-    this.rotationX = x;
-    this.rotationY = y;
+  async loadShaders() {
+    await Promise.all([...this.shaders].map(([key, shader]) => shader.load()));
+
+    this.shaders.forEach((shader) => {
+      shader.init(this.gl);
+    });
   }
+
+  /**
+   * Add a shader to the scene
+   * @param {Shader} shader the shader to add
+   */
+  addShader(shader) {
+    this.shaders.set(shader.label, shader);
+  }
+
+  /**
+   * Get a shader by its label
+   * @param {string} label the label of the shader to find
+   * @returns {Shader}
+   */
+  getShader(label) {
+    const shader = this.shaders.get(label);
+
+    if (!shader) {
+      throw new Error(`Shader "${label}" was not found`);
+    }
+
+    return shader;
+  }
+
+  ///////////////////////////////
+  // SHADER PROGRAM MANAGEMENT //
+  ///////////////////////////////
+
+  /**
+   * Create a new shader program. To create a shader program
+   * of a type other than the default ShaderProgram class,
+   * provide a class to the wrapperClass argument. For example
+   * the PhoneSgaderProgram class...
+   *
+   * @param {string} label the label of the shader program being created
+   * @param {string} vertexShaderLabel the label of the vertex shader to use while creating the program
+   * @param {string} fragmentShaderLabel the label of the fragment shader to use while creating the program
+   * @param {ShaderProgram} [wrapperClass=ShaderProgram] The shader program class to use while creating it.
+   */
+  addProgram(
+    label,
+    vertexShaderLabel,
+    fragmentShaderLabel,
+    wrapperClass = ShaderProgram,
+  ) {
+    const vertexShader = this.getShader(vertexShaderLabel);
+    const fragmentShader = this.getShader(fragmentShaderLabel);
+
+    const shaderProgram = new wrapperClass(label, vertexShader, fragmentShader);
+
+    this.programs.set(label, shaderProgram);
+  }
+
+  /**
+   * Get a shader program by its label
+   * @param {string} label
+   * @returns ShaderProgram
+   */
+  getProgram(label) {
+    const shaderProgram = this.programs.get(label);
+
+    if (!shaderProgram) {
+      throw new Error(`Shader program "${label}" was not found`);
+    }
+
+    return shaderProgram;
+  }
+
+  loadPrograms() {
+    this.programs.forEach((program) => {
+      program.load(this.gl);
+    });
+  }
+
+  /////////////////////////
+  // MATERIAL MANAGEMENT //
+  /////////////////////////
+
+  /**
+   * Add a material to the scene
+   * - setup its uniforms when we init shaders later
+   *
+   * @param {Material} material the material wrapper
+   * @param {ShaderProgram} program the shader program to use this material in
+   */
+  addMaterial(material, program) {
+    material.programLabel = program;
+    this.materials.set(material.label, material);
+  }
+
+  /**
+   * Get a material by its label
+   * @param {string} label
+   * @returns {Material}
+   */
+  getMaterial(label) {
+    const material = this.materials.get(label);
+
+    if (!material) {
+      throw new Error(`Material "${label}" was not found`);
+    }
+
+    return material;
+  }
+
+  /**
+   * Initialize the uniforms locatoions for all the materials currently
+   * added into the scene. Note that this must happen after the shader
+   * programs have been compiled.
+   *
+   * This is called internally by load so do not call unless doing something weird
+   */
+  loadMaterials() {
+    // attach materials
+    this.materials.forEach((mat) => {
+      try {
+        const shaderProg = this.getProgram(mat.programLabel);
+        mat.initUniforms(this.gl, shaderProg);
+      } catch (error) {
+        console.error(mat);
+        console.error(
+          `Error initializing uniforms for material ${mat.label} in shader program ${mat.programLabel}`,
+        );
+        console.error(error);
+      }
+    });
+  }
+
+  //////////////////////
+  // LIGHT MANAGEMENT //
+  //////////////////////
+
+  /**
+   * Add a light to the scene
+   * @param {Light} light light to add to the scene
+   */
+  addLight(light) {
+    this.lights.set(light.label, light);
+  }
+
+  /**
+   * Remove a light from the scene by its label
+   * @param {string} label the label of the light
+   * @returns {Light} the removed Light
+   */
+  removeLight(label) {
+    return this.lights.delete(label);
+  }
+
+  /**
+   * Get a light by its label
+   * @param {string} label
+   * @returns {Light} the light
+   */
+  getLight(label) {
+    const light = this.lights.get(label);
+
+    if (!light) {
+      throw new Error(`Light "${label}" was not found`);
+    }
+
+    return light;
+  }
+
+  ///////////////////////////
+  // RENDERPASS MANAGEMENT //
+  ///////////////////////////
+
+  /**
+   * Add a renderpass to the scene
+   * @param {RenderPass} pass the RenderPass to add
+   */
+  addRenderPass(pass) {
+    if (this.passes.has(pass.label)) {
+      throw new Error(`Render pass "${pass.label}" already exists`);
+    }
+
+    this.passes.set(pass.label, pass);
+  }
+
+  /**
+   * Get a renderpass from the scene by its label
+   * @param {string} label the label of the renderpass
+   * @returns {RenderPass}
+   */
+  getRenderPass(label) {
+    const pass = this.passes.get(label);
+    if (!pass) throw new Error(`Render pass "${label}" was not found`);
+    return pass;
+  }
+
+  /**
+   * Remove a renderpass from the scene by its label
+   * @param {string} label the label of the renderpass
+   * @returns {RenderPass} the removed renderpass
+   */
+  removeRenderPass(label) {
+    return this.passes.delete(label);
+  }
+
+  ////////////////////////
+  // TEXTURE MANAGEMENT //
+  ////////////////////////
+
+  /**
+   * Create and start loading a texture.
+   *
+   * NOTE: ensure that you call load or loadTextures to finish the loading process
+   * @param {string} label the label to use for this texture
+   * @param {string} url the source url of this texture
+   * @param {*} options
+   * @returns {Texture2D}
+   */
+  createTexture(label, url, options = {}) {
+    if (this.textures.has(label)) {
+      throw new Error(`Texture "${label}" already exists`);
+    }
+
+    const texture = new Texture2D(this.gl, options);
+    texture.label = label;
+    texture.ready = texture.load(url);
+
+    this.textures.set(label, texture);
+    return texture;
+  }
+
+  /**
+   * Get a texture by its label
+   * @param {string} label
+   * @returns {Texture2D}
+   */
+  getTexture(label) {
+    const texture = this.textures.get(label);
+
+    if (!texture) {
+      throw new Error(`Texture "${label}" was not found`);
+    }
+
+    return texture;
+  }
+
+  /**
+   * Load all the textures from their source urls. this is called
+   * internally in scene.load so dont call unless youre doing something
+   * weird
+   */
+  async loadTextures() {
+    await Promise.all(
+      [...this.textures.values()].map((texture) => texture.ready),
+    );
+  }
+
+  /**
+   * Remove a texture from the scene by its label. returns
+   * true if it was removed.
+   * @param {string} label
+   * @returns {bool}
+   */
+  removeTexture(label) {
+    const texture = this.textures.get(label);
+
+    if (!texture) {
+      return false;
+    }
+
+    texture.dispose();
+    return this.textures.delete(label);
+  }
+
+  /////////////////////////////
+  // SCENE UPDATE MANAGEMENT //
+  /////////////////////////////
 
   /**
    * attach a callback function to the scene to be run before every
@@ -437,7 +516,7 @@ export default class Scene {
 
   /**
    * Update the state of the scene
-   * @param {*} dt timestep in seconds
+   * @param {number} dt timestep in seconds
    */
   update(dt) {
     if (!!this.updateCB) {
@@ -464,6 +543,13 @@ export default class Scene {
     }
   }
 
+  /**
+   * Update the general uniform values such as time, view, projection etc
+   * @param {ShaderProgram} shaderProgram
+   * @param {Float32Array} projectionMatrix
+   * @param {Float32Array} modelViewMatrix
+   * @param {Float32Array} modelTransformationMatrix
+   */
   _updateShaderGeneralLocs(
     shaderProgram,
     projectionMatrix,
@@ -491,6 +577,23 @@ export default class Scene {
     }
   }
 
+  ////////////////////////////////
+  // SCENE RENDERING MANAGEMENT //
+  ////////////////////////////////
+
+  /**
+   * Set the scene rotation.
+   *
+   * NOTE this is not camera rotation,
+   *      it is full rotation of the objects in the scene
+   * @param {number} x
+   * @param {number} y
+   */
+  setRotation(x, y) {
+    this.rotationX = x;
+    this.rotationY = y;
+  }
+
   /**
    * view, projection, scene transform
    *
@@ -511,10 +614,9 @@ export default class Scene {
   }
 
   /**
-   * Render a set of objects
-   * @param {*} objects
-   * @param {*} pass
-   * @param {*} matrices
+   * Render a set of objects using a given RenderPass
+   * @param {RenderPass} pass the renderpass to use
+   * @param {*} matrices the scene transformation matricies, projection, rotation etc
    */
   _renderPass(pass, matrices) {
     const objects = pass.getObjects();
@@ -524,7 +626,6 @@ export default class Scene {
 
       // if we are rendering with a new program switch over
       if (obj.programLabel != this.activeProgram) {
-
         shaderProgram.use(this.gl);
 
         // TODO: I should really move these functions into the shader class
@@ -605,5 +706,57 @@ export default class Scene {
 
     // unbind the framebuffer if we end with one
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+  }
+
+  ////////////////////////////////
+  // CONVENIENCE LOADER HELPERS //
+  ////////////////////////////////
+
+  /**
+   * Set the message inside the loading spinner
+   * @param {string} message
+   */
+  setLoadingMessage(message) {
+    if (!this.loaderMessage) {
+      return;
+    }
+    this.loaderMessage.innerText = message;
+  }
+
+  /**
+   * Set the loading status of the scene (ie display spinner)
+   * @param {boolean} loading
+   */
+  setLoading(loading) {
+    if (!this.loader) {
+      return;
+    }
+    if (loading) {
+      this.loader.classList.add("show");
+    } else {
+      this.loader.classList.remove("show");
+    }
+  }
+
+  /**
+   * Load the assets in the scene, call this after you have setup shaders, shaderprograms and materials
+   * @param {function} loadAssets Additional loading callback function, consider loading obj file etc
+   */
+  async load(loadAssets = undefined) {
+    this.setLoading(true);
+    this.setLoadingMessage("Loading Shaders");
+    await this.loadShaders();
+    this.loadPrograms();
+
+    this.setLoadingMessage("Loading Materials");
+    await this.loadTextures();
+    this.loadMaterials();
+
+    if (loadAssets) {
+      this.setLoadingMessage("Loading Assets");
+      await loadAssets(this);
+    }
+
+    this.setLoading(false);
   }
 }

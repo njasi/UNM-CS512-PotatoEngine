@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: objects/loaders/BVHObject.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: objects/loaders/BVHObject.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module objects/loaders/BVHObject
+ */
+
+import SceneObject from "../SceneObject";
+
+import {
+  mat4Identity,
+  mat4RotateX,
+  mat4RotateY,
+  mat4RotateZ,
+  mat4Scale,
+  mat4Translate,
+} from "../../util/transformations";
+
+// order to int mappings
+const ROTMAP = {
+  XYZ: 0,
+  XZY: 1,
+  YXZ: 2,
+  YZX: 3,
+  ZXY: 4,
+  ZYX: 5,
+};
+
+/**
+ * Wrapper class for bvh objects. Only difference from a normal
+ * SceneObject is the rotation order property and the corresponding uniform
+ * note that the default value of the uniform is 0, prompting standard
+ * rotation order defined in the shader (XYZ), so we dont need to worry about
+ * this uniform in the SceneObject class and its children classes.
+ *
+ * @class
+ * @alias objects/loaders/BVHObject
+ */
+export class BVHObject extends SceneObject {
+  constructor() {
+    super(...arguments);
+
+    this.uBVHLoc;
+    // bvh joints can all have unique rotation orders
+    this.bvhRotationOrder = "ZXY";
+  }
+
+  /**
+   * Set object specific uniform / attribute locations.
+   * In this case we add uBVHLoc to specify rotation order
+   *
+   * @param {Scene} scene the scene the object is in
+   */
+  setUniforms(scene) {
+    super.setUniforms(scene);
+    const shader = scene.getProgram(this.programLabel);
+
+    this.uBVHLoc = scene.gl.getUniformLocation(shader.program, "uBVH");
+  }
+
+  /**
+   * Update the transformation matrix that represents the world for children
+   * components
+   *
+   * BVH objects use the ZXY order instead of our normal XYZ
+   */
+  updateWorldMatrix() {
+    let M = this.parent ? this.parent.M : mat4Identity();
+
+    const rotationFuncs = {
+      X: (M) => mat4RotateX(M, this.rotation[0]),
+      Y: (M) => mat4RotateY(M, this.rotation[1]),
+      Z: (M) => mat4RotateZ(M, this.rotation[2]),
+    };
+
+    // apply transformss one by one to calc world
+    // for the children of this component
+    M = mat4Translate(M, this.position);
+    for (const char of this.bvhRotationOrder) {
+      M = rotationFuncs[char](M);
+    }
+    M = mat4Scale(M, this.scale);
+
+    this.M = M;
+  }
+
+  /**
+   * Draw an object onto the canvas
+   *
+   * BVH object needs to flag that it uses bvh rotation
+   * for the shader then do normal draw
+   *
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   */
+  draw(gl) {
+    gl.uniform1i(this.uBVHLoc, ROTMAP[this.bvhRotationOrder]);
+    super.draw(gl, arguments[1]);
+    gl.uniform1i(this.uBVHLoc, 0);
+  }
+}
+
+/**
+ * Wrapper class to track all the things we want to add to
+ * the BVHObject in order to animate it
+ *
+ * @class
+ * @alias objects/loaders/BVHObjectRoot
+ * 
+ */
+export class BVHObjectRoot extends BVHObject {
+  /**
+   * The top level parent node of a BVH structure, contains some simple 
+   * options to use in the animation
+   * 
+   * @param {*} options 
+   * @param {boolean} options.animationPlay if the animation should play or not
+   * @param {number} options.animtionSpeed  the speed of the animation
+   * @param {number} options.animationTime  the starting time of the animation in ms
+   * @param {boolean} options.animationInterpolate if the animation should be interpolated (linear)
+   */
+  constructor({
+    animationPlay = false,
+    animationSpeed = 1,
+    animationTime = 0,
+    animationInterpolate = true,
+  } = {}) {
+    super(...arguments);
+
+    // if the animation should play
+    this.animationPlay = animationPlay;
+    // speed scale to play animation at
+    this.animationSpeed = animationSpeed;
+    // current time in seconds of the animation
+    this.animationTime = animationTime;
+    // if animation movements should be interpolated
+    this.animationInterpolate = animationInterpolate;
+    // the list of all joints in this BVHObject
+    this.jointList = [];
+    // the animation frame data loaded from the bvh file
+    this.frames = [];
+    // animation metadata
+    //  motionInfo.Frames: how many frames in the animation
+    //  motionInfo.FrameTime: the duration of each frame
+    //  there can be more metadata; the bvh file format doesn't
+    //  specify limitations here as far as i can tell
+    this.motionInfo = {};
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

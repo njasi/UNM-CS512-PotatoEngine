@@ -1,3 +1,10 @@
+/**
+ * @module objects/helpers
+ * @description Helper functions to make generating SceneObjects / primitives easier. 
+ * Most of these functions are just direct wrappers over a corresponding function in 
+ * ./primitives.js
+ */
+
 import SceneObject from "./SceneObject";
 
 import { generateBarrel, generateBomb, generateCannon } from "./compositions";
@@ -45,6 +52,7 @@ export function makeSceneObjectGenerator(generatePrimitive) {
  *      unless we make the whole things one part
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
+ * @returns {SceneObject}
  */
 export const generateCannonObject = makeSceneObjectGenerator(generateCannon);
 
@@ -53,6 +61,7 @@ export const generateCannonObject = makeSceneObjectGenerator(generateCannon);
  *
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
+ * @returns {SceneObject}
  */
 export const generateBombObject = makeSceneObjectGenerator(generateBomb);
 
@@ -72,7 +81,7 @@ export const generateBombObject = makeSceneObjectGenerator(generateBomb);
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
  * @param {*} bulge the amount of bulge the barrel has
- * @returns
+ * @returns {SceneObject}
  */
 export const generateBarrelObject = makeSceneObjectGenerator(generateBarrel);
 
@@ -87,7 +96,7 @@ export const generateBarrelObject = makeSceneObjectGenerator(generateBarrel);
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
  * @param {*} solid if the bottom of the cone should be closed
- * @returns
+ * @returns {SceneObject}
  */
 export const generateConeObject = makeSceneObjectGenerator(generateCone);
 
@@ -98,7 +107,7 @@ export const generateConeObject = makeSceneObjectGenerator(generateCone);
  * @param {*} x_c x coord of the center of the cylinder
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
- * @returns
+ * @returns {SceneObject}
  */
 export const generateSphereObject = makeSceneObjectGenerator(generateSphere);
 
@@ -117,7 +126,7 @@ export const generateSphereObject = makeSceneObjectGenerator(generateSphere);
  * @param {*} options.solid if false, do not close the ends of the cylinder
  * @param {*} options.segments_h default 2 how many divisions there are along the z axis
  * @param {*} options.prism, if true make the vertical segments have distinct normals from eachother
- * @returns
+ * @returns {SceneObject}
  */
 export const generateCylinderObject =
   makeSceneObjectGenerator(generateCylinder);
@@ -131,6 +140,7 @@ export const generateCylinderObject =
  * @param {*} x_c x coord of the center of the cylinder
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
+ * @returns {SceneObject}
  */
 export const generateGridObject = makeSceneObjectGenerator(generateGrid);
 
@@ -144,7 +154,7 @@ export const generateGridObject = makeSceneObjectGenerator(generateGrid);
  * @param {*} x_c x coord of the center of the cylinder
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
- * @returns
+ * @returns {SceneObject}
  */
 export const generateNGonPrismObject =
   makeSceneObjectGenerator(generateNGonPrism);
@@ -160,7 +170,7 @@ export const generateNGonPrismObject =
  * @param {*} x_c x coord of the center of the torus
  * @param {*} y_c y coord of the center of the torus
  * @param {*} z_c z coord of the center of the torus
- * @returns
+ * @returns {SceneObject}
  */
 export const generateTorusObject = makeSceneObjectGenerator(generateTorus);
 
@@ -178,12 +188,13 @@ export const generateTorusObject = makeSceneObjectGenerator(generateTorus);
  * @param {number} options.l length of cube (z)
  * @param {number} options.w width of cube (x)
  * @param {number} options.h height of cube (y)
- * @returns
+ * @returns {SceneObject}
  */
 export const generateCubeObject = makeSceneObjectGenerator(generateCube);
 
 /**
  * Calculate the center of mass of an object given its vertices
+ * (TODO)
  * @param {*} vertices
  */
 export function calculateCenterOfMass(vertices) {

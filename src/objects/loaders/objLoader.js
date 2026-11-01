@@ -1,6 +1,9 @@
-// load an obj file
-// https://en.wikipedia.org/wiki/Wavefront_.obj_file
-
+/**
+ * @module objects/loaders/objLoader
+ * @description
+ * simple setup to allow loading an obj file: 
+ * https://en.wikipedia.org/wiki/Wavefront_.obj_file
+ */
 import { makeSceneObjectGenerator } from "../helpers";
 import PrimitiveObject from "../PrimitiveObject";
 
@@ -11,8 +14,11 @@ const toNum = (x) => parseFloat(x);
 
 /**
  * Parse an .obj file into the cache by url
- * @param {*} url 
- * @param {*} id 
+ *
+ * Note that this currently assumes the faces are already triangulated
+ *
+ * @param {string} url source url to load the obj from
+ * @param {string} id id to reference the cached object by later
  */
 export async function cacheOBJ(url, id) {
   const response = await fetch(url);
@@ -62,8 +68,8 @@ export async function cacheOBJ(url, id) {
 
 /**
  * Load an object from the cache by id
- * @param {*} id 
- * @returns 
+ * @param {string} id of the cached object file
+ * @returns {PrimitiveObject}
  */
 export function loadOBJ(id) {
   return structuredClone(LOADED_OBJECTS[id]);
@@ -71,8 +77,9 @@ export function loadOBJ(id) {
 
 /**
  * Load a cached obj file into a scene object
- * @param {*} name
- * @param {*} color
- * @param {*} id id of the cached object file
+ * @param {string} label label of the new object
+ * @param {rgb()} color color to use 
+ * @param {string} id id of the cached object file
+ * @returns {SceneObject}
  */
 export const generateOBJObject = makeSceneObjectGenerator(loadOBJ);

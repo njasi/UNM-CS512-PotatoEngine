@@ -7,11 +7,21 @@ import {
   mat4Identity,
 } from "./util/transformations";
 
-
 /**
- * Simple camera class, probably want some updates here for lighting
+ * Simple camera class for perspective / orthographic rendering.
  */
-export default class Camera {
+class Camera {
+  /**
+   * 
+   * @param {Number} aspect The aspect ratio of the camera
+   * @param {Number} x initial x position of the camera
+   * @param {Number} y initial y position of the camera
+   * @param {Number} z initial z position of the camera
+   * @param {Number} fov fov setting
+   * @param {Number} zNear z of the near plane
+   * @param {Number} zFar z of the far plane
+   * @param {Number} orthoSize orthographic projection size
+   */
   constructor(
     aspect,
     x = 0,
@@ -36,16 +46,14 @@ export default class Camera {
   }
 
   /**
-   * Calculate perspective projection matrix
-   * @returns 
+   * Calculate a perspective projection matrix
    */
   createPerspectiveProjection() {
     return perspective(this.fov, this.aspect, this.zNear, this.zFar);
   }
 
   /**
-   * Calculate orthographic projection matrix
-   * @returns 
+   * Calculate an orthographic projection matrix
    */
   createOrthographicProjection() {
     return matMul(
@@ -62,14 +70,14 @@ export default class Camera {
   }
 
   /**
-   * set projection matrix to perspective
+   * Set the projection matrix to perspective
    */
   usePerspective() {
     this.projection = this.createPerspectiveProjection();
   }
 
   /**
-   * set projection matrix to orthographic
+   * Set the projection matrix to orthographic
    */
   useOrthographic() {
     this.projection = this.createOrthographicProjection();
@@ -77,18 +85,18 @@ export default class Camera {
 
   /**
    * Resize the viewport
-   * @param {*} aspect 
+   * @param {Number} aspect
    */
   resize(aspect) {
     this.aspect = aspect;
-    this.projection = this.createOrthographicProjection();
+    this.projection = this.createPerspectiveProjection();
   }
 
   /**
    * Move the position of the camera
-   * @param {*} x 
-   * @param {*} y 
-   * @param {*} z 
+   * @param {Number} x
+   * @param {Number} y
+   * @param {Number} z
    */
   move(x, y, z) {
     this.x += x;
@@ -98,15 +106,7 @@ export default class Camera {
 
   /**
    * get the view matrix of the camera
-   * @returns 
-   */
-  getViewMatrix() {
-    return mat4Translate(mat4Identity(), [this.x, this.y, this.z]);
-  }
-  
-  /**
-   * get the view matrix of the camera
-   * @returns 
+   * @returns {Float32Array} mat4 representaton of the view matrix
    */
   getViewMatrix() {
     return mat4Translate(mat4Identity(), [this.x, this.y, this.z]);
@@ -114,9 +114,11 @@ export default class Camera {
 
   /**
    * get camera projection matrix
-   * @returns 
+   * @returns {Float32Array} mat4 representaton of the projection matrix
    */
   getProjectionMatrix() {
     return this.projection;
   }
 }
+
+export default Camera;

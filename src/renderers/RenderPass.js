@@ -1,23 +1,31 @@
+/**
+ * @module renderers/RenderPass
+ */
+
 import SceneObject from "../objects/SceneObject";
 import Scene from "../Scene";
+
 
 /**
  * Wrapper class to help define render order and different types of objects
  *
  * consider: ui elements, transparent, solid, shadow, etc
+ *
+ * @class
+ * @alias module:renderers/RenderPass
  */
 export default class RenderPass {
   /**
    * Create a render pass
-   * @param {*} label
-   * @param {*} options
+   * @param {string} label
+   * @param {*} options 
    * @param {*} options.framebuffer
    * @param {*} options.viewport
    * @param {*} options.clearMask
-   * @param {*} options.clearColor
-   * @param {*} options.setup
-   * @param {*} options.cleanup
-   * @param {*} options.sort
+   * @param {rgb()} options.clearColor the color to clear with
+   * @param {function} options.setup callback function for before we start the pass
+   * @param {function} options.cleanup callback function for after we've finished the pass
+   * @param {function} options.sort function that defines the render order of objects by sorting them
    */
   constructor(
     label,
@@ -45,7 +53,7 @@ export default class RenderPass {
 
   /**
    * Add an object to the passes list
-   * @param {SceneObject} obj
+   * @param {SceneObject} obj Object to add
    */
   addObject(obj) {
     this.objects.add(obj);
@@ -53,7 +61,7 @@ export default class RenderPass {
 
   /**
    * Remove an object from the passes collection
-   * @param {SceneObject} obj
+   * @param {SceneObject} obj Object to remove
    */
   removeObject(obj) {
     this.objects.delete(obj);
@@ -61,7 +69,7 @@ export default class RenderPass {
 
   /**
    * Attach a render pass to a rendering session
-   * @param {Scene} scene
+   * @param {Scene} scene scene we are rendering in
    */
   attach(scene) {
     const gl = scene.gl;
@@ -92,7 +100,7 @@ export default class RenderPass {
 
   /**
    * Detach a render pass from the current rendering session
-   * @param {Scene} scene
+   * @param {Scene} scene scene we are rendering in
    */
   detach(scene) {
     if (!!this.cleanup) {
@@ -105,8 +113,8 @@ export default class RenderPass {
    *
    * - applies the sort function if it is found
    *
-   * @param {Scene} scene
-   * @returns
+   * @param {Scene} scene scene we are rendering in
+   * @returns {SceneObject[]} 
    */
   getObjects(scene) {
     // Iterate the Set directly unless sorting is requested.

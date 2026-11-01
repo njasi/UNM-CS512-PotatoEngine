@@ -1,45 +1,47 @@
+/** 
+ * @module util/color 
+ * @description Utility functions to make managing color easier.
+*/
+
 /**
  * Quick helper to translate rbga to webgl rgba
  *
  * ie 0-255 => 0-1
  *
- * @param {Number} r
- * @param {Number} g
- * @param {Number} b
- * @param {Number} a
- * @returns
+ * @param {Number} r  red value [0, 255]
+ * @param {Number} g  green value [0, 255]
+ * @param {Number} b  blue value [0, 255]
+ * @param {Number} a  alpha value [0, 1]
+ * @returns {number[]} 4 element array [r,g,b,a]
  */
-export const rgba = (r, g, b, a = undefined) => [
-  r / 255,
-  g / 255,
-  b / 255,
-  a == undefined ? 1 : a,
-];
-
+export function rgba(r, g, b, a = undefined) {
+  return [r / 255, g / 255, b / 255, a == undefined ? 1 : a];
+}
 /**
  * Quick helper to translate rbg to webgl rgba
  *
  * ie 0-255 => 0-1
+ * 
+ * alpha value defaults to 1. Use rgba() for alpha options
  *
- * @param {Number} r
- * @param {Number} g
- * @param {Number} b
- * @param {Number} a
- * @returns
+ * @param {Number} r  red value [0, 255]
+ * @param {Number} g  green value [0, 255]
+ * @param {Number} b  blue value [0, 255]
+ * @returns {number[]} 4 element array [r,g,b,a]
  */
-export const rgb = (r, g, b) => {
+export function rgb(r, g, b) {
   return rgba(r, g, b, 1);
-};
+}
 
 /**
  * Parse a hexcode string into rgba to use
  * should be convenient when start actually working with
  * color pallets like im supposed to later.
  *
- * @param {string} hexcode
- * @returns
+ * @param {string} hexcode the hexcode string 
+ * @returns {number[]} 4 element array [r,g,b,a]
  */
-export const hex = (hexcode) => {
+export function hex(hexcode) {
   hex = hexcode.replace("#", "");
 
   const r = parseInt(hex.slice(0, 2), 16);
@@ -53,17 +55,18 @@ export const hex = (hexcode) => {
   }
 
   return rgba(r, g, b, a);
-};
+}
 
 /**
  * Convert hsv to rgb values webgl understands
  *
  * https://en.wikipedia.org/wiki/HSL_and_HSV#To_RGB
  *
- * @param {*} hue degrees [0,360)
- * @param {*} saturation
- * @param {*} value
- * @param {number} [alpha=1]
+ * @param {*} hue hue in degrees [0,360)
+ * @param {*} saturation saturation amount [0,1]
+ * @param {*} value value level [0,1]
+ * @param {number} [alpha=1] alpha value of the color
+ * @returns {number[]} 4 element array [r,g,b,a]
  */
 export function hsv(hue, saturation, value, alpha = 1) {
   hue %= 360;
@@ -96,10 +99,11 @@ export function hsv(hue, saturation, value, alpha = 1) {
  * Convert hsv + alpha to rgb values webgl understands
  *
  * just a convenience wrapper around hsv
- * @param {*} hue
- * @param {*} saturation
- * @param {*} value
- * @param {*} alpha
+ * @param {*} hue hue in degrees [0,360)
+ * @param {*} saturation saturation amount [0,1]
+ * @param {*} value value level [0,1]
+ * @param {number} [alpha=1] alpha value of the color
+ * @returns {number[]} 4 element array [r,g,b,a]
  */
 export function hsva(hue, saturation, value, alpha) {
   return hsv(hue, saturation, value, alpha);
@@ -109,11 +113,11 @@ export function hsva(hue, saturation, value, alpha) {
  * Convert hsv to rgb values webgl understands
  * - uses radians instead of degrees
  *
- * @param {*} hue
- * @param {*} saturation
- * @param {*} value
- * @param {*} alpha
- * @returns
+ * @param {*} hue in radians [0, 2\pi]
+ * @param {*} saturation saturation amount [0,1]
+ * @param {*} value value level [0,1]
+ * @param {number} [alpha=1] alpha value of the color
+ * @returns {number[]} 4 element array [r,g,b,a]
  */
 export function hsvrad(hue, saturation, value, alpha = 1) {
   return hsv((hue * 180) / Math.PI, saturation, value, alpha);

@@ -59,7 +59,6 @@ function addShaders() {
     new Shader(
       "basicVertex",
       scene.gl.VERTEX_SHADER,
-      "",
       "/src/shaders/vertex.vert",
     ),
   );
@@ -68,7 +67,6 @@ function addShaders() {
     new Shader(
       "phongFragment",
       scene.gl.FRAGMENT_SHADER,
-      "",
       "/src/shaders/phong.frag",
     ),
   );
@@ -181,16 +179,13 @@ function initSceneObjects(
 async function main() {
   addShaders();
   addMaterials();
-
-  await scene.loadShaders();
   scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
 
-  scene.loadMaterials();
+  await scene.load();
+
   addLights();
 
   initSceneObjects();
-
-  scene.initBuffers();
 
   basicControls.setupMouseControls(scene);
   basicControls.setupKeyboardControls(scene);

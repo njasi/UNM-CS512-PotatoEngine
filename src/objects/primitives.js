@@ -1,11 +1,16 @@
+/**
+ * @module objects/primitives
+ * @description Functions to generate different kinds of primitive objects.
+ */
+
 import PrimitiveObject from "./PrimitiveObject";
 
 /**
  * Helper to normalize a vector
- * @param {*} x
- * @param {*} y
- * @param {*} z
- * @returns
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @returns {number[]}
  */
 function normalizeV3(x, y, z) {
   const len = Math.hypot(x, y, z) || 1;
@@ -24,7 +29,7 @@ function normalizeV3(x, y, z) {
  * @param {number} options.l length of cube (z)
  * @param {number} options.w width of cube (x)
  * @param {number} options.h height of cube (y)
- * @returns
+ * @returns {PrimitiveObject}
  */
 export function generateCube({
   x_c = 0,
@@ -214,7 +219,7 @@ export function generateCube({
  * @param {*} x_c x coord of the center of the cylinder
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
- * @returns
+ * @returns {PrimitiveObject}
  */
 export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
@@ -264,7 +269,7 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
  * @param {*} y_c y coord of the center of the cylinder
  * @param {*} z_c z coord of the center of the cylinder
  * @param {*} solid if the bottom of the cone should be closed
- * @returns
+ * @returns {PrimitiveObject}
  */
 export function generateCone(
   segments,
@@ -342,7 +347,7 @@ export function generateCone(
  * @param {*} options.x_c x coord of the center of the cylinder
  * @param {*} options.y_c y coord of the center of the cylinder
  * @param {*} options.z_c z coord of the center of the cylinder
- * @returns
+ * @returns {PrimitiveObject}
  */
 export function generateNGonPrism(n, r, h, { x_c = 0, y_c = 0, z_c = 0 } = {}) {
   return generateCylinder(n, r, h, {
@@ -368,7 +373,7 @@ export function generateNGonPrism(n, r, h, { x_c = 0, y_c = 0, z_c = 0 } = {}) {
  * @param {*} options.solid if false, do not close the ends of the cylinder
  * @param {*} options.segments_h default 2 how many divisions there are along the z axis
  * @param {*} options.prism, if true make the vertical segments have distinct normals from eachother
- * @returns
+ * @returns {PrimitiveObject}
  */
 export function generateCylinder(
   segments,
@@ -561,7 +566,7 @@ export function generateCylinder(
  * @param {*} x_c x coord of the center of the torus
  * @param {*} y_c y coord of the center of the torus
  * @param {*} z_c z coord of the center of the torus
- * @returns
+ * @returns {PrimitiveObject}
  */
 export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
@@ -609,6 +614,7 @@ export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
  * @param {*} x_c x coord of the center of the grid
  * @param {*} y_c y coord of the center of the grid
  * @param {*} z_c z coord of the center of the grid
+ * @returns {PrimitiveObject}
  */
 export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
@@ -650,7 +656,7 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
  * @param {*} vertCount
  * @param {*} color
  * @param {*} alpha
- * @returns number array of colors
+ * @returns {number[][]} number array of colors
  */
 export function generateFillerColors(
   vertCount,

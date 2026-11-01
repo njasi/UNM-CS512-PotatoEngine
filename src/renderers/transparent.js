@@ -1,7 +1,14 @@
-// TODO pass for transparent materials should be independant overall
-
+/**
+ * @module renderers
+ */
 import RenderPass from "./RenderPass";
 
+/**
+ * Add a simple transparent renderpass to the scene for see through objects
+ * this render pass should use the phong shader program with materials that have alpha
+ * or another program that sets alpha from color or something...
+ * @param {Scene} scene 
+ */
 export function addTransparentRenderPass(scene) {
   scene.addRenderPass(
     new RenderPass("transparent", {

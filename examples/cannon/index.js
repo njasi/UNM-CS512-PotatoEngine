@@ -31,7 +31,6 @@ scene.addShader(
   new Shader(
     "basicVertex",
     scene.gl.VERTEX_SHADER,
-    "",
     "/src/shaders/vertex.vert",
   ),
 );
@@ -40,7 +39,6 @@ scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "",
     "/src/shaders/fragment.frag",
   ),
 );
@@ -342,9 +340,9 @@ function setupInputControls() {
  * - start animation loop
  */
 async function main() {
-  await scene.loadShaders();
-
   scene.addProgram("basic", "basicVertex", "basicFragment");
+  
+  await scene.load();
 
   initSceneObjects();
 
@@ -353,8 +351,6 @@ async function main() {
 
   vertEditor.value = vertexShader.source;
   fragEditor.value = fragmentShader.source;
-
-  scene.initBuffers();
 
   setupKeyboardControls(scene);
   setupMouseControls(scene);

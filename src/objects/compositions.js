@@ -1,8 +1,10 @@
 /**
- * "Compositions" are just objects made of multiple primitives
+ * @module objects/compositions
+ * @description "Compositions" are just objects made of multiple primitives. A couple
+ * are defined here for convience, but it may make more sense to define this type
+ * of object per project in its own file
  *
- * - TODO update these to use the new PrimitiveObject class
- * - TODO handle normals, texture coords
+ * - TODO update to handle texture coords
  */
 
 import {
@@ -24,7 +26,13 @@ import {
 } from "./primitives";
 
 /**
- * Combine vert & ind lists together
+ * Combine vert, ind, normal, color lists together
+ * 
+ * @param {Float32Array} verts 
+ * @param {Uint16Array} inds 
+ * @param {Float32Array} normals 
+ * @param {Float32Array} colors 
+ * @returns {number[][]}
  */
 export function combineParts(verts, inds, normals, colors = undefined) {
   const resultVerts = [];
@@ -57,7 +65,8 @@ export function combineParts(verts, inds, normals, colors = undefined) {
  * if colors or colors[i] is undefined try to use color in prim[i]
  *
  * @param {PrimitiveObject[]} prims list of primitives to combine
- * @param {*} colors colors to use for each primitive
+ * @param {Number[][]} colors colors to use for each primitive
+ * @returns {PrimitiveObject}
  */
 export function combine(prims, colors) {
   const verts = [];
@@ -89,14 +98,14 @@ export function combine(prims, colors) {
  *    look of individual staves for free
  * 4 cylinders for the binding rings
  *
- * @param {*} segments
- * @param {*} r
- * @param {*} h
- * @param {*} x_c
- * @param {*} y_c
- * @param {*} z_c
- * @param {*} bulge
- * @returns
+ * @param {number} segments how many points to sample
+ * @param {number} r  the radius of the barrel
+ * @param {number} h  the height of the barrel
+ * @param {number} x_c  x center of the barrel
+ * @param {number} y_c  y center of the barrel
+ * @param {number} z_c  z center of the barrel
+ * @param {number} bulge  amount the barrel bulges
+ * @returns {PrimitiveObject}
  */
 export function generateBarrel(
   segments,
@@ -146,14 +155,14 @@ export function generateBarrel(
 
 /**
  * Generate a spoked wheel
- * @param {*} segments
- * @param {*} R
- * @param {*} r
- * @param {*} spokeCount
- * @param {*} x_c
- * @param {*} y_c
- * @param {*} z_c
- * @returns
+ * @param {Number} segments the number of sampling divisions to use
+ * @param {Number} R the large overall radius of the wheel
+ * @param {Number} r the small radius of the wheel
+ * @param {Number} spokeCount the amount of spokes to put on the wheel
+ * @param {Number} x_c the x coord of the center of the object
+ * @param {Number} y_c the y coord of the center of the object
+ * @param {Number} z_c the z coord of the center of the object
+ * @returns {PrimitiveObject}
  */
 export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
   const rim = generateTorus(segments, R, r, x_c, y_c, z_c);
@@ -190,6 +199,9 @@ export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
 
 /**
  * Generate a cannon object
+ * 
+ * @param {number} barrelLength 
+ * @returns {PrimitiveObject}
  */
 export function generateCannon(barrelLength = 3) {
   // generate all the individual parts
@@ -236,7 +248,8 @@ export function generateCannon(barrelLength = 3) {
 
 /**
  * Generate a simple bomb
- * @returns
+ * @param {number} r 
+ * @returns {PrimitiveObject}
  */
 export function generateBomb(r) {
   const body = generateSphere(20, r, 0, 0, 0);

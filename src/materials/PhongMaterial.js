@@ -1,9 +1,13 @@
+/** @module materials/PhongMaterial */
+
 import ShaderProgram from "../shaders/ShaderProgram";
 import { rgb } from "../util/color";
 import Material from "./Material";
 
 /**
  * Convenience Interface class for phong shader materials
+ * @class
+ * @alias module:materials/PhongMaterial
  */
 export default class PhongMaterial extends Material {
   /**
@@ -31,7 +35,7 @@ export default class PhongMaterial extends Material {
 
   /**
    * Get the location values for the parts of the material
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    * @param {ShaderProgram} shader
    */
   initUniforms(gl, shader) {
@@ -48,7 +52,7 @@ export default class PhongMaterial extends Material {
 
   /**
    * Update the values of the material uniform
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   updateUniforms(gl) {
     super.updateUniforms();

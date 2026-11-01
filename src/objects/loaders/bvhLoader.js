@@ -1,4 +1,7 @@
 /**
+ * @module objects/loaders/bvhLoader
+ * @description
+ * <pre>
  * Simple bvh loader
  * information on the format: https://research.cs.wisc.edu/graphics/Courses/cs-838-1999/Jeff/BVH.html
  *
@@ -27,6 +30,8 @@
  *      vM = vMchildMparentMgrandparent
  *
  *      (this is handled by the hierarchical model setup already we just need to set the offset per child)
+ *
+ * </pre>
  */
 
 import { rgba } from "../../util/color";
@@ -38,15 +43,16 @@ import {
 } from "../primitives";
 import SceneObject from "../SceneObject";
 import Scene from "../../Scene";
-import BVHObject, { BVHObjectRoot } from "./BVHObject";
+import { BVHObjectRoot, BVHObject } from "./BVHObject";
 
 // TODO probably do something more reasonable than this
 const LOADED_BVH = {};
 
 /**
- * Representation of a joint/root node
+ * Representation of a joint/root node. This is not a SceneObject but rather a logical
+ * represnentation for parsing
  *
- *
+ *  <pre>
  * EXAMPLE:
  *
  * HIERARCHY
@@ -64,6 +70,10 @@ const LOADED_BVH = {};
  * root = new Joint("joint_Root", [0, 0, 0], [Xposition, Yposition, Zposition, Zrotation, Xrotation, Yrotation], true)
  * hips = Joint("Hips", [-11.2566, 91.3362, 32.6117], [Xposition, Yposition, Zposition, Zrotation, Xrotation, Yrotation])
  * root.addChild(hips)
+ *
+ * </pre>
+ * @class
+ * @alias module:objects/loaders/bvhLoader/Joint
  */
 class Joint {
   constructor(label, offset, channels, root = false, end = false) {
@@ -91,9 +101,14 @@ class Joint {
  *
  * on progress is a messy progress listener made by opening the request as a
  * stream... would be nicer to have a builtin here...
- * @param {*} url
- * @param {*} id
- * @param {function} onProgress
+ *
+ * Note that the total bytes passed to onprogress may be incorrect if the server is
+ * compressing the file... its best to just report the loaded bytes in mb/kb
+ *
+ * @param {string} url url to get the file from
+ * @param {string} id cache id to use
+ * @param {function} onProgress function to call when we have download progress
+ *                    passed an object {loaded: bytes loaded, total: bytes total, progress: loading percentage (0-100)}
  */
 export async function cacheBVH(url, id, onProgress) {
   if (LOADED_BVH[id]) return;
@@ -139,7 +154,7 @@ export async function cacheBVH(url, id, onProgress) {
 
 /**
  * Check if a id is already cached
- * @param {*} id
+ * @param {string} id
  */
 export function isCached(id) {
   return !!LOADED_BVH[id];
@@ -151,8 +166,8 @@ export function isCached(id) {
  * - give list of joint names in order for animation
  * - return animation frame information
  *
- * @param {*} text text to parse
- * @returns
+ * @param {string} text text to parse
+ * @returns {*}
  */
 function parseBVH(text) {
   // todo track joint objs so can reference while animating
@@ -167,7 +182,7 @@ function parseBVH(text) {
 
   /**
    * Get the next token in the list
-   * @returns
+   * @returns {string}
    */
   function nextToken() {
     i++;
@@ -176,7 +191,7 @@ function parseBVH(text) {
 
   /**
    * Get the next token in list and parse it into a number
-   * @returns Number
+   * @returns {Number}
    */
   function nextNumber() {
     const value = Number(nextToken());
@@ -184,7 +199,8 @@ function parseBVH(text) {
   }
 
   /**
-   * Check if the next value is an expected valkue
+   * Check if the next value is an expected valkue.
+   * throws an error if its not the expected value
    * @param {string} expected
    */
   function nextExpect(expected) {
@@ -196,7 +212,7 @@ function parseBVH(text) {
 
   /**
    * Parse a vec of numbers from the token stream
-   * @returns [x, y, z]
+   * @returns {number[]} [x, y, z]
    */
   function parseVector() {
     return [nextNumber(), nextNumber(), nextNumber()];
@@ -205,6 +221,7 @@ function parseBVH(text) {
   /**
    * Parse a joint and its children recursively from tokens
    *
+   * <pre>
    * ROOT joint_Root
    * {
    * OFFSET 0 0 0
@@ -213,8 +230,9 @@ function parseBVH(text) {
    * {...}
    * ...
    * }
+   * </pre>
    *
-   * @returns
+   * @returns {Joint}
    */
   function parseJoint() {
     const type = nextToken();
@@ -260,6 +278,12 @@ function parseBVH(text) {
     return joint;
   }
 
+  /**
+   * Parse a named number from the text
+   * ie something that looks like
+   * numberLabel: value
+   * @returns {*}
+   */
   function parseNamedNumber() {
     let numLabel = "";
     while (!numLabel.endsWith(":")) {
@@ -296,12 +320,13 @@ function parseBVH(text) {
 
 /**
  * Make a joint placeholder bones connect from joint to joint
- * i think we will rotate a joint to apply the animation later
- * not the bone? unsure...
+ * to make the animation we will rotate/translate a joint based
+ * on the channels defined. note we dont translate the bone, but the
+ * joint because the bone is a child of the joint and the next joint
+ * is a child of it etc.
  *
- * TODO could make these balls so theyre visible...
  * @param {string} label
- * @returns
+ * @returns {BVHObject | BVHObjectRoot}
  */
 function makeJoint(label, segments, thickness, color, root = false) {
   const spherePrim = generateSphere(segments, 1.5 * thickness);
@@ -343,7 +368,7 @@ function makeJoint(label, segments, thickness, color, root = false) {
  * @param {number} segments   the number of segments to use in object geometry
  * @param {rgba()} color      the color of all created objects
  * @param {string} prefix     the prefix to attach to all object labels
- * @returns
+ * @returns {BVHObjectRoot}
  */
 function bvhToSkeletonObject(
   rootJoint,
@@ -390,6 +415,7 @@ function bvhToSkeletonObject(
  * @param {number} segments the number of segments to use in object geometry
  * @param {rgba()} color    the color of all created objects
  * @param {string} prefix   the prefix to attach to all object labels
+ * @returns {BVHObject|BVHObjectRoot}
  */
 function makeBones(
   parent,
@@ -460,9 +486,9 @@ function makeBones(
 /**
  * Interpolate positions between two frames
  *
- * @param {*} positions
- * @param {*} ratio
- * @returns
+ * @param {number[]} positions two tuple of the prev position and the next position
+ * @param {number} ratio the ratio between the two points
+ * @returns {number}
  */
 function interpolatePosition(positions, ratio) {
   return (1 - ratio) * positions[0] + ratio * positions[1];
@@ -471,9 +497,9 @@ function interpolatePosition(positions, ratio) {
 /**
  * Interpolate angles (bvh degrees) between two frames
  *
- * @param {*} positions
- * @param {*} ratio
- * @returns
+ * @param {number[]} angles two tuple of the prev angle and the next angle (in degrees)
+ * @param {number} ratio the ratio between the two angles
+ * @returns {number}
  */
 function interpolateAngles(angles, ratio) {
   const diff = angles[1] - angles[0];
@@ -483,16 +509,18 @@ function interpolateAngles(angles, ratio) {
 }
 
 /**
- * Apply a frame to a single child
- * this will be some soft of spline from the previous frame to the current
- * frame based on the time. probably linear is easiest
+ * Apply a frame to a single child joint
+ * this optionally uses linear interpolation from the prev
+ * frame to the next frame based on the current time.
+ * intrpolation and other animation properties are set on the
+ * BVHObjectRoot instance.
  *
  * @param {Joint} child   the child joint to animate
  * @param {Scene} scene   the animation scene
  * @param {number} frameRatio  the ratio between frames
- * @param {*} prevFrame   the previous frame location
- * @param {*} nextFrame   the next frame locations
- * @param {*} interpolate if frames should be interpolated
+ * @param {number[]} prevFrame   the previous frame location
+ * @param {number[]} nextFrame   the next frame locations
+ * @param {boolean} interpolate if frames should be interpolated
  */
 function applyChildFrame(
   child,
@@ -546,6 +574,8 @@ function applyChildFrame(
  * Update function to play the animation
  *
  * could probably precompute a lot of things here, but seems fast enough already
+ * @param {number} dt the change in time in ms
+ * @param {Scene} scene the scene prompting this update
  */
 function updateBVH(dt, scene) {
   if (!this.animationPlay) {
@@ -593,7 +623,7 @@ function updateBVH(dt, scene) {
  * @param {number} segments the number of segments to use in object geometry
  * @param {rgba()} color    the color of all created objects
  * @param {string} prefix   the prefix to attach to all object labels
- * @returns
+ * @returns {BVHObjectRoot}
  */
 export function loadBVH(
   id,
@@ -617,9 +647,12 @@ export function loadBVH(
 /**
  * Add a bvh object to a scene, this is more complicated than normal because
  * we created all those bones in here without adding them to the scene
- * @param {Scene} scene
- * @param {SceneObject} bvhObject
- * @param {string} shader
+ *
+ * TODO this can be removed or simplified to just use the new addChildren option
+ * in the scene.addObject function
+ * @param {Scene} scene scene to add the obejct to
+ * @param {SceneObject} bvhObject the bvh object to use
+ * @param {string} shader the shader to use
  */
 export function sceneAddBVH(scene, bvhObject, shader, mat, root = true) {
   scene.addObject(bvhObject, shader, mat, { child: !root });
@@ -629,9 +662,9 @@ export function sceneAddBVH(scene, bvhObject, shader, mat, root = true) {
 }
 
 /**
- * Hide the "tail" that these bandai namco bvh files have
- * @param {*} bvhObject
- * @returns
+ * Hide the "tail" bone that the bandai namco bvh files have
+ * @param {BVHObjectRoot} bvhObject
+ * @returns {BVHObjectRoot}
  */
 export function bandaiNamcoHideTail(bvhObject) {
   const tail = bvhObject.children[0].children[0];

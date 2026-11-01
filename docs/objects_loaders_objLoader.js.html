@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: objects/loaders/objLoader.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: objects/loaders/objLoader.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module objects/loaders/objLoader
+ * @description
+ * simple setup to allow loading an obj file: 
+ * https://en.wikipedia.org/wiki/Wavefront_.obj_file
+ */
+import { makeSceneObjectGenerator } from "../helpers";
+import PrimitiveObject from "../PrimitiveObject";
+
+// TODO probably do something more reasonable than this
+const LOADED_OBJECTS = {};
+
+const toNum = (x) => parseFloat(x);
+
+/**
+ * Parse an .obj file into the cache by url
+ *
+ * Note that this currently assumes the faces are already triangulated
+ *
+ * @param {string} url source url to load the obj from
+ * @param {string} id id to reference the cached object by later
+ */
+export async function cacheOBJ(url, id) {
+  const response = await fetch(url);
+  const text = await response.text();
+
+  const vertices = [];
+  const normals = [];
+  const indices = [];
+
+  const lines = text.split("\n");
+  for (let i = 0; i &lt; lines.length; i++) {
+    const line = lines[i];
+
+    // split on whitespace
+    const data = line.trim().split(/\s+/);
+    const type = data[0];
+
+    switch (type) {
+      case "v":
+        vertices.push(...data.slice(1, 4).map(toNum), 0);
+        break;
+
+      case "vn":
+        normals.push(...data.slice(1, 4).map(toNum));
+        break;
+
+      case "f":
+        // assume faces are already triangulated
+        const faceVerts = data.slice(1);
+        for (let j = 0; j &lt; faceVerts.length; j++) {
+          const [positionIdx, _, normalIdx] = faceVerts[j]
+            .split("/")
+            .map(toNum);
+          indices.push(positionIdx - 1);
+        }
+        break;
+    }
+  }
+
+  // slap into loaded objects so we dont need to reload them ever
+  // would make sense to have the scene handle these tbh
+  LOADED_OBJECTS[id] = new PrimitiveObject(vertices, {
+    indices,
+    normals,
+  });
+}
+
+/**
+ * Load an object from the cache by id
+ * @param {string} id of the cached object file
+ * @returns {PrimitiveObject}
+ */
+export function loadOBJ(id) {
+  return structuredClone(LOADED_OBJECTS[id]);
+}
+
+/**
+ * Load a cached obj file into a scene object
+ * @param {string} label label of the new object
+ * @param {rgb()} color color to use 
+ * @param {string} id id of the cached object file
+ * @returns {SceneObject}
+ */
+export const generateOBJObject = makeSceneObjectGenerator(loadOBJ);
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

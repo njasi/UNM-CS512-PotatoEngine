@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: objects/compositions.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: objects/compositions.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module objects/compositions
+ * @description "Compositions" are just objects made of multiple primitives. A couple
+ * are defined here for convience, but it may make more sense to define this type
+ * of object per project in its own file
+ *
+ * - TODO update to handle texture coords
+ */
+
+import {
+  mat4Identity,
+  mat4RotateX,
+  mat4RotateY,
+  mat4Translate,
+  matMul,
+  transformPrimitive,
+  transformVertices,
+} from "../util/transformations";
+import { rgba } from "../util/color";
+import PrimitiveObject from "./PrimitiveObject";
+import {
+  generateCylinder,
+  generateFillerColors,
+  generateSphere,
+  generateTorus,
+} from "./primitives";
+
+/**
+ * Combine vert, ind, normal, color lists together
+ * 
+ * @param {*} verts 
+ * @param {*} inds 
+ * @param {*} normals 
+ * @param {*} colors 
+ * @returns {number[][]}
+ */
+export function combineParts(verts, inds, normals, colors = undefined) {
+  const resultVerts = [];
+  const resultInds = [];
+  const resultColors = [];
+  const resultNorms = [];
+
+  for (let i = 0; i &lt; verts.length; i++) {
+    resultInds.push(...inds[i].map((ind) => ind + resultVerts.length / 4));
+    resultVerts.push(...verts[i]);
+    resultNorms.push(...normals[i]);
+    if (!!colors) {
+      // if the prim already had color array we should use it
+      if (!!colors[i] &amp;&amp; Array.isArray(colors[i]) &amp;&amp; colors[i].length > 4) {
+        resultColors.push(...colors[i]);
+        continue;
+      }
+      resultColors.push(
+        ...generateFillerColors(verts[i].length / 4, colors[i]),
+      );
+    }
+  }
+
+  return [resultVerts, resultInds, resultNorms, resultColors];
+}
+
+/**
+ * Higher level of combine, take the primitive dicts so can be cleaner
+ *
+ * if colors or colors[i] is undefined try to use color in prim[i]
+ *
+ * @param {PrimitiveObject[]} prims list of primitives to combine
+ * @param {*} colors colors to use for each primitive
+ * @returns {PrimitiveObject}
+ */
+export function combine(prims, colors) {
+  const verts = [];
+  const norms = [];
+  const inds = [];
+  const cols = [];
+
+  for (let i = 0; i &lt; prims.length; i++) {
+    verts.push(prims[i].vertices);
+    inds.push(prims[i].indices);
+    norms.push(prims[i].normals);
+    cols.push(!colors || !colors[i] ? prims[i].colors : colors[i]);
+  }
+
+  const [v, i, n, c] = combineParts(verts, inds, norms, cols);
+
+  return new PrimitiveObject(v, {
+    indices: i,
+    colors: c,
+    normals: n,
+    vertexCount: v.length / 4,
+  });
+}
+
+/**
+ * Generate a Parametric (kinda) Barrel
+ * one cylinder as main body
+ *  - the barrel body should be low to get the
+ *    look of individual staves for free
+ * 4 cylinders for the binding rings
+ *
+ * @param {number} segments how many points to sample
+ * @param {number} r  the radius of the barrel
+ * @param {number} h  the height of the barrel
+ * @param {number} x_c  x center of the barrel
+ * @param {number} y_c  y center of the barrel
+ * @param {number} z_c  z center of the barrel
+ * @param {number} bulge  amount the barrel bulges
+ * @returns {PrimitiveObject}
+ */
+export function generateBarrel(
+  segments,
+  r,
+  h,
+  x_c,
+  y_c,
+  z_c,
+  bulge = 0.4,
+  staves = 10,
+) {
+  let body = generateCylinder(staves, r, h, {
+    x_c,
+    y_c,
+    z_c,
+    bulge,
+    segments_h: segments,
+  });
+  body.colors = generateFillerColors(
+    body.vertexCount,
+    rgba(150, 111, 51, 1),
+    true,
+  );
+
+  const bracePositions = [-0.449, -0.2, 0.2, 0.449];
+
+  for (let i = 0; i &lt; bracePositions.length; i++) {
+    const brace_z = z_c + bracePositions[i] * h;
+    const brace_r_angle = Math.PI * (bracePositions[i] + 0.5);
+
+    const brace = generateCylinder(
+      staves,
+      r + r * (bulge + 0.07) * Math.sin(brace_r_angle),
+      0.1 * h,
+      {
+        x_c,
+        y_c,
+        z_c: brace_z,
+      },
+    );
+
+    body = combine([body, brace], [undefined, rgba(51, 51, 51, 1)]);
+  }
+
+  return body;
+}
+
+/**
+ * Generate a spoked wheel
+ * @param {*} segments
+ * @param {*} R
+ * @param {*} r
+ * @param {*} spokeCount
+ * @param {*} x_c
+ * @param {*} y_c
+ * @param {*} z_c
+ * @returns {PrimitiveObject}
+ */
+export function generateWheel(segments, R, r, spokeCount, x_c, y_c, z_c) {
+  const rim = generateTorus(segments, R, r, x_c, y_c, z_c);
+
+  let spokes = {
+    vertices: [],
+    indices: [],
+    normals: [],
+  };
+
+  for (let i = 0; i &lt; spokeCount; i++) {
+    // TODO wtf is goin on here with the transformations
+    // why does setting z_c make the cylinders fly in every direction
+    let spoketmp = generateCylinder(segments, r / 2, R * 2, {
+      x_c: -z_c,
+      y_c,
+      solid: false,
+    });
+
+    // rotate the spoke
+    const id = mat4Identity();
+    const ry = mat4RotateY(id, Math.PI / 2);
+    const rx = mat4RotateX(id, (Math.PI * i) / spokeCount);
+
+    const M = matMul(ry, rx);
+    spoketmp = transformPrimitive(spoketmp, M);
+
+    spokes = combine([spokes, spoketmp]);
+  }
+
+  const wheel = combine([rim, spokes]);
+  return wheel;
+}
+
+/**
+ * Generate a cannon object
+ * 
+ * @param {number} barrelLength 
+ * @returns {PrimitiveObject}
+ */
+export function generateCannon(barrelLength = 3) {
+  // generate all the individual parts
+  const shaft = generateCylinder(20, 1, barrelLength, {
+    z_c: -barrelLength / 2,
+  });
+  const end = generateSphere(20, 1, 0, 0, 0);
+  let fuseHolder = generateCylinder(16, 0.2, 0.2);
+  let fuse = generateCylinder(10, 0.1, 0.4);
+  let axel = generateCylinder(16, 0.15, 2.5);
+  const wheel1 = generateWheel(40, 1.15, 0.15, 4, 0, 0, -1.15);
+  const wheel2 = generateWheel(40, 1.15, 0.15, 4, 0, 0, 1.15);
+
+  let wheels = combine([wheel1, wheel2]);
+
+  // transformations to place the parts
+  const id = mat4Identity();
+  const wheelRot = mat4RotateY(id, Math.PI / 2);
+
+  const fuseRot = mat4RotateX(id, Math.PI / 2);
+  const fuseTrans = mat4Translate(id, [0, 1, 0]);
+  const fuseM = matMul(fuseTrans, fuseRot);
+
+  fuse = transformPrimitive(fuse, fuseM);
+  fuseHolder = transformPrimitive(fuseHolder, fuseM);
+  wheels = transformPrimitive(wheels, wheelRot);
+  axel = transformPrimitive(axel, wheelRot);
+
+  // combine the things all together now
+  const cannon = combine(
+    [shaft, end, axel, fuse, fuseHolder, wheels],
+    [
+      rgba(34, 34, 34, 1),
+      rgba(34, 34, 34, 1),
+      rgba(34, 34, 34, 1),
+      rgba(150, 111, 51, 1),
+      rgba(124, 124, 124, 1),
+      rgba(150, 111, 51, 1),
+    ],
+  );
+
+  return cannon;
+}
+
+/**
+ * Generate a simple bomb
+ * @param {number} r 
+ * @returns {PrimitiveObject}
+ */
+export function generateBomb(r) {
+  const body = generateSphere(20, r, 0, 0, 0);
+  let fuseHolder = generateCylinder(16, r / 5, r / 5);
+  let fuse = generateCylinder(10, r / 10, r / 2.5);
+
+  // transformations to place the parts
+  const id = mat4Identity();
+
+  const fuseRot = mat4RotateX(id, Math.PI / 2);
+  const fuseTrans = mat4Translate(id, [0, r, 0]);
+  const fuseM = matMul(fuseTrans, fuseRot);
+
+  fuse = transformPrimitive(fuse, fuseM);
+  fuseHolder = transformPrimitive(fuseHolder, fuseM);
+
+  // combine the things all together now
+  const bomb = combine(
+    [body, fuse, fuseHolder],
+    [rgba(34, 34, 34, 1), rgba(150, 111, 51, 1), rgba(124, 124, 124, 1)],
+  );
+
+  return bomb;
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

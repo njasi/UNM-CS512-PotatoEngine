@@ -1,16 +1,5 @@
 /**
- * Wrapper class to make animation and such simple.
- *
- * We will want this to hold
- * - vertices
- * - colors
- * - indices
- * (maybe multiples of the above)
- *
- * Later add for hierarchical models:
- * - children
- * - parent
- * - transformation matrix previously used?
+ * @module objects/SceneObject
  */
 
 import {
@@ -24,6 +13,34 @@ import {
 } from "../util/transformations";
 import PrimitiveObject from "./PrimitiveObject";
 
+/**
+ * Wrapper class of a basic object to make animation and such simple.
+ *
+ * Represents the object properties
+ * - vertices
+ * - colors
+ * - indices
+ * - normals
+ * - texCoords
+ * - tangents
+ *
+ * Some meta properties:
+ * - label of the material to use when rendering the object
+ * - label of the shader program to use
+ * - list of renderpasses to use
+ * - lighting bounds for light culling
+ *
+ * And the current state of the object:
+ * - position
+ * - rotation
+ * - scale
+ *
+ * Additionally has a parent child relationship structure that can be leveraged to
+ * make a hiearchical model easily.
+ *
+ * @class
+ * @alias module:objects/SceneObject
+ */
 export default class SceneObject {
   static DEFAULT_OPTIONS = {};
 
@@ -36,16 +53,16 @@ export default class SceneObject {
    * @param {Float32Array} normals
    * @param {*} options
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
-   * @param {*} options.position                    initial position of the object
-   * @param {*} options.rotation                    initial rotation of the object
-   * @param {*} options.scale                       initial scale of the object
+   * @param {number[]} options.position             initial position of the object
+   * @param {number[]} options.rotation             initial rotation of the object
+   * @param {number[]} options.scale                initial scale of the object
    * @param {boolean} options.shouldDraw            if this object should be drawn
    * @param {string} options.programLabel           the program to draw this object with
    * @param {string} options.materialLabel          the material to use with this object
    * @param {string} options.lightingCenter         the center of the object to calculate light culling with
    * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
    * @param {string} options.child                  if the object is a child
-   * @param {string} options.passed                 the renderpasses to render this object with
+   * @param {string} options.passes                 the renderpasses to render this object with
    * @param {string} options.tangents
    * @param {string} options.texCoords
    */
@@ -162,7 +179,7 @@ export default class SceneObject {
   /**
    * Load the vertices, colors, indices into the buffers
    *
-   * @param {*} gl the webgl2 context from canvas
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   loadBuffers(gl) {
     if (!(this.vertices instanceof Float32Array)) {
@@ -209,7 +226,7 @@ export default class SceneObject {
   /**
    * Bind and setup buffers
    *
-   * @param {*} gl the webgl2 context from canvas
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   bindBuffers(gl) {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -242,7 +259,7 @@ export default class SceneObject {
 
   /**
    * Free the buffers of the object
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   cleanBuffers(gl) {
     for (const key of ["vbo", "cbo", "nbo", "ibo", "tbo", "xbo"]) {
@@ -251,7 +268,7 @@ export default class SceneObject {
           gl.deleteBuffer(this[key]);
           this[key] = undefined;
         } catch (error) {
-          console.error(`Failed to clean buffer ${key} for ${this.label}.`)
+          console.error(`Failed to clean buffer ${key} for ${this.label}.`);
         }
       }
     }
@@ -314,7 +331,7 @@ export default class SceneObject {
   /**
    * Draw an object onto the canvas
    *
-   * @param {*} gl the webgl2 context from canvas
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    * @param {Scene} [scene=undefined]
    */
   draw(gl, scene = undefined) {

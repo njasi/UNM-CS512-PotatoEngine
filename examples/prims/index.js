@@ -1,13 +1,11 @@
 import Scene from "../../src/Scene";
 import { PhongShaderProgram, Shader } from "../../src/shaders";
 import {
-  cacheOBJ,
   generateConeObject,
   generateCubeObject,
   generateCylinderObject,
   generateGridObject,
   generateNGonPrismObject,
-  generateOBJObject,
   generateSphereObject,
   generateTorusObject,
 } from "../../src/objects";
@@ -16,24 +14,19 @@ import basicControls from "../../src/controls/basic";
 import { common } from "../../src/materials";
 import Light from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
+import { cacheOBJ, loadOBJ } from "../../src/objects/loaders";
 
 const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;
 
 scene.addShader(
-  new Shader(
-    "basicVertex",
-    scene.gl.VERTEX_SHADER,
-    "",
-    "/src/shaders/vertex.vert",
-  ),
+  new Shader("basicVertex", scene.gl.VERTEX_SHADER, "/src/shaders/vertex.vert"),
 );
 
 scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "",
     "/src/shaders/fragment.frag",
   ),
 );
@@ -42,7 +35,6 @@ scene.addShader(
   new Shader(
     "phongFragment",
     scene.gl.FRAGMENT_SHADER,
-    "",
     "/src/shaders/phong.frag",
   ),
 );
@@ -319,13 +311,13 @@ function updateScene(dt) {
  * - start animation loop
  */
 async function main() {
-  await scene.loadShaders();
-  await cacheOBJ("./utah_teapot.obj", "teapot");
-
+  
   scene.addProgram("basic", "basicVertex", "basicFragment");
   scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
-
-  scene.loadMaterials();
+  
+  await scene.load(async () => {
+    await cacheOBJ("./utah_teapot.obj", "teapot");
+  });
 
   setupLight();
 
@@ -335,8 +327,6 @@ async function main() {
   } catch (error) {
     console.error(error);
   }
-
-  scene.initBuffers();
 
   basicControls.setupMouseControls(scene);
   basicControls.setupKeyboardControls(scene);

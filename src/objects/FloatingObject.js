@@ -1,3 +1,8 @@
+/**
+ * @module objects/FloatingObject
+ */
+
+import { Scene } from "..";
 import PhysicsObject from "./PhysicsObject";
 
 /**
@@ -5,6 +10,13 @@ import PhysicsObject from "./PhysicsObject";
  * Might just combine being "floaty" on the normal physics object later
  *
  * Floating calculations are very lazy but good enough for now.
+ * 
+ * These objects will slow down their velocity and rotational velocity while in water.
+ * and accelerate upwards while under water. Eventually if speed is low enough they snap to the 
+ * water surface.
+ * 
+ * @class
+ * @alias module:objects/FloatingObject
  */
 export default class FloatingObject extends PhysicsObject {
   /**
@@ -15,14 +27,14 @@ export default class FloatingObject extends PhysicsObject {
    * @param {Float32Array} normals
    * @param {*} options
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
-   * @param {*} options.position                    initial position of the object
-   * @param {*} options.rotation                    initial rotation of the object
-   * @param {*} options.scale                       initial scale of the object
+   * @param {number[]} options.position             initial position of the object
+   * @param {number[]} options.rotation             initial rotation of the object
+   * @param {number[]} options.scale                initial scale of the object
    * @param {boolean} options.shouldDraw            if this object should be drawn
    * @param {string} options.programLabel           the program to draw this object with
    * @param {string} options.materialLabel          the material to use with this object
-   * @param {*} options.velocity
-   * @param {*} options.rotVelocity
+   * @param {number[]} options.velocity             the initial velocity
+   * @param {number[]} options.rotVelocity          the initial rotational velocity
    * @param {number} options.gravity                gravity acceleration to apply to the object
    * @param {number} options.hitboxRadius           the radius of this objects hitbox
    * @param {boolean} options.collidable            if this object is collidable or not
@@ -97,8 +109,8 @@ export default class FloatingObject extends PhysicsObject {
    * - decelerate in water
    * - snap to water if speed low & close to surface
    * 
-   * @param {*} dt
-   * @param {*} scene
+   * @param {number} dt change since last update in ms
+   * @param {Scene} scene the scene updating the object
    */
   update(dt, scene) {
     // physics object does an update of the position according to velocity

@@ -1,3 +1,8 @@
+/**
+ * @module objects/PhysicsObject
+ */
+
+import { Scene } from "..";
 import { vec4distance, scaleVec4, sumVec4 } from "../util/vec4";
 import SceneObject from "./SceneObject";
 
@@ -7,6 +12,9 @@ import SceneObject from "./SceneObject";
  * - movement velocity
  * - rotational velocity
  * - basic collisions (spheres atm)
+ * 
+ * @class
+ * @alias module:objects/PhysicsObject
  */
 export default class PhysicsObject extends SceneObject {
   /**
@@ -18,14 +26,14 @@ export default class PhysicsObject extends SceneObject {
    * @param {Float32Array} normals
    * @param {*} options
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
-   * @param {*} options.position                    initial position of the object
-   * @param {*} options.rotation                    initial rotation of the object
-   * @param {*} options.scale                       initial scale of the object
+   * @param {number[]} options.position             initial three tuple [x,y,z] position of the object
+   * @param {number[]} options.rotation             initial three tuple [x,y,z] rotation of the object
+   * @param {number[]} options.scale                initial three tuple [x,y,z] scale of the object
    * @param {boolean} options.shouldDraw            if this object should be drawn
    * @param {string} options.programLabel           the program to draw this object with
    * @param {string} options.materialLabel          the material to use with this object
-   * @param {*} options.velocity
-   * @param {*} options.rotVelocity
+   * @param {number} options.velocity
+   * @param {number} options.rotVelocity
    * @param {number} options.gravity                gravity acceleration to apply to the object
    * @param {number} options.hitboxRadius           the radius of this objects hitbox
    * @param {boolean} options.collidable            if this object is collidable or not
@@ -85,8 +93,8 @@ export default class PhysicsObject extends SceneObject {
    * additionally apply the physics based updates
    * - gravity, pos & rot velocity
    * - detect collisions in the scene
-   * @param {*} dt
-   * @param {*} scene
+   * @param {number} dt change in time in s
+   * @param {Scene} scene the scene prompting the update
    */
   update(dt, scene) {
     super.update(dt, scene);
@@ -120,15 +128,5 @@ export default class PhysicsObject extends SceneObject {
         }
       }
     }
-  }
-
-  /**
-   * Draw a physics object onto the canvas
-   * additionally binds position and rotation matrices
-   *
-   * @param {*} gl the webgl2 context from canvas
-   */
-  draw(gl) {
-    super.draw(gl, arguments[1]);
   }
 }

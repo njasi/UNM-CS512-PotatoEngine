@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: objects/PrimitiveObject.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: objects/PrimitiveObject.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module objects/PrimitiveObject
+ */
+
+import { generateFillerColors } from "./primitives";
+
+/**
+ * Wrapper class to make primitive handling standardized.
+ *
+ * We will want this to hold
+ * - vertices
+ * - colors
+ * - indices
+ * - tangents
+ * - texCoords
+ * - vertex normals
+ * - vertex count
+ * 
+ * @class
+ * @alias module:objects/PrimitiveObject
+ */
+export default class PrimitiveObject {
+  /**
+   * Create a new PrimitiveObject
+   * @param {*} vertices
+   * @param {Object} [options]
+   * @param {*} [options.normals]
+   * @param {*} [options.colors]
+   * @param {*} [options.indices]
+   * @param {*} [options.tangents]
+   * @param {*} [options.texCoords]
+   * @param {*} [options.vertexCount]
+   * @param {*} [options.indexCount]
+   */
+  constructor(
+    vertices,
+    {
+      normals = [],
+      colors = [],
+      indices = [],
+      tangents = [],
+      texCoords = [],
+      vertexCount = vertices.length / 4,
+      indexCount = indices.length,
+    } = {},
+  ) {
+    this.vertices = vertices;
+    this.normals = normals;
+    this.colors = colors;
+    this.indices = indices;
+    this.tangents = tangents;
+    this.texCoords = texCoords;
+    this.vertexCount = vertexCount;
+    this.indexCount = indexCount;
+  }
+
+  /**
+   * Generate filler colors for the primitive
+   * based off of the vertex count
+   *
+   * @param {*} colors
+   * @param {*} alpha
+   */
+  generateColors(colors, alpha = false) {
+    this.colors = generateFillerColors(this.vertexCount, colors, alpha);
+  }
+
+  /**
+   * Convert primitive properties to respective typed arrays
+   * and return them in a dict
+   *
+   * - vertices, normals, colors, tangents, texCoords : Float32Array
+   * - indices: Uint16Array
+   * @returns {*}
+   */
+  toTypedArray() {
+    return {
+      vertices: new Float32Array(this.vertices),
+      normals: new Float32Array(this.normals),
+      colors: new Float32Array(this.colors),
+      indices: new Uint16Array(this.indices),
+      tangents: new Float32Array(this.tangents),
+      texCoords: new Float32Array(this.texCoords),
+    };
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

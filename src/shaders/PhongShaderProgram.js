@@ -1,18 +1,26 @@
-import { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../lights/Light";
+/**
+ * @module shaders/PhongShaderProgram
+ */
+
+import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../lights/Light";
+import { SceneObject } from "../objects";
 import { transformPoint } from "../util/transformations";
 import ShaderProgram from "./ShaderProgram";
 
 /**
- * Phong shader program, I'm just using it to tack on another uniform for free
+ * Phong shader program class, I'm just using it to tack on another uniform for free
  * while still remaining readable if i have to deal with it later rather
  * than using the extras thing even though that would work
+ * 
+ * @class
+ * @alias module:shaders/PhongShaderProgram
  */
 export default class PhongShaderProgram extends ShaderProgram {
   /**
    * Create a new shader program
    * @param {*} label
    * @param {*} program
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    * @param {Object} options
    * @param {number} [options.maxLights=64]
    * @param {boolean} [options.hasLight=true]
@@ -20,18 +28,28 @@ export default class PhongShaderProgram extends ShaderProgram {
    */
   constructor(
     label,
-    program,
-    gl,
+    vertexShader,
+    fragmentShader,
     { maxLights = 64, hasLight = true, hasMaterial = true } = {},
   ) {
-    super(label, program, gl);
+    super(label, vertexShader, fragmentShader);
     this.hasLight = hasLight;
     this.hasMaterial = hasMaterial;
     this.maxLights = maxLights;
+    this.lightBuffer;
+  }
+
+  /**
+   * Initialize the properties of the shader program
+   * this mostly consists of getting uniform & attribute locations.
+   * This additionally initializes the light buffer region, the light count uniform
+   * and the light mask uniform.
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   */
+  _init(gl) {
+    super._init(gl);
 
     this.uLightCount = gl.getUniformLocation(this.program, "uLightCount");
-    this.lightBuffer;
-
     this.uLightMask = gl.getUniformLocation(this.program, "uLightMask[0]");
 
     this._initLightBuffer(gl, this.maxLights);
@@ -39,17 +57,18 @@ export default class PhongShaderProgram extends ShaderProgram {
 
   /**
    * Update the light count uniform
-   * @param {*} count
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @param {number} count how many lights are currently in the scene
    */
   setLightCount(gl, count) {
     gl.uniform1i(this.uLightCount, count);
   }
 
   /**
-   * Reserve a buffer for lighting information.
-   * @param {*} gl
-   * @param {*} maxLights
+   * Reserve a buffer for lighting information. this is slightly faster 
+   * than updating a bunch of uniform locations but a little more annoying
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @param {number} maxLights the maximum amount of lights
    */
   _initLightBuffer(gl, maxLights) {
     this.maxLights = maxLights;
@@ -75,8 +94,9 @@ export default class PhongShaderProgram extends ShaderProgram {
    * that section of the buffer? Unsure if its needed though. most of the
    * work load seems to be gpu bottlenecking
    *
-   * @param {*} lightTransformation
-   * @returns
+   * @param {Float32Array} lightTransformation mat4 transformation to apply to the lights
+   * @param {Light[]} lights the lights in the scene
+   * @returns {Float32Array}
    */
   _packLightData(lightTransformation, lights) {
     const count = lights.length;
@@ -142,8 +162,8 @@ export default class PhongShaderProgram extends ShaderProgram {
    * Distance based light culling might be a good idea, since lights by
    * default will have attenuation, and this would also effect spotlights
    *
-   * @param {*} gl
-   * @param {*} lightTransformation
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @param {Float32Array} lightTransformation the transformation needed to get lights in the right space
    */
   _uploadLightData(gl, lightTransformation, lights) {
     const data = this._packLightData(lightTransformation, lights);
@@ -164,10 +184,9 @@ export default class PhongShaderProgram extends ShaderProgram {
 
   /**
    * Update the shader's light buffer
-   * @param {*} gl
-   * @param {*} lightTransformation
-   * @param {*} lights
-   * @returns
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @param {Float32Array} lightTransformation mat4 transformation to apply to all lights
+   * @param {Light[]} light
    */
   updateLights(gl, lightTransformation, lights) {
     if (!this.hasLight) {
@@ -180,22 +199,22 @@ export default class PhongShaderProgram extends ShaderProgram {
   /**
    * Given an object and the lights array calculate which
    * lights should interact with the object\
-   * 
-   * could also be good to cap the number of lights that 
-   * interact with a single object although this would 
+   *
+   * could also be good to cap the number of lights that
+   * interact with a single object although this would
    * cause issues with large objects probably
    *
    * - for point lights this should be attenuation based
    * - spot lights should be based off of the angle and distance
    * - directional lights are global and probably should not be culled
    *
-   * @param {*} obj
-   * @param {*} lights
-   * @returns
+   * @param {SceneObject} obj the object to generate the mask for
+   * @param {Light[]} lights the lights in the scene
+   * @returns {Uint32Array}
    */
   _buildLightMask(obj, lights) {
     const mask = new Uint32Array(4);
-    
+
     // enable all lights if there arent bounds on the object
     if (!obj.lightingCenter) {
       mask.fill(0xffffffff);
@@ -230,9 +249,9 @@ export default class PhongShaderProgram extends ShaderProgram {
 
   /**
    * Update the light mask for a given object
-   * @param {*} gl
-   * @param {*} obj
-   * @param {*} lights
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @param {SceneObject} obj the object we're updating the light mask for
+   * @param {Light[]} lights list of lights that effect the object
    */
   updateLightMask(gl, obj, lights) {
     const mask = this._buildLightMask(obj, lights);

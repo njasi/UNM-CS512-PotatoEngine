@@ -1,8 +1,13 @@
+/**
+ * @module renderers
+ */
+
+import { Scene } from "..";
 import RenderPass from "./RenderPass";
 
 /**
  * Add the default basic render pass to a scene
- * @param {*} scene 
+ * @param {Scene} scene 
  */
 export function addBasicRenderPass(scene){
     scene.addRenderPass(

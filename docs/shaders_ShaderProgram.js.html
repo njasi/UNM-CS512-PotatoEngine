@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: shaders/ShaderProgram.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: shaders/ShaderProgram.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module shaders/ShaderProgram
+ */
+
+/**
+ * Simple wrapper class representation of a shader program
+ *
+ * @class
+ * @alias module:shaders/ShaderProgram
+ */
+export default class ShaderProgram {
+  /**
+   * Create a new shader program
+   * @param {string} label the label to use for this program
+   * @param {Shader} vertexShader the vertex shader to use when compiling the program
+   * @param {Shader} fragmentShader the fragment shader to use when compiling the program
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @param {Object} [options={}]
+   * @param {boolean} [options.hasMaterial=false] if this program uses Materials in its objects
+   * @param {boolean} [options.hasLight=false]  if this program uses Lighting
+   * @param {string[]} [options.extraLocs=[]] extra uniform locs to init in this program
+   */
+  constructor(
+    label,
+    vertexShader,
+    fragmentShader,
+    { hasMaterial = false, hasLight = false, extraLocs = [] } = {},
+  ) {
+    this.label = label;
+    this.vertexShader = vertexShader;
+    this.fragmentShader = fragmentShader;
+
+    this.hasMaterial = hasMaterial;
+    this.hasLight = hasLight;
+
+    this.extraLocsNames = extraLocs;
+    this.extraLocs = {};
+  }
+
+  /**
+   * Initialize the properties of the shader program
+   * this mostly consists of getting uniform &amp; attribute locations
+   *
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   */
+  _init(gl) {
+    // NOTE: we are assuming here that all of our shaders will use these
+    //       values if we do this here, may need extensions for other custom shaders
+    this.posLoc = gl.getAttribLocation(this.program, "aPosition");
+    this.colorLoc = gl.getAttribLocation(this.program, "aColor");
+
+    // can also define locs per object if needed...
+    // materials work this way, bvh objects etc
+
+    this.timeLoc = gl.getUniformLocation(this.program, "uTime");
+    this.uMVM = gl.getUniformLocation(this.program, "uModelViewMatrix");
+    this.uPM = gl.getUniformLocation(this.program, "uProjectionMatrix");
+    this.uMTM = gl.getUniformLocation(
+      this.program,
+      "uModelTransformationMatrix",
+    );
+
+    for (const loc of this.extraLocsNames) {
+      this.extraLocs[loc] = gl.getUniformLocation(this.program, loc);
+    }
+  }
+
+  /**
+   * using the compiled vertex and fragment shader, link a shader program.
+   * Additionally initialize the shader program's uniform / attribute locations
+   *
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   */
+  load(gl) {
+    this.program = gl.createProgram();
+
+    gl.attachShader(this.program, this.vertexShader.shader);
+    gl.attachShader(this.program, this.fragmentShader.shader);
+    gl.linkProgram(this.program);
+
+    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+      gl.deleteProgram(this.program);
+      throw new Error(
+        `Failed to link shader program: ${gl.getProgramInfoLog(program)}`,
+      );
+    }
+
+    this._init(gl);
+  }
+
+  /**
+   * Add an extra loc to the shader,
+   * @param {string} loc uniform to locate in the shader program
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   */
+  addLoc(loc, gl) {
+    this.extra[loc] = gl.getUniformLocation(this.program, loc);
+  }
+
+  /**
+   * Use the shader program as the active program
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   */
+  use(gl) {
+    if (!this.program) {
+      console.warn("Cannot render before initializing the shader program");
+      return;
+    }
+    gl.useProgram(this.program);
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

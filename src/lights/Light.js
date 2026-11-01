@@ -1,25 +1,46 @@
+/**
+ * @module lights/Light
+ */
+
 import { rgba } from "../util/color";
 
+/**
+ * Point light type
+ */
 export const LIGHT_POINT = 0;
+
+/**
+ * Spotlight light type
+ */
 export const LIGHT_SPOT = 1;
+
+/**
+ * Global directional light type
+ */
 export const LIGHT_DIRECTIONAL = 2;
 
+/**
+ * Representation of a light source in the scene
+ *
+ * @class
+ * @alias module:lights/Light
+ */
 export default class Light {
   /**
    * Representation of a light source
-   * @param {*} label
-   * @param {*} position
+   * @param {string} label
+   * @param {number[]} position starting position of the light
    * @param {*} options
-   * @param {*} options.color
-   * @param {*} options.intensity
-   * @param {*} options.type
+   * @param {number[]} options.color the color of the light
+   * @param {number} options.intensity intensity of the light >0
+   * @param {number} options.type the type of light one of LIGHT_POINT, LIGHT_SPOT, LIGHT_DIRECTIONAL
    * @param {number} [options.attA=1] Light attenuation constant value
    * @param {number} [options.attB=0.09] Light attenuation linear value
    * @param {number} [options.attC=0.032] Light attenuation quadratic value
    * @param {number[]} [options.direction=[0, 0, 0]] direction of the light, for spot & directional lights
    * @param {number} [options.cutoff=Math.PI / 4] cutoff for spotlights
    * @param {number} [options.spotExponent=20] spotlight exponent
-   * @param {number} [options.cullingCutoff=0.05] lighting contribution cuttoff after which the light is culled  
+   * @param {number} [options.cullingCutoff=0.05] lighting contribution cuttoff after which the light is culled
    */
   constructor(
     label,

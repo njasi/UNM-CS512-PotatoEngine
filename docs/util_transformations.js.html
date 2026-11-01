@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: util/transformations.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: util/transformations.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/** 
+ * @module util/transformations 
+ * @description Transformation helpers taken from the provided sample code
+ * for the most part they allow transformation on Float32Arrays of verticies
+ * or Array(number) but there are some helpers meant to act on the 
+ * primitive object types directly
+*/
+
+import PrimitiveObject from "../objects/PrimitiveObject";
+
+/**
+ * &lt;pre>
+ * Wrapping the frustum into the box [l,r][b,t][n,f]
+ *   [ n  0   0    0  ]
+ *   [ 0  n   0    0  ]
+ *   [ 0  0  f+n  -fn ]
+ *   [ 0  0   1    0  ]
+ * &lt;/pre>
+ * 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The frustum view matrix
+ */
+export function frustum2Box(near, far) {
+  return new Float32Array([
+    near,
+    0,
+    0,
+    0,
+    0,
+    near,
+    0,
+    0,
+    0,
+    0,
+    far + near,
+    1,
+    0,
+    0,
+    -far * near,
+    0,
+  ]);
+}
+
+
+/**
+ * &lt;pre>
+ * mapping box [l,r][b,t][n,f] onto the normalized cube [-1,1]^3.
+ *   [ 2/(r-l)    0        0      -(r+l)/(r-l) ]
+ *   [    0    2/(t-b)     0      -(t+b)/(t-b) ]
+ *   [    0       0     2/(f-n)   -(f+n)/(f-n) ]
+ *   [    0       0        0            1      ]
+ * &lt;/pre>
+ * 
+ * @param {*} left 
+ * @param {*} right 
+ * @param {*} bottom 
+ * @param {*} top 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} Normalization cube matrix
+ */
+export function box2Cube(left, right, bottom, top, near, far) {
+  const rl = 1 / (right - left),
+    tb = 1 / (top - bottom),
+    fn = 1 / (far - near);
+  return new Float32Array([
+    2 * rl,
+    0,
+    0,
+    0,
+    0,
+    2 * tb,
+    0,
+    0,
+    0,
+    0,
+    2 * fn,
+    0,
+    -(right + left) * rl,
+    -(top + bottom) * tb,
+    -(far + near) * fn,
+    1,
+  ]);
+}
+
+/**
+ * Camera Looks down -z, near/far passed as positive distances into the
+ * +z-forward convention P and M_orth are written in
+ * 
+ * @returns {Float32Array} z flip matrix (identity with -1 for z)
+ */
+export function flipZ() {
+  return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]);
+}
+
+/**
+ * Basic Float32Array mat4 matrix multiplication
+ * 
+ * @param {Float32Array} a 
+ * @param {Float32Array} b 
+ * @returns {Float32Array} the product of the two matricies
+ */
+export function multiplyMat4(a, b) {
+  let r = new Float32Array(16);
+  for (let i = 0; i &lt; 4; i++)
+    for (let j = 0; j &lt; 4; j++) {
+      let sum = 0;
+      for (let k = 0; k &lt; 4; k++) {
+        sum += a[k * 4 + i] * b[j * 4 + k];
+      }
+      r[j * 4 + i] = sum;
+    }
+  return r;
+}
+
+/**
+ * Multiply matrices left to right, e.g. matMul(A, B, C) is A * B * C.
+ * JavaScript has no operator overloading, GLSL does overload `*` for mat4
+ * 
+ * @param  {...any} matrices 
+ * @returns {Float32Array} the product of all matricies
+ */
+export function matMul(...matrices) {
+  return matrices.reduce(multiplyMat4);
+}
+
+/**
+ * General perspective frustum
+ * 
+ * The perspective matrix is built as a product of three factors:
+ *
+ * &lt;pre>
+ *   M_per = M_orth * P * F
+ *
+ *   M_orth: Normalization from box to cube [l,r][b,t][n,f] -> [-1,1]^3
+ *   P: Perspective warping, from frustum to box
+ *   F: z-axis flip.
+ * &lt;/pre>
+ * 
+ * @param {*} left 
+ * @param {*} right 
+ * @param {*} bottom 
+ * @param {*} top 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The frustum matrix
+ */
+export function frustum(left, right, bottom, top, near, far) {
+  const M_orth = box2Cube(left, right, bottom, top, near, far);
+  const P = frustum2Box(near, far);
+  const F = flipZ();
+  return matMul(M_orth, P, F); // M_per = M_orth * Perspective Warping * FlipZ
+}
+
+/**
+ * Symmetric frustum from vertical field of view. fov in radians.
+ * 
+ * @param {*} fov 
+ * @param {*} aspect 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The symmetric frustum marix
+ */
+export function perspective(fov, aspect, near, far) {
+  const top = near * Math.tan(fov / 2);
+  const right = top * aspect;
+  return frustum(-right, right, -top, top, near, far);
+}
+
+/**
+ * Orthographic matrix
+ * 
+ * @param {*} left 
+ * @param {*} right 
+ * @param {*} bottom 
+ * @param {*} top 
+ * @param {*} near 
+ * @param {*} far 
+ * @returns {Float32Array} The orthographic projection matrix
+ */
+export function ortho(left, right, bottom, top, near, far) {
+  const lr = 1 / (left - right),
+    bt = 1 / (bottom - top),
+    nf = 1 / (near - far);
+  return new Float32Array([
+    -2 * lr,
+    0,
+    0,
+    0,
+    0,
+    -2 * bt,
+    0,
+    0,
+    0,
+    0,
+    2 * nf,
+    0,
+    (left + right) * lr,
+    (top + bottom) * bt,
+    (far + near) * nf,
+    1,
+  ]);
+}
+
+/**
+ * Identity matrix
+ * @returns {Float32Array} the mat4 identity matrix
+ */
+export function mat4Identity() {
+  return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+}
+
+/**
+ * Matrix translation
+ * 
+ * @param {Float32Array} matrix matrix to apply translation to
+ * @param {number[]} translation three tuple x,y,z translation
+ * @returns {Float32Array} translated matrix
+ */
+export function mat4Translate(matrix, translation) {
+  const result = new Float32Array(matrix);
+  result[12] =
+    matrix[0] * translation[0] +
+    matrix[4] * translation[1] +
+    matrix[8] * translation[2] +
+    matrix[12];
+  result[13] =
+    matrix[1] * translation[0] +
+    matrix[5] * translation[1] +
+    matrix[9] * translation[2] +
+    matrix[13];
+  result[14] =
+    matrix[2] * translation[0] +
+    matrix[6] * translation[1] +
+    matrix[10] * translation[2] +
+    matrix[14];
+  result[15] =
+    matrix[3] * translation[0] +
+    matrix[7] * translation[1] +
+    matrix[11] * translation[2] +
+    matrix[15];
+  return result;
+}
+/**
+ * Matrix rotation around X axis
+ * 
+ * @param {Float32Array} matrix matrix to apply rotation to
+ * @param {number} angle rotation angle
+ * @returns {Float32Array} the matrix with the rotation applied
+ */
+export function mat4RotateX(matrix, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const result = new Float32Array(matrix);
+
+  const mv1 = matrix[4],
+    mv5 = matrix[5],
+    mv9 = matrix[6],
+    mv13 = matrix[7];
+  const mv2 = matrix[8],
+    mv6 = matrix[9],
+    mv10 = matrix[10],
+    mv14 = matrix[11];
+
+  result[4] = mv1 * c + mv2 * s;
+  result[5] = mv5 * c + mv6 * s;
+  result[6] = mv9 * c + mv10 * s;
+  result[7] = mv13 * c + mv14 * s;
+  result[8] = mv2 * c - mv1 * s;
+  result[9] = mv6 * c - mv5 * s;
+  result[10] = mv10 * c - mv9 * s;
+  result[11] = mv14 * c - mv13 * s;
+
+  return result;
+}
+
+/**
+ * Matrix rotation around Y axis
+ * 
+ * @param {Float32Array} matrix matrix to apply rotation to
+ * @param {number} angle rotation angle
+ * @returns {Float32Array} the matrix with the rotation applied
+ */
+export function mat4RotateY(matrix, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const result = new Float32Array(matrix);
+
+  const mv0 = matrix[0],
+    mv4 = matrix[1],
+    mv8 = matrix[2],
+    mv12 = matrix[3];
+  const mv2 = matrix[8],
+    mv6 = matrix[9],
+    mv10 = matrix[10],
+    mv14 = matrix[11];
+
+  result[0] = mv0 * c - mv2 * s;
+  result[1] = mv4 * c - mv6 * s;
+  result[2] = mv8 * c - mv10 * s;
+  result[3] = mv12 * c - mv14 * s;
+  result[8] = mv0 * s + mv2 * c;
+  result[9] = mv4 * s + mv6 * c;
+  result[10] = mv8 * s + mv10 * c;
+  result[11] = mv12 * s + mv14 * c;
+
+  return result;
+}
+
+/**
+ * Matrix rotation around Z axis
+ * 
+ * @param {Float32Array} matrix matrix to apply rotation to
+ * @param {number} angle rotation angle
+ * @returns {Float32Array} the matrix with the rotation applied
+ */
+export function mat4RotateZ(matrix, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const result = new Float32Array(matrix);
+
+  const mv0 = matrix[0],
+    mv1 = matrix[1],
+    mv2 = matrix[2],
+    mv3 = matrix[3];
+
+  const mv4 = matrix[4],
+    mv5 = matrix[5],
+    mv6 = matrix[6],
+    mv7 = matrix[7];
+
+  result[0] = mv0 * c + mv4 * s;
+  result[1] = mv1 * c + mv5 * s;
+  result[2] = mv2 * c + mv6 * s;
+  result[3] = mv3 * c + mv7 * s;
+
+  result[4] = mv4 * c - mv0 * s;
+  result[5] = mv5 * c - mv1 * s;
+  result[6] = mv6 * c - mv2 * s;
+  result[7] = mv7 * c - mv3 * s;
+
+  return result;
+}
+
+/**
+ * Matrix scaling 
+ * 
+ * @param {Float32Array} matrix matrix to apply scale to
+ * @param {number[]} scale the scale values to apply x,y,z
+ * @returns {Float32Array} the matrix with the scale operation applied
+ */
+export function mat4Scale(matrix, scale) {
+  const [sx, sy, sz] = scale;
+
+  const result = new Float32Array(matrix);
+
+  for (let i = 0; i &lt; 4; i++) {
+    result[i] *= sx;
+    result[4 + i] *= sy;
+    result[8 + i] *= sz;
+  }
+
+  return result;
+}
+
+/**
+ * Apply a transformation matrix to a array of vertices
+ *
+ * @param {Array(number)} vertices verticies to transform
+ * @param {Float32Array} matrix transformation to apply
+ * @returns {Array(number)} transformed verticies
+ */
+export function transformVertices(vertices, matrix) {
+  const transformed = Array(vertices.length);
+
+  for (let i = 0; i &lt; vertices.length; i += 4) {
+    const x = vertices[i];
+    const y = vertices[i + 1];
+    const z = vertices[i + 2];
+    const w = vertices[i + 3];
+
+    transformed[i] =
+      matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12] * w;
+
+    transformed[i + 1] =
+      matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13] * w;
+
+    transformed[i + 2] =
+      matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14] * w;
+
+    transformed[i + 3] =
+      matrix[3] * x + matrix[7] * y + matrix[11] * z + matrix[15] * w;
+  }
+
+  return transformed;
+}
+
+/**
+ * Apply a mat4 transformation to a primative object.
+ * 
+ * NOTE: this may have to be updated since its from before primitive 
+ * objects were their own class so semantics have changed a bit.
+ * Will still work if careful though.
+ * 
+ * @param {PrimitiveObject} prim 
+ * @param {Float32Array} matrix the transformation to apply
+ * @returns {PrimitiveObject} the updated primitive
+ */
+export function transformPrimitive(prim, matrix) {
+  const vertsTransformed = transformVertices(prim.vertices, matrix);
+  prim.vertices = vertsTransformed;
+  return prim;
+}
+
+
+/**
+ * Apply mat4 transformation to a xyz point
+ * @param {number[]} point three tuple point x,y,z
+ * @param {Float32Array} m 
+ * @returns {number[]} the transformed point three tuple x,y,z
+ */
+export function transformPoint(point, m) {
+  const [x, y, z] = point;
+  return [
+    m[0] * x + m[4] * y + m[8] * z + m[12],
+    m[1] * x + m[5] * y + m[9] * z + m[13],
+    m[2] * x + m[6] * y + m[10] * z + m[14]
+  ];
+}
+
+// [optional] Helper function converting math format row-major matrices into a flat column-major array.
+// export function mat4FromRows(m00, m01, m02, m03,
+//                       m10, m11, m12, m13,
+//                       m20, m21, m22, m23,
+//                       m30, m31, m32, m33) {
+//     return new Float32Array([
+//         m00, m10, m20, m30,   // column 0
+//         m01, m11, m21, m31,   // column 1
+//         m02, m12, m22, m32,   // column 2
+//         m03, m13, m23, m33    // column 3
+//     ]);
+// }
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

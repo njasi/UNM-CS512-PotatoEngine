@@ -1,5 +1,11 @@
+/** @module materials/Material */
+
+
 /**
- * Convenience Interface class for shader materials
+ * Convenience Interface class for basic shader materials
+ * 
+ * @class
+ * @alias module:materials/Material
  */
 export default class Material {
   /**
@@ -15,14 +21,14 @@ export default class Material {
 
   /**
    * Get the location values for the parts of the material
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    * @param {ShaderProgram} shader
    */
   initUniforms(gl, shader) {}
 
   /**
    * Update the values of the material uniform
-   * @param {*} gl
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   updateUniforms(gl) {}
 }

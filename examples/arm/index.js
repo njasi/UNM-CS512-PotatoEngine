@@ -16,7 +16,6 @@ scene.addShader(
   new Shader(
     "basicVertex",
     scene.gl.VERTEX_SHADER,
-    "",
     "/src/shaders/vertex.vert",
   ),
 );
@@ -25,7 +24,6 @@ scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "",
     "/src/shaders/fragment.frag",
   ),
 );
@@ -132,12 +130,11 @@ function initSceneObjects() {
  * - start animation loop
  */
 async function main() {
-  await scene.loadShaders();
-
   scene.addProgram("basic", "basicVertex", "basicFragment");
+  
+  await scene.load();
 
   initSceneObjects();
-  scene.initBuffers();
 
   basicControls.setupMouseControls(scene);
   basicControls.setupKeyboardControls(scene);

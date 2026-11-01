@@ -1,24 +1,49 @@
+/**
+ * @module materials/common 
+ * @description Common phong materials and helper functions to generate them.
+*/
+
 import PhongMaterial from "./PhongMaterial";
 import { rgb } from "../util/color";
 
-// vec3 scale but didnt feel like making a vec3 file
+/**
+ * this is just vec3 scale but didnt feel like making a vec3 util file
+ * 
+ * @param {number[]} colorValue 
+ * @param {number} scale 
+ * @returns {number[]}
+ */
 const scaleColor = (colorValue, scale) => {
-  return colorValue.map((x) => x * scale)
+  return colorValue.map((x) => x * scale);
 };
 
 /**
- * Given a material cfg return a new material
- * @param {rgb()} baseColor 3-tuple rgb color
- * @returns
+ * Given material options return a new material
+ * @param {string} label the name of the material
+ * @param {*} options material configuration
+ * @param {rgb()} options.ka: ambient color contribution
+ * @param {rgb()} options.kd: diffuse color contribution
+ * @param {rgb()} options.ks: specular color contribution
+ * @param {number} options.specularExponent: specular exponent (>0)
+ * @param {number} options.alpha: transparency if used with transparent renderpass
+ * @returns {PhongMaterial}
  */
-export function generateMaterial(label, cfg) {
-  return new PhongMaterial(label, cfg.ka, cfg.kd, cfg.ks, cfg.specularExp, cfg.alpha);
+export function generateMaterial(label, options) {
+  return new PhongMaterial(
+    label,
+    options.ka,
+    options.kd,
+    options.ks,
+    options.specularExp,
+    options.alpha,
+  );
 }
 
 /**
  * Given a base color generate a metallic like material
+ * @param {string} label the name of the material
  * @param {rgb()} baseColor 3-tuple rgb color
- * @returns
+ * @returns {PhongMaterial}
  */
 export function metallic(label, baseColor) {
   return generateMaterial(label, {
@@ -31,8 +56,9 @@ export function metallic(label, baseColor) {
 
 /**
  * Given a base color generate a plastic like material
+ * @param {string} label the name of the material
  * @param {rgb()} baseColor 3-tuple rgb color
- * @returns
+ * @returns {PhongMaterial}
  */
 export function plastic(label, baseColor) {
   return generateMaterial(label, {
@@ -45,11 +71,12 @@ export function plastic(label, baseColor) {
 
 /**
  * Given a base color generate a glass like material
- * 
- * This one makes sense on an otherwise clear material 
- * 
+ *
+ * This one makes sense on an otherwise clear material
+ *
+ * @param {string} label the name of the material
  * @param {rgb()} baseColor 3-tuple rgb color
- * @returns
+ * @returns {PhongMaterial}
  */
 export function glass(label, baseColor) {
   return generateMaterial(label, {
@@ -62,8 +89,9 @@ export function glass(label, baseColor) {
 
 /**
  * Given a base color generate a wood like material
+ * @param {string} label the name of the material
  * @param {rgb()} baseColor 3-tuple rgb color
- * @returns
+ * @returns {PhongMaterial}
  */
 export function wood(label, baseColor) {
   return generateMaterial(label, {
@@ -78,7 +106,8 @@ export function wood(label, baseColor) {
  * material mostly based on the vert color below and ambient
  * with small contributions from diffuse and specular
  *
- * @param {string} label
+ * @param {string} label the name of the material
+ * @returns {PhongMaterial}
  */
 export function vertColor(label) {
   return generateMaterial(label, {
@@ -91,7 +120,8 @@ export function vertColor(label) {
 
 /**
  * only ambient lighting is included
- * @param {*} label
+ * @param {string} label the name of the material
+ * @returns {PhongMaterial}
  */
 export function ambientOnly(label, ka = [1, 1, 1]) {
   return generateMaterial(label, {
@@ -104,7 +134,8 @@ export function ambientOnly(label, ka = [1, 1, 1]) {
 
 /**
  * only diffuse lighting is included
- * @param {*} label
+ * @param {string} label the name of the material
+ * @returns {PhongMaterial}
  */
 export function diffuseOnly(label, kd = [1, 1, 1]) {
   return generateMaterial(label, {
@@ -117,7 +148,8 @@ export function diffuseOnly(label, kd = [1, 1, 1]) {
 
 /**
  * only specular lighting is included
- * @param {*} label
+ * @param {string} label the name of the material
+ * @returns {PhongMaterial}
  */
 export function specularOnly(label, ks = [1, 1, 1], exp = 16) {
   return generateMaterial(label, {

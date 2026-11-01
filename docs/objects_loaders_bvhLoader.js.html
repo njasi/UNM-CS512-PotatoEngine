@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: objects/loaders/bvhLoader.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: objects/loaders/bvhLoader.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module objects/loaders/bvhLoader
+ * @description
+ * &lt;pre>
+ * Simple bvh loader
+ * information on the format: https://research.cs.wisc.edu/graphics/Courses/cs-838-1999/Jeff/BVH.html
+ *
+ * - bvh rotation s in Z, X, Y order
+ *      A straightforward way to create the rotation matrix is
+ *      to create 3 separate rotation matrices, one for each axis
+ *      of rotation. Then concatenate the matrices from left to
+ *      right Y, X and Z.
+ *
+ *      vR = vYXZ
+ *
+ *      (these operations should probably be applied to the primitive itself for the initial positions...
+ *       )
+ *
+ *      !!! this is a lie, turns out bvh files can use any rotation order
+ *      and each joint can even use its own rotation order..........
+ *      offset seems to be standard xyz but I dont trust that any more
+ *
+ * - offset
+ *      Adding the offset information is simple, just poke the X,Y
+ *      and Z translation data into into the proper locations of
+ *      the matrix. Once the local transformation is created then
+ *      concatenate it with the local transformation of its parent,
+ *      then its grand parent, and so on.
+ *
+ *      vM = vMchildMparentMgrandparent
+ *
+ *      (this is handled by the hierarchical model setup already we just need to set the offset per child)
+ *
+ * &lt;/pre>
+ */
+
+import { rgba } from "../../util/color";
+
+import {
+  generateCylinder,
+  generateFillerColors,
+  generateSphere,
+} from "../primitives";
+import SceneObject from "../SceneObject";
+import Scene from "../../Scene";
+import { BVHObjectRoot, BVHObject } from "./BVHObject";
+
+// TODO probably do something more reasonable than this
+const LOADED_BVH = {};
+
+/**
+ * Representation of a joint/root node. This is not a SceneObject but rather a logical
+ * represnentation for parsing
+ *
+ *  &lt;pre>
+ * EXAMPLE:
+ *
+ * HIERARCHY
+ * ROOT joint_Root
+ * {
+ * OFFSET 0 0 0
+ * CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+ * JOINT Hips
+ * {
+ *     OFFSET -11.2566 91.3362 32.6117
+ *     CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+ *     JOINT Spine
+ *
+ * for the root component
+ * root = new Joint("joint_Root", [0, 0, 0], [Xposition, Yposition, Zposition, Zrotation, Xrotation, Yrotation], true)
+ * hips = Joint("Hips", [-11.2566, 91.3362, 32.6117], [Xposition, Yposition, Zposition, Zrotation, Xrotation, Yrotation])
+ * root.addChild(hips)
+ *
+ * &lt;/pre>
+ * @class
+ * @alias module:objects/loaders/bvhLoader/Joint
+ */
+class Joint {
+  constructor(label, offset, channels, root = false, end = false) {
+    this.label = label;
+    this.offset = offset;
+    this.channels = channels;
+    this.children = [];
+    this.root = root;
+    this.end = end;
+  }
+
+  /**
+   * Add a child joint to the joint
+   * @param {Joint} child
+   */
+  addChild(child) {
+    this.children.push(child);
+  }
+}
+
+/**
+ * Parse a bvh file into more understandable format for later
+ *
+ * if id already in cache dont load again
+ *
+ * on progress is a messy progress listener made by opening the request as a
+ * stream... would be nicer to have a builtin here...
+ *
+ * Note that the total bytes passed to onprogress may be incorrect if the server is
+ * compressing the file... its best to just report the loaded bytes in mb/kb
+ *
+ * @param {string} url url to get the file from
+ * @param {string} id cache id to use
+ * @param {function} onProgress function to call when we have download progress
+ *                    passed an object {loaded: bytes loaded, total: bytes total, progress: loading percentage (0-100)}
+ */
+export async function cacheBVH(url, id, onProgress) {
+  if (LOADED_BVH[id]) return;
+
+  const response = await fetch(url);
+
+  const rawTotal = response.headers.get("content-length");
+  const parsedTotal = rawTotal ? Number(rawTotal) : NaN;
+  const total =
+    Number.isFinite(parsedTotal) &amp;&amp; parsedTotal > 0 ? parsedTotal : null;
+
+  if (!response.body) {
+    throw new Error("This response does not provide a readable stream");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let loaded = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    loaded += value.byteLength;
+    text += decoder.decode(value, { stream: true });
+
+    onProgress?.({
+      loaded,
+      total,
+      percent:
+        total === null
+          ? null
+          : Math.min(100, Math.round((loaded / total) * 100)),
+    });
+  }
+
+  text += decoder.decode(); // Flush any remaining decoded text
+
+  const loadedBVH = parseBVH(text);
+  LOADED_BVH[id] = loadedBVH;
+}
+
+/**
+ * Check if a id is already cached
+ * @param {string} id
+ */
+export function isCached(id) {
+  return !!LOADED_BVH[id];
+}
+
+/**
+ * Parse the BVH structure from text
+ * - load joint structure
+ * - give list of joint names in order for animation
+ * - return animation frame information
+ *
+ * @param {string} text text to parse
+ * @returns {*}
+ */
+function parseBVH(text) {
+  // todo track joint objs so can reference while animating
+  const jointList = [];
+  const frames = [];
+
+  const tokens = text.match(/[{}]|[^\s{}]+/g);
+
+  let motionInfo = {};
+  let totalChannels = 0;
+  let i = 0;
+
+  /**
+   * Get the next token in the list
+   * @returns {string}
+   */
+  function nextToken() {
+    i++;
+    return tokens[i - 1];
+  }
+
+  /**
+   * Get the next token in list and parse it into a number
+   * @returns {Number}
+   */
+  function nextNumber() {
+    const value = Number(nextToken());
+    return value;
+  }
+
+  /**
+   * Check if the next value is an expected valkue.
+   * throws an error if its not the expected value
+   * @param {string} expected
+   */
+  function nextExpect(expected) {
+    const value = nextToken();
+    if (value != expected) {
+      throw new Error(`expected ${expected} got ${value}`);
+    }
+  }
+
+  /**
+   * Parse a vec of numbers from the token stream
+   * @returns {number[]} [x, y, z]
+   */
+  function parseVector() {
+    return [nextNumber(), nextNumber(), nextNumber()];
+  }
+
+  /**
+   * Parse a joint and its children recursively from tokens
+   *
+   * &lt;pre>
+   * ROOT joint_Root
+   * {
+   * OFFSET 0 0 0
+   * CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+   * JOINT Hips
+   * {...}
+   * ...
+   * }
+   * &lt;/pre>
+   *
+   * @returns {Joint}
+   */
+  function parseJoint() {
+    const type = nextToken();
+    const label = nextToken();
+
+    nextExpect("{");
+    nextExpect("OFFSET");
+    const offset = parseVector();
+
+    nextExpect("CHANNELS");
+    const channelCount = nextNumber();
+
+    const channels = [];
+    for (let i = 0; i &lt; channelCount; i++) {
+      channels.push(nextToken());
+    }
+
+    const joint = new Joint(label, offset, channels, type == "ROOT");
+    jointList.push(joint);
+    totalChannels += joint.channels.length;
+
+    while (tokens[i] !== "}") {
+      if (tokens[i] == "JOINT") {
+        // children parsing
+        joint.addChild(parseJoint());
+        continue;
+      }
+
+      if (tokens[i] == "End") {
+        // at an endpoinit
+        nextToken();
+        nextExpect("Site");
+        nextExpect("{");
+        nextExpect("OFFSET");
+        const offset = parseVector();
+        nextExpect("}");
+
+        joint.addChild(new Joint(label + "end", offset, [], false, true));
+      }
+    }
+
+    nextExpect("}");
+    return joint;
+  }
+
+  /**
+   * Parse a named number from the text
+   * ie something that looks like
+   * numberLabel: value
+   * @returns {*}
+   */
+  function parseNamedNumber() {
+    let numLabel = "";
+    while (!numLabel.endsWith(":")) {
+      numLabel += nextToken();
+    }
+    const value = nextNumber();
+    return { [numLabel.replace(":", "").replaceAll(" ", "")]: value };
+  }
+
+  /**
+   * Parse the motion (animation frame) section of the bvh file
+   */
+  function parseMotion() {
+    nextExpect("MOTION");
+    motionInfo = {
+      ...parseNamedNumber(),
+      ...parseNamedNumber(),
+    };
+    for (let j = 0; j &lt; motionInfo.Frames; j++) {
+      frames.push([...new Array(totalChannels)].map((_) => nextNumber()));
+    }
+  }
+
+  nextExpect("HIERARCHY");
+  const rootJoint = parseJoint();
+  parseMotion();
+
+  return { rootJoint, jointList, frames, motionInfo };
+}
+
+///////////////////////////////////
+// SKELETON SCENEOBJECT CREATION //
+///////////////////////////////////
+
+/**
+ * Make a joint placeholder bones connect from joint to joint
+ * to make the animation we will rotate/translate a joint based
+ * on the channels defined. note we dont translate the bone, but the
+ * joint because the bone is a child of the joint and the next joint
+ * is a child of it etc.
+ *
+ * @param {string} label
+ * @returns {BVHObject | BVHObjectRoot}
+ */
+function makeJoint(label, segments, thickness, color, root = false) {
+  const spherePrim = generateSphere(segments, 1.5 * thickness);
+  const colors = generateFillerColors(
+    spherePrim.vertexCount,
+    rgba(255, 255, 255, 1),
+  );
+
+  if (root) {
+    return new BVHObjectRoot(
+      label,
+      new Float32Array(spherePrim.vertices),
+      new Float32Array(colors),
+      new Uint16Array(spherePrim.indices),
+      new Float32Array(spherePrim.normals),
+    );
+  }
+
+  return new BVHObject(
+    label,
+    new Float32Array(spherePrim.vertices),
+    new Float32Array(colors),
+    new Uint16Array(spherePrim.indices),
+    new Float32Array(spherePrim.normals),
+  );
+}
+
+/**
+ * Construct bones from joint positions and update function
+ * from the frames
+ *
+ * NOTE: joint names probably changes at somepoint
+ *
+ * @param {Joint} rootJoint   the root of the joint structure
+ * @param {*} jointList       list of sequential joint names
+ * @param {*} frames          the animation frames
+ * @param {*} motionInfo      animation metadata
+ * @param {number} thickness  the radius of object geometry
+ * @param {number} segments   the number of segments to use in object geometry
+ * @param {rgba()} color      the color of all created objects
+ * @param {string} prefix     the prefix to attach to all object labels
+ * @returns {BVHObjectRoot}
+ */
+function bvhToSkeletonObject(
+  rootJoint,
+  jointList,
+  frames,
+  motionInfo,
+  thickness = 0.1,
+  segments = 16,
+  color = rgba(255, 255, 255, 1),
+  prefix = "",
+) {
+  // this will be empty with no verts since its a 'joint'
+  // unless I want to render them as spheres...
+  const root = makeJoint(prefix + "ROOT", segments, thickness, color, true);
+
+  makeBones(root, rootJoint, thickness, segments, color, prefix);
+
+  const jointListCopy = jointList.map((joint) => {
+    const j = structuredClone(joint);
+    j.label = prefix + j.label;
+    return j;
+  });
+  root.jointList = jointListCopy;
+  root.frames = frames;
+  root.animationPlay = true;
+  root.motionInfo = motionInfo;
+
+  root.setUpdateCB(updateBVH);
+
+  return root;
+}
+
+/**
+ * Make the skeleton structure described in the bvh file
+ *
+ * - joints are spheres
+ *      - rotate move these to produce the animation later
+ * - bones are cylinders that go from joint to joint
+ *      - dont think we need to touch these after creating
+ *
+ * @param {SceneObject} parent  the previous parent object
+ * @param {Joint} currJoint current joint we are parsing
+ * @param {number} thickness    the radius of object geometry
+ * @param {number} segments the number of segments to use in object geometry
+ * @param {rgba()} color    the color of all created objects
+ * @param {string} prefix   the prefix to attach to all object labels
+ * @returns {BVHObject|BVHObjectRoot}
+ */
+function makeBones(
+  parent,
+  currJoint,
+  thickness = 0.1,
+  segments = 16,
+  color = rgba(255, 255, 255, 1),
+  prefix = "",
+) {
+  const jointObj = makeJoint(
+    prefix + currJoint.label,
+    segments,
+    thickness,
+    color,
+  );
+  jointObj.position = [...currJoint.offset];
+  parent.addChild(jointObj);
+
+  for (let i = 0; i &lt; currJoint.children.length; i++) {
+    const childJoint = currJoint.children[i];
+    const [x, y, z] = childJoint.offset;
+
+    // make new cylinder from prev joint to current joint position
+    // relative coords now so we dont need to use diffs
+    const dist = Math.hypot(x, y, z);
+
+    if (dist == 0) {
+      makeBones(jointObj, childJoint, thickness, segments, color, prefix);
+      continue;
+    }
+
+    // hmm might need to make joints like the root joint thats empty
+    const bonePrim = generateCylinder(segments, thickness, dist, {
+      z_c: dist / 2,
+      bulge: 0.75,
+      segments_h: 8,
+    });
+    const colors = generateFillerColors(bonePrim.vertexCount, color, true);
+    const bone = new SceneObject(
+      prefix + currJoint.label + "-" + childJoint.label,
+      new Float32Array(bonePrim.vertices),
+      new Float32Array(colors),
+      new Uint16Array(bonePrim.indices),
+      new Float32Array(bonePrim.normals),
+    );
+
+    const rotationX = -Math.atan2(y, Math.hypot(x, z));
+    const rotationY = Math.atan2(x, z);
+    bone.rotation = [rotationX, rotationY, 0];
+
+    jointObj.addChild(bone);
+    // might need a safty check, not sure if every joint is
+    // guaranteed to have rotation channels
+    jointObj.bvhRotationOrder = currJoint.channels
+      .filter((e) => e.endsWith("rotation"))
+      .map((e) => e.replace("rotation", ""));
+
+    makeBones(jointObj, childJoint, thickness, segments, color, prefix);
+  }
+
+  return jointObj;
+}
+
+////////////////////////
+// ANIMATION CREATION //
+////////////////////////
+
+/**
+ * Interpolate positions between two frames
+ *
+ * @param {number[]} positions two tuple of the prev position and the next position
+ * @param {number} ratio the ratio between the two points
+ * @returns {number}
+ */
+function interpolatePosition(positions, ratio) {
+  return (1 - ratio) * positions[0] + ratio * positions[1];
+}
+
+/**
+ * Interpolate angles (bvh degrees) between two frames
+ *
+ * @param {number[]} angles two tuple of the prev angle and the next angle (in degrees)
+ * @param {number} ratio the ratio between the two angles
+ * @returns {number}
+ */
+function interpolateAngles(angles, ratio) {
+  const diff = angles[1] - angles[0];
+  const delta = ((diff + 540) % 360) - 180;
+
+  return (angles[0] + ratio * delta + 360) % 360;
+}
+
+/**
+ * Apply a frame to a single child joint
+ * this optionally uses linear interpolation from the prev
+ * frame to the next frame based on the current time.
+ * intrpolation and other animation properties are set on the
+ * BVHObjectRoot instance.
+ *
+ * @param {Joint} child   the child joint to animate
+ * @param {Scene} scene   the animation scene
+ * @param {number} frameRatio  the ratio between frames
+ * @param {number[]} prevFrame   the previous frame location
+ * @param {number[]} nextFrame   the next frame locations
+ * @param {boolean} interpolate if frames should be interpolated
+ */
+function applyChildFrame(
+  child,
+  scene,
+  frameRatio,
+  prevFrame,
+  nextFrame,
+  interpolate,
+) {
+  const channels = {};
+  for (let i = 0; i &lt; child.channels.length; i++) {
+    channels[child.channels[i]] = [prevFrame[i], nextFrame[i]];
+  }
+
+  let x,
+    y,
+    z = 0;
+
+  if (interpolate) {
+    x = (interpolateAngles(channels["Xrotation"], frameRatio) * Math.PI) / 180;
+    y = (interpolateAngles(channels["Yrotation"], frameRatio) * Math.PI) / 180;
+    z = (interpolateAngles(channels["Zrotation"], frameRatio) * Math.PI) / 180;
+  } else {
+    x = (channels["Xrotation"][0] * Math.PI) / 180;
+    y = (channels["Yrotation"][0] * Math.PI) / 180;
+    z = (channels["Zrotation"][0] * Math.PI) / 180;
+  }
+
+  const rotation = [x, y, z];
+
+  const childObj = scene.getObject(child.label);
+  childObj.rotation = rotation;
+  if ((child.channels.length > 3) &amp; child.root) {
+    if (interpolate) {
+      childObj.position = [
+        interpolatePosition(channels["Xposition"], frameRatio),
+        interpolatePosition(channels["Yposition"], frameRatio),
+        interpolatePosition(channels["Zposition"], frameRatio),
+      ];
+    } else {
+      childObj.position = [
+        channels["Xposition"][0],
+        channels["Yposition"][0],
+        channels["Zposition"][0],
+      ];
+    }
+  }
+}
+
+/**
+ * Update function to play the animation
+ *
+ * could probably precompute a lot of things here, but seems fast enough already
+ * @param {number} dt the change in time in ms
+ * @param {Scene} scene the scene prompting this update
+ */
+function updateBVH(dt, scene) {
+  if (!this.animationPlay) {
+    return;
+  }
+
+  this.animationTime += dt * this.animationSpeed;
+
+  // calculate the prev, next frames and the ratio between them for interpolation
+  const loopedTime =
+    this.animationTime % (this.motionInfo.Frames * this.motionInfo.FrameTime);
+  const prevFrameIdx = Math.floor(loopedTime / this.motionInfo.FrameTime);
+  const nextFrameIdx = (prevFrameIdx + 1) % this.motionInfo.Frames;
+  const frameRatio =
+    (loopedTime % this.motionInfo.FrameTime) / this.motionInfo.FrameTime;
+
+  let offset = 0;
+  for (const joint of this.jointList) {
+    // grab only the frame parts needed in the joint update
+    // could probably pass offset &amp; the whole array to save on compute ig
+    const prevFrame = this.frames[prevFrameIdx].slice(
+      offset,
+      offset + joint.channels.length,
+    );
+    const nextFrame = this.frames[nextFrameIdx].slice(
+      offset,
+      offset + joint.channels.length,
+    );
+    offset += joint.channels.length;
+    applyChildFrame(
+      joint,
+      scene,
+      frameRatio,
+      prevFrame,
+      nextFrame,
+      this.animationInterpolate,
+    );
+  }
+}
+
+/**
+ * Load a BVH file into a SceneObject.
+ * @param {*} id the id of the cached &amp; parsed bvh file to load
+ * @param {number} thickness    the radius of object geometry
+ * @param {number} segments the number of segments to use in object geometry
+ * @param {rgba()} color    the color of all created objects
+ * @param {string} prefix   the prefix to attach to all object labels
+ * @returns {BVHObjectRoot}
+ */
+export function loadBVH(
+  id,
+  thickness = 0.1,
+  segments = 16,
+  color = rgba(255, 255, 255, 1),
+  prefix = "",
+) {
+  return bvhToSkeletonObject(
+    LOADED_BVH[id].rootJoint,
+    LOADED_BVH[id].jointList,
+    LOADED_BVH[id].frames,
+    LOADED_BVH[id].motionInfo,
+    thickness,
+    segments,
+    color,
+    prefix,
+  );
+}
+
+/**
+ * Add a bvh object to a scene, this is more complicated than normal because
+ * we created all those bones in here without adding them to the scene
+ *
+ * TODO this can be removed or simplified to just use the new addChildren option
+ * in the scene.addObject function
+ * @param {Scene} scene scene to add the obejct to
+ * @param {SceneObject} bvhObject the bvh object to use
+ * @param {string} shader the shader to use
+ */
+export function sceneAddBVH(scene, bvhObject, shader, mat, root = true) {
+  scene.addObject(bvhObject, shader, mat, { child: !root });
+  for (const child of bvhObject.children) {
+    sceneAddBVH(scene, child, shader, mat, false);
+  }
+}
+
+/**
+ * Hide the "tail" bone that the bandai namco bvh files have
+ * @param {BVHObjectRoot} bvhObject
+ * @returns {BVHObjectRoot}
+ */
+export function bandaiNamcoHideTail(bvhObject) {
+  const tail = bvhObject.children[0].children[0];
+  tail.shouldDraw = false;
+  return bvhObject;
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

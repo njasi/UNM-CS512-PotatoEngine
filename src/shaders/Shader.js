@@ -1,15 +1,26 @@
 /**
- * Wrapper class to represent a shader file
+ * @module shaders/Shader
+ */
+
+/**
+ * Wrapper class to represent shader source
+ *
+ * @class
+ * @alias module:shaders/Shader
  */
 export default class Shader {
   /**
    * Create a new shader
-   * @param {*} label       the name of the shader
-   * @param {*} type        the type of shader
-   * @param {*} source      source text
-   * @param {*} source_url  source url
+   *
+   * one of source or source_url needs to be set
+   *
+   * @param {string} label       the name of the shader
+   * @param {*} type             the type of shader
+   * @param {*} options          source options
+   * @param {string} source_url  url to load source text from
+   * @param {string} source      source text
    */
-  constructor(label, type, source, source_url) {
+  constructor(label, type, source_url = undefined, source = undefined) {
     this.label = label;
     this.type = type;
     this.source = source;
@@ -17,36 +28,35 @@ export default class Shader {
 
     this.shader = undefined;
 
-    this.loadRemote = this.loadRemote.bind(this);
-    this.create = this.create.bind(this);
+    this.load = this.load.bind(this);
+    this.init = this.init.bind(this);
   }
 
   /**
-   * Initialize the shader wth webgl
-   * @param {*} gl the webgl2 context from canvas
-   * @param {*} type the type of shader
-   * @param {*} source the shader source
-   * @returns
+   * Initialize the shader wth webgl context
+   * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
-  create(gl) {
+  init(gl) {
     let shader = gl.createShader(this.type);
     gl.shaderSource(shader, this.source);
     gl.compileShader(shader);
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error(
+        `Shader ${this.label} was not able to compile properly.\n${this.source}`,
+      );
       throw new Error(gl.getShaderInfoLog(shader));
     }
     this.shader = shader;
   }
 
   /**
-   * Load a shader from a remote source (file)
-   * @param {*} url shader url to load from
-   * @returns the text of the shader file
+   * Load a shader from a remote source file into the source attribute
+   *
+   * if source_url is undefined, ignore
    */
-  async loadRemote() {
+  async load() {
     if (!this.source_url) {
-      console.error(this.name + ":\tNo source_url found");
       return;
     }
 

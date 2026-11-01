@@ -33,8 +33,21 @@
  * Convience representation of a 2D texture
  * @class
  * @alias module:materials/Texture2D
+ * 
  */
 export default class Texture2D {
+  /**
+   * 
+   * @param {*} gl 
+   * @param {Object} [options={}] 
+   * @param {boolean} [options.flipY=true] 
+   * @param {boolean} [options.mipmaps=true] 
+   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR] 
+   * @param {*} [options.magFilter=gl.LINEAR] 
+   * @param {*} [options.wrapS=gl.REPEAT] 
+   * @param {*} [options.wrapT=gl.REPEAT] 
+   * @param {number[]} [options.placeholder=[128, 128, 255, 255]] 
+   */
   constructor(
     gl,
     {
@@ -45,7 +58,6 @@ export default class Texture2D {
       wrapS = gl.REPEAT,
       wrapT = gl.REPEAT,
       placeholder = [128, 128, 255, 255],
-      crossOrigin,
     } = {},
   ) {
     this.gl = gl;
@@ -55,7 +67,6 @@ export default class Texture2D {
     this.magFilter = magFilter;
     this.wrapS = wrapS;
     this.wrapT = wrapT;
-    this.crossOrigin = crossOrigin;
 
     this.texture = gl.createTexture();
     if (!this.texture) {
@@ -85,16 +96,11 @@ export default class Texture2D {
   }
 
   /**
-   * Load an image URL into this texture.
-   * Resolves with this Texture2D when loaded.
+   * Load the image at the url into this texture
    */
   load(url) {
     return new Promise((resolve, reject) => {
       const image = new Image();
-
-      if (this.crossOrigin !== undefined) {
-        image.crossOrigin = this.crossOrigin;
-      }
 
       image.onload = () => {
         try {
@@ -112,7 +118,9 @@ export default class Texture2D {
   }
 
   /**
-   * Upload an Image, canvas, or other valid TexImageSource.
+   * parse some valid source to the texture
+   * 
+   * @param {TexImageSource} source 
    */
   upload(source) {
     const gl = this.gl;
@@ -148,7 +156,8 @@ export default class Texture2D {
   }
 
   /**
-   * Bind this texture to a texture unit.
+   * bind this texture to a texture unit
+   * @param {number} [unit=0] the unit
    */
   bind(unit = 0) {
     const gl = this.gl;
@@ -156,6 +165,9 @@ export default class Texture2D {
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
   }
 
+  /**
+   * Clean up the allocated things
+   */
   dispose() {
     this.gl.deleteTexture(this.texture);
     this.texture = null;
@@ -171,13 +183,13 @@ export default class Texture2D {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#initUniforms">initUniforms</a></li><li><a href="global.html#updateUniforms">updateUniforms</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Oct 31 2026 22:29:43 GMT-0600 (Mountain Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

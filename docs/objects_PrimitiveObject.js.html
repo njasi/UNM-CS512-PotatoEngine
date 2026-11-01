@@ -31,6 +31,7 @@
  */
 
 import { generateFillerColors } from "./primitives";
+import SceneObject from "./SceneObject";
 
 /**
  * Wrapper class to make primitive handling standardized.
@@ -43,7 +44,7 @@ import { generateFillerColors } from "./primitives";
  * - texCoords
  * - vertex normals
  * - vertex count
- * 
+ *
  * @class
  * @alias module:objects/PrimitiveObject
  */
@@ -111,6 +112,41 @@ export default class PrimitiveObject {
       texCoords: new Float32Array(this.texCoords),
     };
   }
+
+  /**
+   * Convert the primitive directly to a scene object.
+   *
+   * the options are inherited from whatever sceneobject you're creating
+   * the base SceneObject options are noted below
+   *
+   * @param {string} label the label to use for this object
+   * @param {SceneObject} [sceneObjectType=SceneObject]
+   * @param {*} options
+   * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
+   * @param {number[]} options.position             initial position of the object
+   * @param {number[]} options.rotation             initial rotation of the object
+   * @param {number[]} options.scale                initial scale of the object
+   * @param {boolean} options.shouldDraw            if this object should be drawn
+   * @param {string} options.programLabel           the program to draw this object with
+   * @param {string} options.materialLabel          the material to use with this object
+   * @param {string} options.lightingCenter         the center of the object to calculate light culling with
+   * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
+   * @param {string} options.child                  if the object is a child
+   * @param {string} options.passes                 the renderpasses to render this object with
+   * @param {string} options.tangents
+   * @param {string} options.texCoords
+   *
+   */
+  toSceneObject(label, sceneObjectType = SceneObject, options = {}) {
+    const { vertices, normals, colors, indices, tangents, texCoords } =
+      this.toTypedArray();
+
+    return new sceneObjectType(label, vertices, colors, indices, normals, {
+      tangents,
+      texCoords,
+      ...options,
+    });
+  }
 }
 </code></pre>
         </article>
@@ -122,13 +158,13 @@ export default class PrimitiveObject {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#initUniforms">initUniforms</a></li><li><a href="global.html#updateUniforms">updateUniforms</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Oct 30 2026 20:35:17 GMT-0600 (Mountain Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Oct 31 2026 22:29:43 GMT-0600 (Mountain Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

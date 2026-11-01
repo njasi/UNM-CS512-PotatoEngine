@@ -92,7 +92,7 @@ export default class PrimitiveObject {
    * the base SceneObject options are noted below
    *
    * @param {string} label the label to use for this object
-   * @param {typeof SceneObject} [sceneObjectType=SceneObject]
+   * @param {SceneObject} [sceneObjectType=SceneObject]
    * @param {*} options
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
    * @param {number[]} options.position             initial position of the object

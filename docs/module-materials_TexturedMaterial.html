@@ -139,6 +139,196 @@
     
 
     
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="TEXTURE_TYPE_ALBEDO"><span class="type-signature"></span>TEXTURE_TYPE_ALBEDO<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Default texture type name for albedo (regular base color) texture maps
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line33">line 33</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="TEXTURE_TYPE_BUMP"><span class="type-signature"></span>TEXTURE_TYPE_BUMP<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Default texture type name for bump texture maps
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line29">line 29</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="TEXTURE_TYPE_NORMAL"><span class="type-signature"></span>TEXTURE_TYPE_NORMAL<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Default texture type name for normal texture maps
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line25">line 25</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
 
     
         <h3 class="subsection-title">Methods</h3>
@@ -274,7 +464,441 @@ and update the internal locs map
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line134">line 134</a>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line213">line 213</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="_setTextureUsageUniform"><span class="type-signature"></span>_setTextureUsageUniform<span class="signature">(type, value)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Set the usage uniform for the given
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">the type of texture eg normal, bump, etc</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line135">line 135</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="disableTexture"><span class="type-signature"></span>disableTexture<span class="signature">(type)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Disable the usage uniform for a texture
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">the type of texture eg normal, bump, etc</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line118">line 118</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="enableTexture"><span class="type-signature"></span>enableTexture<span class="signature">(type)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Enable the usage uniform for a texture
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">the type of texture eg normal, bump, etc</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line126">line 126</a>
     </li></ul></dd>
     
 
@@ -434,7 +1058,7 @@ and update the internal locs map
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line86">line 86</a>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line145">line 145</a>
     </li></ul></dd>
     
 
@@ -520,7 +1144,7 @@ and update the internal locs map
             <td class="type">
             
                 
-<span class="param-type">*</span>
+<span class="param-type">string</span>
 
 
             
@@ -530,7 +1154,7 @@ and update the internal locs map
 
             
 
-            <td class="description last"></td>
+            <td class="description last">the usage of the material in the shader eg normal, bump, etc</td>
         </tr>
 
     
@@ -571,7 +1195,7 @@ and update the internal locs map
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line69">line 69</a>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line97">line 97</a>
     </li></ul></dd>
     
 
@@ -607,7 +1231,7 @@ and update the internal locs map
     
 
     
-    <h4 class="name" id="setTexture"><span class="type-signature"></span>setTexture<span class="signature">(type, textureLabel, options)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="setTexture"><span class="type-signature"></span>setTexture<span class="signature">(type, textureLabel, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
     
@@ -639,7 +1263,11 @@ and update the internal locs map
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -664,10 +1292,22 @@ and update the internal locs map
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">the type of the texture</td>
         </tr>
 
     
@@ -687,10 +1327,22 @@ and update the internal locs map
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">the label of the texture to use</td>
         </tr>
 
     
@@ -710,10 +1362,169 @@ and update the internal locs map
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"></td>
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>samplerUniform</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">specify the name of the  sampler uniform defaults to u<Type>Map</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>useUniform</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">specify the name of the use uniform defaults to uUse<Type>Map</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>extraUniforms</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last">dictionary of supplemental uniforms {uniformName:value} pairs</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -754,7 +1565,7 @@ and update the internal locs map
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line48">line 48</a>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line64">line 64</a>
     </li></ul></dd>
     
 
@@ -914,7 +1725,7 @@ and update the internal locs map
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line107">line 107</a>
+        <a href="materials_TexturedMaterial.js.html">materials/TexturedMaterial.js</a>, <a href="materials_TexturedMaterial.js.html#line166">line 166</a>
     </li></ul></dd>
     
 
@@ -966,7 +1777,7 @@ and update the internal locs map
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Nov 02 2026 12:41:25 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Nov 02 2026 14:04:52 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -2,23 +2,31 @@
  * @module materials/TexturedMaterial
  */
 
-// will need add support for a object having a bunch of textures
-// normal, bump, color etc, but im tired for now these docstrings
-// were annoying and distrcted me from actually finishing the texture
-// related code lol
-// probably also want to extend the phong mat to get the base
-// values
-
 import { Scene } from "..";
 import { ShaderProgram } from "../shaders";
 
 /**
  * Wrapper class to represent a material that uses texture data
  *
+ * TODO might want to extend PhongMaterial to get those basic values...
+ *
  * @class
  * @alias module:materials/TexturedMaterial
  */
 export default class TexturedMaterial extends Material {
+  /**
+   * Default texture type name for normal texture maps
+   */
+  static TEXTURE_TYPE_NORMAL = "normal";
+  /**
+   * Default texture type name for bump texture maps
+   */
+  static TEXTURE_TYPE_BUMP = "bump";
+  /**
+   * Default texture type name for albedo (regular base color) texture maps
+   */
+  static TEXTURE_TYPE_ALBEDO = "albedo";
+
   constructor(label, textures = {}) {
     // internal state for ease of use
     // TODO should do this across the other classes...
@@ -166,6 +174,32 @@ export default class TexturedMaterial extends Material {
   }
 
   /**
+   * Disable the usage uniform for a texture
+   * @param {string} type the type of texture eg normal, bump, etc
+   */
+  disableTexture(type) {
+    this._setTextureUsageUniform(type, 0);
+  }
+
+  /**
+   * Enable the usage uniform for a texture
+   * @param {string} type the type of texture eg normal, bump, etc
+   */
+  enableTexture(type) {
+    this._setTextureUsageUniform(type, 1);
+  }
+
+  /**
+   * Set the usage uniform for the given
+   * @param {string} type the type of texture eg normal, bump, etc
+   * @param {boolean} value
+   */
+  _setTextureUsageUniform(type, value) {
+    const locs = this._locs.get(type);
+    this._gl.uniform1i(locs.use, value);
+  }
+
+  /**
    * Find all the locs related to a specific texture type
    * and update the internal locs map
    * @param {string} type
@@ -173,10 +207,15 @@ export default class TexturedMaterial extends Material {
    */
   _getLocs(type, texture) {
     const locs = {
-      sampler: this._gl.getUniformLocation(this._program),
+      sampler: this._gl.getUniformLocation(
+        this._program,
+        texture.samplerUniform,
+      ),
       use: this._gl.getUniformLocation(this._program, texture.useUniform),
     };
 
+    // get the cursed extra uniforms, may want to nest these or prefix them with
+    // the type by default?
     for (const extraUniformName of Object.keys(texture.extraUniforms)) {
       locs[extraUniformName] = gl.getUniformLocation(
         this._program,

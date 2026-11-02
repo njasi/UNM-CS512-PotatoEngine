@@ -26,56 +26,150 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>// will need add support for a object having a bunch of textures
+            <pre class="prettyprint source linenums"><code>/**
+ * @module materials/TexturedMaterial
+ */
+
+// will need add support for a object having a bunch of textures
 // normal, bump, color etc, but im tired for now these docstrings
 // were annoying and distrcted me from actually finishing the texture
 // related code lol
-// probably also want to extend the phong mat to get the base 
+// probably also want to extend the phong mat to get the base
 // values
 
 import { Scene } from "..";
 import { ShaderProgram } from "../shaders";
 
-
 /**
- * 
+ * Wrapper class to represent a material that uses texture data
+ *
+ * @class
+ * @alias module:materials/TexturedMaterial
  */
 export default class TexturedMaterial extends Material {
-  constructor(label, textureLabel) {
-    super(label);
-    this.textureLabel = textureLabel;
-    this.textureLoc = null;
+  constructor(label, textures = {}) {
+    // internal state for ease of use
+    // TODO should do this across the other classes...
+    // would be cleaner than the current annoying pass
+    // gl everywhere structure
+    this._gl = undefined;
+    this._program = undefined;
+
+    // texture information
+    this._textures = new Map();
+    this._locs = new Map();
+
+    this.label = label;
+    this.programLabel = undefined;
+
+    for (const [type, cfg] of Object.entries(textures)) {
+      this.setTexture(type, cfg.textureLabel, cfg);
+    }
+  }
+
+  /**
+   * Set the value of a texture type, ie normal, bump etc
+   * @param {string} type
+   * @param {string} textureLabel
+   * @param {*} options
+   */
+  setTexture(type, textureLabel, options = {}) {
+    const textureInfo = {
+      textureLabel,
+      ...options,
+    };
+
+    // TODO proper cleaning check here, this should work for now
+    // to make sure an old texture is removed properly
+    this.removeTexture(type);
+    this.textures.set(type, textureInfo);
+
+    if (this._gl &amp;&amp; this._program) {
+      // add after the program has started...
+      this._getLocs(type, texture);
+    }
+  }
+
+  /**
+   * Remove a texture from the material
+   * @param {*} type
+   */
+  removeTexture(type) {
+    const locs = this._locs.get(type);
+
+    // TODO figure out the internal structure of locs
+    // how many needed per texture? should be a couple...
+    // 1 for the texture sampler itself and then more for
+    // config like one as a bool label use bump, bumpScale...?
+
+    this.textures.delete(type);
+    this._locs.delete(type);
   }
 
   /**
    * Setup the texture(TODO s) location
-   * @param {WebGL2RenderingContext} gl 
-   * @param {ShaderProgram} shaderProgram 
+   * @param {WebGL2RenderingContext} gl
+   * @param {ShaderProgram} shaderProgram
    */
   initUniforms(gl, shaderProgram) {
-    super.initUniforms(gl, shaderProgram)
-    this.textureLoc = gl.getUniformLocation(
-      shaderProgram.program,
-      "uTexture",
-    );
+    super.initUniforms(gl, shaderProgram);
+    // honestly i should start tracking gl and related objects everywhere
+    // since it makes other functions easier to work with
+    this._gl = gl;
+    this._program = shaderProgram.program;
+    this._locs.clear();
+
+    // will still need this to interface with my render loop in scene.
+    this.programLabel = shaderProgram.label;
+
+    for (const [type, texture] of this.textures) {
+      this._getLocs(type, texture);
+    }
   }
 
   /**
-   * bind the textures
-   * @param {WebGL2RenderingContext} gl 
-   * @param {Scene} scene 
+   * Bind the textures &amp; update related uniforms
+   * @param {WebGL2RenderingContext} gl
+   * @param {Scene} scene
    */
   updateUniforms(gl, scene) {
-    super.updateUniforms(gl)
+    super.updateUniforms(gl);
 
     const textureUnit = 0;
-    const texture = scene.getTexture(this.textureLabel);
 
-    texture.bind(textureUnit);
+    for (const [type, texture] of this.textures) {
+      const locs = this._locs.get(type);
+      const texture = scene.getTexture(this.textureLabel);
 
-    if (this.textureLoc !== null) {
-      gl.uniform1i(this.textureLoc, textureUnit);
+      texture.bind(textureUnit);
+
+      if (locs.sampler2D !== null) {
+        gl.uniform1i(locs.sampler2D, textureUnit);
+      }
+
+      // TODO enumerate the other uniforms
+
+      textureUnit++;
     }
+  }
+
+  /**
+   * Find all the locs related to a specific texture type
+   * and update the internal locs map
+   * @param {string} type
+   * @param {*} texture
+   */
+  _getLocs(type, texture) {
+    // TODO make full list of the locs we need per texture...
+
+    // sampler2D : the texture itself
+    // dynamic list of uniforms? since you can have things like bumpScale etc
+
+    const locs = {
+      sampler2D: this._gl.getUniformLocation(this._program),
+    };
+
+    this._locs.set(type, locs);
   }
 }
 </code></pre>
@@ -88,13 +182,13 @@ export default class TexturedMaterial extends Material {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#initUniforms">initUniforms</a></li><li><a href="global.html#updateUniforms">updateUniforms</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Oct 31 2026 22:29:43 GMT-0600 (Mountain Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Nov 02 2026 12:41:25 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

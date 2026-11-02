@@ -35,7 +35,7 @@ function addShaders() {
     new Shader(
       "basicVertex",
       scene.gl.VERTEX_SHADER,
-      "/src/shaders/vertex.vert",
+      "../../src/shaders/vertex.vert",
     ),
   );
 
@@ -43,7 +43,7 @@ function addShaders() {
     new Shader(
       "phongFragment",
       scene.gl.FRAGMENT_SHADER,
-      "/src/shaders/phong.frag",
+      "../../src/shaders/phong.frag",
     ),
   );
 }

@@ -41,14 +41,29 @@ export default class TexturedMaterial extends Material {
 
   /**
    * Set the value of a texture type, ie normal, bump etc
-   * @param {string} type
-   * @param {string} textureLabel
-   * @param {*} options
+   * @param {string} type the type of the texture
+   * @param {string} textureLabel the label of the texture to use
+   * @param {*} [options={}]
+   * @param {string} [options.samplerUniform=undefined] specify the name of the  sampler uniform defaults to u<Type>Map
+   * @param {string} [options.useUniform=undefined] specify the name of the use uniform defaults to uUse<Type>Map
+   * @param {*} [options.extraUniforms={}] dictionary of supplemental uniforms {uniformName:value} pairs
    */
-  setTexture(type, textureLabel, options = {}) {
+  setTexture(
+    type,
+    textureLabel,
+    {
+      samplerUniform = undefined,
+      useUniform = undefined,
+      extraUniforms = {},
+    } = {},
+  ) {
+    const uLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
     const textureInfo = {
       textureLabel,
-      ...options,
+      samplerUniform: samplerUniform ?? `u${uLabel}Map`,
+      useUniform: useUniform ?? `uUse${uLabel}Map`,
+      extraUniforms: extraUniforms,
     };
 
     // TODO proper cleaning check here, this should work for now
@@ -64,15 +79,20 @@ export default class TexturedMaterial extends Material {
 
   /**
    * Remove a texture from the material
-   * @param {*} type
+   * @param {string} type the usage of the material in the shader eg normal, bump, etc
    */
   removeTexture(type) {
     const locs = this._locs.get(type);
 
-    // TODO figure out the internal structure of locs
-    // how many needed per texture? should be a couple...
-    // 1 for the texture sampler itself and then more for
-    // config like one as a bool label use bump, bumpScale...?
+    // make sure we turn off the texture usage in the shader before
+    // we delete any information...
+    if (!!locs && !!locs.use) {
+      this._gl.uniform1i(locs.use, 0);
+    }
+
+    // TODO: I don't need to unbind anything here since we will
+    // ignore related locs if the use loc is false, but
+    // it might be better to not have garbage left behind
 
     this.textures.delete(type);
     this._locs.delete(type);
@@ -111,15 +131,35 @@ export default class TexturedMaterial extends Material {
 
     for (const [type, texture] of this.textures) {
       const locs = this._locs.get(type);
-      const texture = scene.getTexture(this.textureLabel);
+      const texture2d = scene.getTexture(this.textureLabel);
 
-      texture.bind(textureUnit);
+      // TODO: do we need to verify the texture still exists?
+      // might be useful since user could remove a texture while things
+      // are running...
 
-      if (locs.sampler2D !== null) {
-        gl.uniform1i(locs.sampler2D, textureUnit);
+      texture2d.bind(textureUnit);
+
+      if (!!locs.sampler) {
+        this._gl.uniform1i(locs.sampler, textureUnit);
       }
 
-      // TODO enumerate the other uniforms
+      if (!!locs.use) {
+        this._gl.uniform1i(locs.use, 1);
+      }
+
+      for (const [uniformName, value] of Object.entries(
+        texture.extraUniforms,
+      )) {
+        // TODO: for now just support floats, maybe a robust
+        // type split later?
+        if (typeof value == "number") {
+          this._gl.uniform1f(locs[uniformName], value);
+        } else {
+          console.error(
+            `Unsupported extra uniform (type, value): (${typeof value}, ${value})`,
+          );
+        }
+      }
 
       textureUnit++;
     }
@@ -132,14 +172,17 @@ export default class TexturedMaterial extends Material {
    * @param {*} texture
    */
   _getLocs(type, texture) {
-    // TODO make full list of the locs we need per texture...
-
-    // sampler2D : the texture itself
-    // dynamic list of uniforms? since you can have things like bumpScale etc
-
     const locs = {
-      sampler2D: this._gl.getUniformLocation(this._program),
+      sampler: this._gl.getUniformLocation(this._program),
+      use: this._gl.getUniformLocation(this._program, texture.useUniform),
     };
+
+    for (const extraUniformName of Object.keys(texture.extraUniforms)) {
+      locs[extraUniformName] = gl.getUniformLocation(
+        this._program,
+        extraUniformName,
+      );
+    }
 
     this._locs.set(type, locs);
   }

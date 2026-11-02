@@ -4,6 +4,9 @@ A scene "engine" created during homework 3 in CS512, and planned to be used for 
 ## Features
 TODO
 
+## Documentation
+This repository comes with [docs generated via jsdoc](./docs/index.html)
+
 ## Usage 
 This repository can be used in another project as a npm module.
 
@@ -12,15 +15,15 @@ This repository can be used in another project as a npm module.
 cd project
 
 # add this repository as a submodule
-git submodule add 
+git submodule add https://github.com/njasi/UNM-CS512-PotatoEngine.git PotatoEngine
 
-# setup npm project if needed
+# setup your npm project if needed
 npm init
 
-# add the submodule as a dependency
+# add the submodule as a local dependency
 npm install ./PotatoEngine
 
-# to update the submodule copy
+# to update the potato engine submodule copy
 git submodule update --remote
 ```
 
@@ -32,7 +35,7 @@ Setup
 npm i
 ```
 
-Dev Server
+Dev Server (opens localhost:8080 by default)
 
 ```sh
 npm run start
@@ -44,11 +47,17 @@ Production build
 npm run build
 ```
 
+Update Documentation
+
+```sh
+npm run docs
+```
+
 
 ## TODO
 - [ ] shader "ping ponging" for support of multiple shaders per object, consider: s_1 material -> s_2 lighting
     - [ ] should also allow passes for more complicated lighting later if interested
     - [ ] bind basic values to shader uniforms for all shaders like lighting, position, transformation etc
-- [ ] object reaping, consider cannon balls far out of range... these should be killed
+- [x] object reaping, consider cannon balls far out of range... these should be killed
 - [o] standardize object classes & clean up interfaces
 - [ ] add handling for mirroring and skewing in gl pipeline.

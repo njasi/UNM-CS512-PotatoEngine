@@ -20,14 +20,14 @@ const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;
 
 scene.addShader(
-  new Shader("basicVertex", scene.gl.VERTEX_SHADER, "/src/shaders/vertex.vert"),
+  new Shader("basicVertex", scene.gl.VERTEX_SHADER, "../../src/shaders/vertex.vert"),
 );
 
 scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "/src/shaders/fragment.frag",
+    "../../src/shaders/fragment.frag",
   ),
 );
 
@@ -35,7 +35,7 @@ scene.addShader(
   new Shader(
     "phongFragment",
     scene.gl.FRAGMENT_SHADER,
-    "/src/shaders/phong.frag",
+    "../../src/shaders/phong.frag",
   ),
 );
 

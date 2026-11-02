@@ -31,7 +31,7 @@ scene.addShader(
   new Shader(
     "basicVertex",
     scene.gl.VERTEX_SHADER,
-    "/src/shaders/vertex.vert",
+    "../../src/shaders/vertex.vert",
   ),
 );
 
@@ -39,7 +39,7 @@ scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "/src/shaders/fragment.frag",
+    "../../src/shaders/fragment.frag",
   ),
 );
 

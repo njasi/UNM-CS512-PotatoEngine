@@ -14,14 +14,18 @@ scene.camera.move(0, -8, -25);
 scene.rotationX += Math.PI / 6;
 
 scene.addShader(
-  new Shader("basicVertex", scene.gl.VERTEX_SHADER, "/src/shaders/vertex.vert"),
+  new Shader(
+    "basicVertex",
+    scene.gl.VERTEX_SHADER,
+    "../../src/shaders/vertex.vert",
+  ),
 );
 
 scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "/src/shaders/fragment.frag",
+    "../../src/shaders/fragment.frag",
   ),
 );
 

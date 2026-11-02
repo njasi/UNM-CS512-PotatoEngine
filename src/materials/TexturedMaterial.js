@@ -4,6 +4,7 @@
 
 import { Scene } from "..";
 import { ShaderProgram } from "../shaders";
+import Material from "./Material";
 
 /**
  * Wrapper class to represent a material that uses texture data

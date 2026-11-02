@@ -14,7 +14,7 @@ import basicControls from "../../src/controls/basic";
 import { common } from "../../src/materials";
 import Light from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
-import { cacheOBJ, loadOBJ } from "../../src/objects/loaders";
+import { cacheOBJ, generateOBJObject, loadOBJ } from "../../src/objects/loaders";
 
 const scene = new Scene("glcanvas");
 scene.rotationX += Math.PI / 6;

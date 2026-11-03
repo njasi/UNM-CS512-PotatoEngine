@@ -5,6 +5,7 @@ import {
   generateCubeObject,
   generateGridObject,
   generateSphereObject,
+  generateTorusObject,
 } from "../../src/objects";
 
 import basicControls from "../../src/controls/basic";
@@ -162,6 +163,16 @@ function initSceneObjects(object = "cube", shader = "phong") {
         1,
         2,
       );
+      break;
+    case "torus":
+      texturedObject = generateTorusObject(
+        "texturedObject",
+        colors.white,
+        32,
+        1,
+        0.25,
+      );
+
       break;
     case "sphere":
     default:

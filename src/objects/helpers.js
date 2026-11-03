@@ -83,13 +83,15 @@ export const generateBarrelObject = makeSceneObjectGenerator(generateBarrel);
  * Generate a cone
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
- * @param {*} segments how many divisions there are
- * @param {*} r the radius of the base of the cone
- * @param {*} h the height of the cone
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
- * @param {*} solid if the bottom of the cone should be closed
+ * @param {number} segments how many divisions there are
+ * @param {number} r the radius of the base of the cone
+ * @param {number} h the hright of the cone
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the cylinder
+ * @param {number} options.y_c y coord of the center of the cylinder
+ * @param {number} options.z_c z coord of the center of the cylinder
+ * @param {boolean} options.solid if the bottom of the cone should be closed
+ * @returns {PrimitiveObject}
  * @returns {SceneObject}
  */
 export const generateConeObject = makeSceneObjectGenerator(generateCone);
@@ -158,12 +160,13 @@ export const generateNGonPrismObject =
  *
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
- * @param {*} segments how many divisions there are
- * @param {*} R the big radius of the torus
- * @param {*} r the radius of the tube part of the torus
- * @param {*} x_c x coord of the center of the torus
- * @param {*} y_c y coord of the center of the torus
- * @param {*} z_c z coord of the center of the torus
+ * @param {number} segments how many divisions there are
+ * @param {number} R the big radius of the torus
+ * @param {number} r the radius of the tube part of the torus
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the torus
+ * @param {number} options.y_c y coord of the center of the torus
+ * @param {number} options.z_c z coord of the center of the torus
  * @returns {SceneObject}
  */
 export const generateTorusObject = makeSceneObjectGenerator(generateTorus);

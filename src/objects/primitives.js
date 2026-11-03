@@ -582,15 +582,21 @@ export function generateCylinder(
 /**
  * Generate a torus
  *
- * @param {*} segments how many divisions there are
- * @param {*} R the big radius of the torus
- * @param {*} r the radius of the tube part of the torus
- * @param {*} x_c x coord of the center of the torus
- * @param {*} y_c y coord of the center of the torus
- * @param {*} z_c z coord of the center of the torus
+ * @param {number} segments how many divisions there are
+ * @param {number} R the big radius of the torus
+ * @param {number} r the radius of the tube part of the torus
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the torus
+ * @param {number} options.y_c y coord of the center of the torus
+ * @param {number} options.z_c z coord of the center of the torus
  * @returns {PrimitiveObject}
  */
-export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
+export function generateTorus(
+  segments,
+  R,
+  r,
+  { x_c = 0, y_c = 0, z_c = 0 } = {},
+) {
   const vertices = [];
   const normals = [];
   const indices = [];
@@ -612,6 +618,8 @@ export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
       const ny = Math.cos(vRad) * Math.sin(uRad);
       const nz = Math.sin(vRad);
       normals.push(nx, ny, nz);
+      texCoords.push(u / segments, v / segments);
+      tangents.push(-Math.sin(uRad), Math.cos(uRad), 0);
     }
   }
 
@@ -628,7 +636,7 @@ export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices, normals });
+  return new PrimitiveObject(vertices, { indices, normals, texCoords, tangents });
 }
 
 /**

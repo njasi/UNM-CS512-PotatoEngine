@@ -29,7 +29,7 @@ function addShaders() {
     new Shader(
       "basicVertex",
       scene.gl.VERTEX_SHADER,
-      "../../src/shaders/vertex.vert",
+      "../../src/shaders/vertex/phongTextured.vert",
     ),
   );
 
@@ -37,7 +37,7 @@ function addShaders() {
     new Shader(
       "phongFragment",
       scene.gl.FRAGMENT_SHADER,
-      "../../src/shaders/phong.frag",
+      "../../src/shaders/fragment/phongTextured.frag",
     ),
   );
 
@@ -136,6 +136,14 @@ function updateScene(dt) {
 
   cube.materialLabel =
     MAT_CYCLE[Math.floor(scene.time / 2000) % MAT_CYCLE.length];
+
+  scene
+    .getMaterial("bricks_bump_only")
+    .setTextureExtraUniform(
+      TexturedMaterial.TEXTURE_TYPE_BUMP,
+      "uBumpScale",
+      Math.sin(scene.time / 100) * 10,
+    );
 }
 
 /**

@@ -83,7 +83,7 @@ export default class TexturedMaterial extends Material {
 
     if (this._gl && this._program) {
       // add after the program has started...
-      this._getLocs(type, texture);
+      this._getLocs(type, textureInfo);
     }
   }
 
@@ -173,6 +173,33 @@ export default class TexturedMaterial extends Material {
       }
 
       textureUnit++;
+    }
+  }
+
+  /**
+   * Set the value of a extra uniform on a texture map
+   * without re setting the entire texture
+   * @param {String} type
+   * @param {String} uniformName
+   * @param {*} value
+   */
+  setTextureExtraUniform(type, uniformName, value) {
+    const texture = this._textures.get(type);
+    if (!texture) {
+      throw new Error(`Texture type "${type}" is not set`);
+    }
+
+    // updated value will propagate to shader in updateUniforms
+    texture.extraUniforms[uniformName] = value;
+
+    // update the locations as well
+    // since we could be adding an extra loc
+    const locs = this._locs.get(type);
+    if (this._gl && this._program && locs && !(uniformName in locs)) {
+      locs[uniformName] = this._gl.getUniformLocation(
+        this._program,
+        uniformName,
+      );
     }
   }
 

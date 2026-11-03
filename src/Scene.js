@@ -353,8 +353,6 @@ export default class Scene {
       );
     }
 
-    console.log(vertLabel, fragLabel);
-
     this.addProgram(label, vertLabel, fragLabel, wrapperClass);
   }
 

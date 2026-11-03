@@ -7,12 +7,12 @@ import {
 } from "../../src/objects";
 
 import basicControls from "../../src/controls/basic";
-import { common } from "../../src/materials";
+import { common, TexturedMaterial } from "../../src/materials";
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 
 const scene = new Scene("glcanvas");
-scene.camera.move(0, 0, -10);
+scene.camera.move(0, 0, 0);
 scene.rotationX += Math.PI / 6;
 
 function addLights() {
@@ -21,13 +21,7 @@ function addLights() {
     direction: [1, -1, 0],
     intensity: 1,
   });
-  const globalLight2 = new Light("directionalLight2", [0, 0, 0], {
-    type: LIGHT_DIRECTIONAL,
-    direction: [-1, -1, -1],
-    intensity: 1,
-  });
   scene.addLight(globalLight);
-  scene.addLight(globalLight2);
 }
 
 function addShaders() {
@@ -79,35 +73,67 @@ function addMaterials() {
   scene.addMaterial(common.diffuseOnly("diffuseOnly"), "phong");
   scene.addMaterial(common.specularOnly("specularOnly"), "phong");
   scene.addMaterial(common.metallic("gold", colors.gold), "phong");
+
+  const bricks_albedo_only = new TexturedMaterial("bricks_albedo_only", {
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "bricks" },
+  });
+
+  const bricks_bump_only = new TexturedMaterial("bricks_bump_only", {
+    [TexturedMaterial.TEXTURE_TYPE_BUMP]: {
+      textureLabel: "texture2",
+      extraUniforms: { uBumpScale: 10 },
+    },
+  });
+
+  const bricks_normal_only = new TexturedMaterial("bricks_normal_only", {
+    [TexturedMaterial.TEXTURE_TYPE_NORMAL]: {
+      textureLabel: "brick2",
+      extraUniforms: { uNormalScale: 1 },
+    },
+  });
+
+  const bricks_bump_albedo = new TexturedMaterial("bricks_bump_albedo", {
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "bricks" },
+    [TexturedMaterial.TEXTURE_TYPE_BUMP]: {
+      textureLabel: "texture2",
+      extraUniforms: { uBumpScale: 100 },
+    },
+  });
+
+  scene.addMaterial(bricks_albedo_only, "phong");
+  scene.addMaterial(bricks_bump_only, "phong");
+  scene.addMaterial(bricks_normal_only, "phong");
+  scene.addMaterial(bricks_bump_albedo, "phong");
 }
 
-let prims = [];
+const MAT_CYCLE = [
+  "bricks_albedo_only",
+  "bricks_normal_only",
+  "bricks_bump_only",
+  "bricks_bump_albedo",
+  "flat",
+];
 
-function initSceneObjects(
-  segments = 32,
-  color = colors.gold,
-  shader = "phong",
-  mat = "gold",
-) {
-  prims = [];
+const cube = generateCubeObject("testCube", colors.gold);
 
-  scene.removeObject("testCube");
-  const cube = generateCubeObject("testCube", color);
-  prims.push(cube);
-  scene.addObject(cube, shader, mat);
-  cube.position = [3, 1, 0];
-
-  scene.removeObject("testSphere");
-  const sphere = generateSphereObject("testSphere", color, segments, 1);
-  prims.push(sphere);
-  scene.addObject(sphere, shader, "glass", {
-    passes: ["transparent"],
-    addChildren: true,
-  });
-  sphere.position = [-3, 1, 0];
-
-  sphere.lightingRadius = 1;
+function initSceneObjects(shader = "phong") {
+  cube.materialLabel = "bricks_albedo_only";
+  scene.addObject(cube, shader);
+  cube.position = [0, 0, 0];
   cube.lightingRadius = 2;
+}
+
+/**
+ * Update the scene
+ * @param {*} dt
+ */
+function updateScene(dt) {
+  cube.rotation[0] += (dt * Math.PI) / 10;
+  cube.rotation[1] += (dt * Math.PI) / 10;
+  cube.rotation[2] += (dt * Math.PI) / 10;
+
+  cube.materialLabel =
+    MAT_CYCLE[Math.floor(scene.time / 2000) % MAT_CYCLE.length];
 }
 
 /**
@@ -122,8 +148,11 @@ async function main() {
   addShaders();
   addMaterials();
   scene.createTexture("bricks", "./assets/brick.png");
+  scene.createTexture("brick2", "./assets/brick2.png");
   scene.createTexture("texture2", "./assets/texture2.jpg");
   scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
+
+  scene.setUpdateCB(updateScene);
 
   // refactored loading to be less annoying lol
   await scene.load();

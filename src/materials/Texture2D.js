@@ -1,24 +1,23 @@
 /** @module materials/Texture2D */
 
-
 /**
  * Convience representation of a 2D texture
  * @class
  * @alias module:materials/Texture2D
- * 
+ *
  */
 export default class Texture2D {
   /**
-   * 
-   * @param {*} gl 
-   * @param {Object} [options={}] 
-   * @param {boolean} [options.flipY=true] 
-   * @param {boolean} [options.mipmaps=true] 
-   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR] 
-   * @param {*} [options.magFilter=gl.LINEAR] 
-   * @param {*} [options.wrapS=gl.REPEAT] 
-   * @param {*} [options.wrapT=gl.REPEAT] 
-   * @param {number[]} [options.placeholder=[128, 128, 255, 255]] 
+   * Create a new 2d texture...
+   * @param {WebGL2RenderingContext} gl
+   * @param {Object} [options={}]
+   * @param {boolean} [options.flipY=true]
+   * @param {boolean} [options.mipmaps=true]
+   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
+   * @param {*} [options.magFilter=gl.LINEAR]
+   * @param {*} [options.wrapS=gl.REPEAT]
+   * @param {*} [options.wrapT=gl.REPEAT]
+   * @param {number[]} [options.placeholder=[128, 128, 255, 255]]
    */
   constructor(
     gl,
@@ -91,8 +90,8 @@ export default class Texture2D {
 
   /**
    * parse some valid source to the texture
-   * 
-   * @param {TexImageSource} source 
+   *
+   * @param {TexImageSource} source
    */
   upload(source) {
     const gl = this.gl;

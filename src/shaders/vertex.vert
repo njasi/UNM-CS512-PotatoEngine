@@ -3,6 +3,8 @@
 in vec3 aPosition;
 in vec3 aColor;
 in vec3 aNormal;
+in vec3 aTangent;
+in vec2 aTexCoord;
 
 uniform float uTime; // time in sec
 uniform mat4 uModelViewMatrix;
@@ -14,7 +16,7 @@ uniform mat4 uWorldTransformationMatrix;
 
 // object translation coords, not an actual
 // translation matrix
-uniform vec3 uPosition; 
+uniform vec3 uPosition;
 uniform vec3 uRotation;
 uniform vec3 uScale;
 
@@ -24,6 +26,8 @@ uniform int uBVH;
 out vec3 vColor;
 out vec3 vPosition;
 out vec3 vNormal;
+out vec3 vTangent;
+out vec2 vTexCoord;
 
 // create a 2d scaling matrix
 mat3 scaling2D(float xs, float ys){
@@ -109,10 +113,10 @@ mat4 rotateZYX(float ax, float ay, float az) {
 }
 
 // rotate around all axis in default order
-mat4 rotate3D(float ax, float ay, float az){
+mat4 rotate3D(float ax, float ay, float az) {
     // TODO could probaby make more efficient by writing out the whole matrix
     //      but tbh thats what the X,Y,Z specific rotations are for anyway
-    return rotateXYZ(ax, ay, az);
+  return rotateXYZ(ax, ay, az);
 }
 
 // get rotation matrix based on the rotation order
@@ -230,11 +234,14 @@ void main() {
     R = getBVHRotation(uRotation.x, uRotation.y, uRotation.z, uBVH);
   }
 
-  mat4 M =  uModelViewMatrix * uModelTransformationMatrix * uWorldTransformationMatrix * T * R * S;
+  mat4 M = uModelViewMatrix * uModelTransformationMatrix * uWorldTransformationMatrix * T * R * S;
+  mat3 mv = mat3(M);
 
   vPosition = (M * vec4(aPosition, 1.0f)).xyz;
-  vNormal = mat3(M) * aNormal;
+  vNormal = transpose(inverse(mv)) * aNormal;
+  vTangent = mv * aTangent;
   vColor = aColor;
+  vTexCoord = aTexCoord;
 
   gl_Position = uProjectionMatrix * vec4(vPosition, 1.0f);
 }

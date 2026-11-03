@@ -35,13 +35,18 @@ export function makeSceneObjectGenerator(generatePrimitive) {
         ? generateFillerColors(prim.vertexCount, color, true)
         : prim.colors;
 
-    return new SceneObject(
-      objectName,
-      new Float32Array(prim.vertices),
-      new Float32Array(prim.colors),
-      new Uint16Array(prim.indices),
-      new Float32Array(prim.normals),
-    );
+
+    console.log("tangents:", prim.tangents)
+    console.log("texCoords:", prim.texCoords)
+    return prim.toSceneObject(objectName)
+
+    // return new SceneObject(
+    //   objectName,
+    //   new Float32Array(prim.vertices),
+    //   new Float32Array(prim.colors),
+    //   new Uint16Array(prim.indices),
+    //   new Float32Array(prim.normals),
+    // );
   };
 }
 

@@ -29,6 +29,7 @@ export default class TexturedMaterial extends Material {
   static TEXTURE_TYPE_ALBEDO = "albedo";
 
   constructor(label, textures = {}) {
+    super(label);
     // internal state for ease of use
     // TODO should do this across the other classes...
     // would be cleaner than the current annoying pass
@@ -78,7 +79,7 @@ export default class TexturedMaterial extends Material {
     // TODO proper cleaning check here, this should work for now
     // to make sure an old texture is removed properly
     this.removeTexture(type);
-    this.textures.set(type, textureInfo);
+    this._textures.set(type, textureInfo);
 
     if (this._gl && this._program) {
       // add after the program has started...
@@ -103,7 +104,7 @@ export default class TexturedMaterial extends Material {
     // ignore related locs if the use loc is false, but
     // it might be better to not have garbage left behind
 
-    this.textures.delete(type);
+    this._textures.delete(type);
     this._locs.delete(type);
   }
 
@@ -123,7 +124,7 @@ export default class TexturedMaterial extends Material {
     // will still need this to interface with my render loop in scene.
     this.programLabel = shaderProgram.label;
 
-    for (const [type, texture] of this.textures) {
+    for (const [type, texture] of this._textures) {
       this._getLocs(type, texture);
     }
   }
@@ -131,16 +132,16 @@ export default class TexturedMaterial extends Material {
   /**
    * Bind the textures & update related uniforms
    * @param {WebGL2RenderingContext} gl
-   * @param {Scene} scene
+   * @param {Scene} scene the scene prompting the update
    */
   updateUniforms(gl, scene) {
     super.updateUniforms(gl);
 
-    const textureUnit = 0;
+    let textureUnit = 0;
 
-    for (const [type, texture] of this.textures) {
+    for (const [type, texture] of this._textures) {
       const locs = this._locs.get(type);
-      const texture2d = scene.getTexture(this.textureLabel);
+      const texture2d = scene.getTexture(texture.textureLabel);
 
       // TODO: do we need to verify the texture still exists?
       // might be useful since user could remove a texture while things
@@ -148,6 +149,7 @@ export default class TexturedMaterial extends Material {
 
       texture2d.bind(textureUnit);
 
+      // console.log("LOCS:", this._locs)
       if (!!locs.sampler) {
         this._gl.uniform1i(locs.sampler, textureUnit);
       }
@@ -171,6 +173,16 @@ export default class TexturedMaterial extends Material {
       }
 
       textureUnit++;
+    }
+  }
+
+  /**
+   * Clean up the uniforms after material was used
+   */
+  cleanup() {
+    super.cleanup();
+    for (const [type, _] of this._textures) {
+      this.disableTexture(type);
     }
   }
 
@@ -218,7 +230,7 @@ export default class TexturedMaterial extends Material {
     // get the cursed extra uniforms, may want to nest these or prefix them with
     // the type by default?
     for (const extraUniformName of Object.keys(texture.extraUniforms)) {
-      locs[extraUniformName] = gl.getUniformLocation(
+      locs[extraUniformName] = this._gl.getUniformLocation(
         this._program,
         extraUniformName,
       );

@@ -95,6 +95,8 @@ export default class SceneObject {
     this.colors = colors;
     this.indices = indices;
     this.normals = normals;
+    this.tangents = tangents;
+    this.texCoords = texCoords;
 
     // TODO parent and children for hierarchy later
     this.parent = parent;
@@ -212,11 +214,11 @@ export default class SceneObject {
 
     this.tbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.tbo);
-    gl.bufferData(gl.ARRAY_BUFFER, this.tan, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, this.tangents, gl.STATIC_DRAW);
 
     this.xbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.tbo);
-    gl.bufferData(gl.ARRAY_BUFFER, this.tan, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.xbo);
+    gl.bufferData(gl.ARRAY_BUFFER, this.texCoords, gl.STATIC_DRAW);
 
     this.ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
@@ -248,7 +250,7 @@ export default class SceneObject {
     if (this.texCoordLoc !== -1) {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.xbo);
       gl.enableVertexAttribArray(this.texCoordLoc);
-      gl.vertexAttribPointer(this.texCoordLoc, 3, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribPointer(this.texCoordLoc, 2, gl.FLOAT, false, 0, 0);
     }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.cbo);

@@ -314,7 +314,7 @@ export default class Scene {
    * - setup its uniforms when we init shaders later
    *
    * @param {Material} material the material wrapper
-   * @param {ShaderProgram} program the shader program to use this material in
+   * @param {string} program the label of the shader program to use this material in
    */
   addMaterial(material, program) {
     material.programLabel = program;
@@ -595,6 +595,16 @@ export default class Scene {
   }
 
   /**
+   * Cleanup the active material and set it to undefined
+   */
+  _clearActiveMaterial() {
+    if (this.activeMaterial !== undefined) {
+      this.getMaterial(this.activeMaterial).cleanup();
+      this.activeMaterial = undefined;
+    }
+  }
+
+  /**
    * view, projection, scene transform
    *
    * might need these in render passes so sectioning out...
@@ -626,6 +636,8 @@ export default class Scene {
 
       // if we are rendering with a new program switch over
       if (obj.programLabel != this.activeProgram) {
+        this._clearActiveMaterial();
+
         shaderProgram.use(this.gl);
 
         // TODO: I should really move these functions into the shader class
@@ -648,18 +660,19 @@ export default class Scene {
 
         //
         this.activeProgram = obj.programLabel;
-        this.activeMaterial = undefined;
       }
+      const nextMaterial = shaderProgram.hasMaterial
+        ? obj.materialLabel
+        : undefined;
 
       // if shader uses mats and the active material is not this
       // one then update it
-      if (
-        shaderProgram.hasMaterial &&
-        obj.materialLabel != this.activeMaterial &&
-        obj.materialLabel != undefined
-      ) {
-        this.getMaterial(obj.materialLabel).updateUniforms(this.gl);
-        this.activeMaterial = obj.materialLabel;
+      if (nextMaterial !== this.activeMaterial) {
+        this._clearActiveMaterial();
+        if (nextMaterial !== undefined) {
+          this.getMaterial(nextMaterial).updateUniforms(this.gl, this);
+          this.activeMaterial = nextMaterial;
+        }
       }
 
       if (shaderProgram.hasLight) {
@@ -696,7 +709,7 @@ export default class Scene {
       // reset switch flags
       // NOTE: if end up in a situation with only one program
       // can remove the flag. might be worth a dynamic check
-      this.activeMaterial = undefined;
+      // this.activeMaterial = undefined;
       this.activeProgram = undefined;
 
       this._renderPass(pass, matrices);

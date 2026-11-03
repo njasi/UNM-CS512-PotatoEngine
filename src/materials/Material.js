@@ -1,22 +1,21 @@
 /** @module materials/Material */
 
-
 /**
  * Convenience Interface class for basic shader materials
- * 
+ *
  * @class
  * @alias module:materials/Material
  */
 export default class Material {
   /**
    * create a material instance
-   * @param {string} label 
+   * @param {string} label
    */
   constructor(label) {
-    this.label = label
+    this.label = label;
 
     // set in secne when we add a mat
-    this.programLabel = undefined
+    this.programLabel = undefined;
   }
 
   /**
@@ -31,4 +30,9 @@ export default class Material {
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   updateUniforms(gl) {}
+
+  /**
+   * Clean up uniforms that could pollute effects after material was used
+   */
+  cleanup() {}
 }

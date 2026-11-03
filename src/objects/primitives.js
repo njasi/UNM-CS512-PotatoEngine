@@ -271,27 +271,27 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
 
 /**
  * Generate a cone
- * @param {*} segments how many divisions there are
- * @param {*} r the radius of the base of the cone
- * @param {*} h the hright of the cone
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
- * @param {*} solid if the bottom of the cone should be closed
+ * @param {number} segments how many divisions there are
+ * @param {number} r the radius of the base of the cone
+ * @param {number} h the hright of the cone
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the cylinder
+ * @param {number} options.y_c y coord of the center of the cylinder
+ * @param {number} options.z_c z coord of the center of the cylinder
+ * @param {boolean} options.solid if the bottom of the cone should be closed
  * @returns {PrimitiveObject}
  */
 export function generateCone(
   segments,
   r,
   h,
-  x_c = 0,
-  y_c = 0,
-  z_c = 0,
-  solid = true,
+  { x_c = 0, y_c = 0, z_c = 0, solid = true } = {},
 ) {
   const vertices = [];
   const normals = [];
   const indices = [];
+  const texCoords = [];
+  const tangents = [];
 
   for (let v = 0; v <= segments; v++) {
     const vFrac = v / segments;
@@ -308,6 +308,8 @@ export function generateCone(
       const ny = (h * Math.sin(uRad)) / (h * h + r * r);
       const nz = r / (h * h + r * r);
       normals.push(nx, ny, nz);
+      texCoords.push(u / segments, vFrac);
+      tangents.push(-Math.sin(uRad), Math.cos(uRad), 0);
     }
   }
 
@@ -327,6 +329,8 @@ export function generateCone(
     const bottomCenterIndex = vertices.length / 4;
     vertices.push(x_c, y_c, z_c, 1);
     normals.push(0, 0, -1);
+    texCoords.push(0.5, 0.5);
+    tangents.push(1, 0, 0);
 
     const capStart = vertices.length / 4;
 
@@ -334,6 +338,8 @@ export function generateCone(
       const uRad = (2 * Math.PI * u) / segments;
       vertices.push(x_c + r * Math.cos(uRad), y_c + r * Math.sin(uRad), z_c, 1);
       normals.push(0, 0, -1);
+      texCoords.push(0.5 + 0.5 * Math.cos(uRad), 0.5 - 0.5 * Math.sin(uRad));
+      tangents.push(1, 0, 0);
     }
 
     for (let u = 0; u < segments; u++) {
@@ -344,7 +350,12 @@ export function generateCone(
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices, normals });
+  return new PrimitiveObject(vertices, {
+    indices,
+    normals,
+    texCoords,
+    tangents,
+  });
 }
 
 /**
@@ -401,6 +412,8 @@ export function generateCylinder(
   const vertices = [];
   const normals = [];
   const indices = [];
+  const texCoords = [];
+  const tangents = [];
 
   segments_h = segments_h == undefined ? segments : segments_h;
 
@@ -581,6 +594,8 @@ export function generateTorus(segments, R, r, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
   const normals = [];
   const indices = [];
+  const texCoords = [];
+  const tangents = [];
 
   for (let v = 0; v <= segments; v++) {
     const vRad = (2 * Math.PI * v) / segments;
@@ -629,6 +644,8 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
   const normals = [];
   const indices = [];
+  const texCoords = [];
+  const tangents = [];
 
   // iterate over depth
   for (let z = 0; z <= segments; z++) {

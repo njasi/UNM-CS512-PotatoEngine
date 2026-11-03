@@ -1,6 +1,7 @@
 import Scene from "../../src/Scene";
 import { PhongShaderProgram, Shader } from "../../src/shaders";
 import {
+  generateConeObject,
   generateCubeObject,
   generateGridObject,
   generateSphereObject,
@@ -153,6 +154,15 @@ function initSceneObjects(object = "cube", shader = "phong") {
     case "cube":
       texturedObject = generateCubeObject("texturedObject", colors.white);
       break;
+    case "cone":
+      texturedObject = generateConeObject(
+        "texturedObject",
+        colors.white,
+        32,
+        1,
+        2,
+      );
+      break;
     case "sphere":
     default:
       texturedObject = generateSphereObject(
@@ -222,7 +232,7 @@ async function main() {
 
   basicControls.setupMouseControls(scene);
   basicControls.setupKeyboardControls(scene);
-  attachListeners()
+  attachListeners();
 
   setInterval(() => {
     scene.render();

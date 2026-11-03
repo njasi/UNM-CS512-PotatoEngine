@@ -123,6 +123,9 @@ const MAT_CYCLE = [
   "flat",
 ];
 
+/**
+ * Add the texture structs to the scene
+ */
 function addTextures() {
   scene.createTexture("bricks", "./assets/brick.png");
   scene.createTexture("brick2", "./assets/brick2.png");
@@ -137,14 +140,42 @@ function addTextures() {
   });
 }
 
-// const texturedObject = generateCubeObject("testCube", colors.white);
-const texturedObject = generateSphereObject("testSphere", colors.white, 32, 1);
+let texturedObject;
+/**
+ * Setup the scene
+ * @param {string} object which object type to use, cube|sphere
+ * @param {string} shader which shader to use
+ */
+function initSceneObjects(object = "cube", shader = "phong") {
+  scene.removeObject("texturedObject");
 
-function initSceneObjects(shader = "phong") {
+  switch (object) {
+    case "cube":
+      texturedObject = generateCubeObject("texturedObject", colors.white);
+      break;
+    case "sphere":
+    default:
+      texturedObject = generateSphereObject(
+        "texturedObject",
+        colors.white,
+        32,
+        1,
+      );
+      break;
+  }
+
   texturedObject.materialLabel = "bricks_albedo_only";
   scene.addObject(texturedObject, shader);
   texturedObject.position = [0, 0, 0];
   texturedObject.lightingRadius = 2;
+}
+
+function attachListeners() {
+  document
+    .getElementById("prim-selector")
+    .addEventListener("input", (event) => {
+      initSceneObjects(event.target.value);
+    });
 }
 
 /**
@@ -191,6 +222,7 @@ async function main() {
 
   basicControls.setupMouseControls(scene);
   basicControls.setupKeyboardControls(scene);
+  attachListeners()
 
   setInterval(() => {
     scene.render();

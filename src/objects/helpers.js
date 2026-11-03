@@ -1,7 +1,7 @@
 /**
  * @module objects/helpers
- * @description Helper functions to make generating SceneObjects / primitives easier. 
- * Most of these functions are just direct wrappers over a corresponding function in 
+ * @description Helper functions to make generating SceneObjects / primitives easier.
+ * Most of these functions are just direct wrappers over a corresponding function in
  * ./primitives.js
  */
 
@@ -35,7 +35,7 @@ export function makeSceneObjectGenerator(generatePrimitive) {
         ? generateFillerColors(prim.vertexCount, color, true)
         : prim.colors;
 
-    return prim.toSceneObject(objectName)
+    return prim.toSceneObject(objectName);
   };
 }
 
@@ -131,11 +131,12 @@ export const generateCylinderObject =
  * Generate a square grid centered on the origin
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
- * @param {*} segments
- * @param {*} size
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
+ * @param {number} segments
+ * @param {number} size
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the grid
+ * @param {number} options.y_c y coord of the center of the grid
+ * @param {number} options.z_c z coord of the center of the grid
  * @returns {SceneObject}
  */
 export const generateGridObject = makeSceneObjectGenerator(generateGrid);

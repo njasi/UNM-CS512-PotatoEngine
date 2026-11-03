@@ -172,7 +172,9 @@ function initSceneObjects(object = "cube", shader = "phong") {
         1,
         0.25,
       );
-
+      break;
+    case "grid":
+      texturedObject = generateGridObject("texturedObject", colors.white, 1, 2);
       break;
     case "sphere":
     default:

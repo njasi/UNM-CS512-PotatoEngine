@@ -636,19 +636,25 @@ export function generateTorus(
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices, normals, texCoords, tangents });
+  return new PrimitiveObject(vertices, {
+    indices,
+    normals,
+    texCoords,
+    tangents,
+  });
 }
 
 /**
  * Generate a square grid centered on the origin
- * @param {*} segments
- * @param {*} size
- * @param {*} x_c x coord of the center of the grid
- * @param {*} y_c y coord of the center of the grid
- * @param {*} z_c z coord of the center of the grid
+ * @param {number} segments
+ * @param {number} size
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the grid
+ * @param {number} options.y_c y coord of the center of the grid
+ * @param {number} options.z_c z coord of the center of the grid
  * @returns {PrimitiveObject}
  */
-export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
+export function generateGrid(segments, size, {x_c = 0, y_c = 0, z_c = 0} = {}) {
   const vertices = [];
   const normals = [];
   const indices = [];
@@ -663,6 +669,8 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
       const vertX = (x / segments - 0.5) * size + x_c;
       vertices.push(vertX, y_c, vertZ, 1);
       normals.push(0, 1, 0);
+      texCoords.push(x / segments, 1 - z / segments);
+      tangents.push(1, 0, 0);
     }
   }
 
@@ -682,7 +690,12 @@ export function generateGrid(segments, size, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices, normals });
+  return new PrimitiveObject(vertices, {
+    indices,
+    normals,
+    texCoords,
+    tangents,
+  });
 }
 
 /**

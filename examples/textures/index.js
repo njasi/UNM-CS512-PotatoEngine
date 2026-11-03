@@ -40,6 +40,8 @@ function addShaders() {
       "../../src/shaders/phong.frag",
     ),
   );
+
+  scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
 }
 
 const colors = {
@@ -147,17 +149,16 @@ function updateScene(dt) {
 async function main() {
   addShaders();
   addMaterials();
+  addLights();
+
   scene.createTexture("bricks", "./assets/brick.png");
   scene.createTexture("brick2", "./assets/brick2.png");
   scene.createTexture("texture2", "./assets/texture2.jpg");
-  scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
 
   scene.setUpdateCB(updateScene);
 
   // refactored loading to be less annoying lol
   await scene.load();
-
-  addLights();
 
   initSceneObjects();
 

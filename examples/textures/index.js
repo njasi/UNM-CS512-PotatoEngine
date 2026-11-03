@@ -27,23 +27,12 @@ function addLights() {
 }
 
 function addShaders() {
-  scene.addShader(
-    new Shader(
-      "basicVertex",
-      scene.gl.VERTEX_SHADER,
-      "../../src/shaders/vertex/phongTextured.vert",
-    ),
+  scene.createProgram(
+    "phong",
+    "../../src/shaders/vertex/phongTextured.vert",
+    "../../src/shaders/fragment/phongTextured.frag",
+    PhongShaderProgram,
   );
-
-  scene.addShader(
-    new Shader(
-      "phongFragment",
-      scene.gl.FRAGMENT_SHADER,
-      "../../src/shaders/fragment/phongTextured.frag",
-    ),
-  );
-
-  scene.addProgram("phong", "basicVertex", "phongFragment", PhongShaderProgram);
 }
 
 const colors = {

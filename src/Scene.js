@@ -305,6 +305,59 @@ export default class Scene {
     });
   }
 
+  /**
+   * Create a new shader program directly from source urls
+   * To create a shader program of a type other than the default
+   * ShaderProgram class, provide a class to the wrapperClass
+   * argument. For example the PhongShaderProgram class...
+   *
+   * @param {string} label the label of the shader program being created
+   * @param {string} vertShaderUrl the url of the vertex shader source to load for creating the program
+   * @param {string} fragShaderUrl the url of the fragment shader source to load for creating the program
+   * @param {ShaderProgram} [wrapperClass=ShaderProgram] The shader program class to use while creating it.
+   * @param {Object} [options={}]
+   * @param {string | undefined} [options.vertLabel=vertShaderUrl.split("/").pop()] set to override vertex shader label
+   * @param {string | undefined} [options.fragLabel=fragShaderUrl.split("/").pop()] set to override fragment shader label
+   */
+  createProgram(
+    label,
+    vertShaderUrl,
+    fragShaderUrl,
+    wrapperClass = shaderProg,
+    {
+      vertLabel = vertShaderUrl.split("/").pop(),
+      fragLabel = fragShaderUrl.split("/").pop(),
+    } = {},
+  ) {
+    if (!vertLabel.endsWith(".vert")) {
+      throw new Error(`Vertex shader should end in .vert: ${vertShaderUrl}`);
+    }
+
+    if (!fragLabel.endsWith(".frag")) {
+      throw new Error(`Fragment shader should end in .frag: ${fragShaderUrl}`);
+    }
+
+    try {
+      this.getShader(vertLabel);
+    } catch {
+      this.addShader(
+        new Shader(vertLabel, this.gl.VERTEX_SHADER, vertShaderUrl),
+      );
+    }
+
+    try {
+      this.getShader(fragLabel);
+    } catch {
+      this.addShader(
+        new Shader(fragLabel, this.gl.FRAGMENT_SHADER, fragShaderUrl),
+      );
+    }
+
+    console.log(vertLabel, fragLabel);
+
+    this.addProgram(label, vertLabel, fragLabel, wrapperClass);
+  }
+
   /////////////////////////
   // MATERIAL MANAGEMENT //
   /////////////////////////

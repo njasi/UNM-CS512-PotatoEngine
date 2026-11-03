@@ -73,17 +73,24 @@ float height(vec2 uv) {
 
 // steal the normal shading from the provided hw6 source
 vec3 getShadingNormal() {
-    // Tangent frame (T, B, N)
     vec3 N = normalize(vNormal);
+
+    // if there is no normal/bump make sure we use the surface normal directly
+    // important that this does not get multiplied against TBN like the others
+    // was why things looked wonkyy
+    if(!uUseNormalMap && !uUseBumpMap) {
+        return N;
+    }
+
     vec3 T = normalize(vTangent - dot(vTangent, N) * N);
     vec3 B = cross(N, T);
     mat3 TBN = mat3(T, B, N);
 
-    vec3 n = vNormal;
+    vec3 n = vec3(0.0f, 0.0f, 1.0f);
 
     if(uUseNormalMap) {
         // Normal mapping: the texture stores the tangent-space normal in [0, 1]
-        n = normalize(texture(uNormalMap, vTexCoord).rgb * 2.0f - 1.0f);
+        n = texture(uNormalMap, vTexCoord).rgb * 2.0f - 1.0f;
         n.xy *= uNormalScale;
     }
 
@@ -97,11 +104,10 @@ vec3 getShadingNormal() {
         float dhdv = (height(vTexCoord + dv) -
             height(vTexCoord - dv)) * 0.5f;
 
-        n = normalize(vec3(-uBumpScale * dhdu, -uBumpScale * dhdv, 1.0f));
-
+        n = vec3(-uBumpScale * dhdu, -uBumpScale * dhdv, 1.0f);
     }
 
-    return normalize(TBN * n);
+    return normalize(TBN * normalize(n));
 }
 
 // given the Light source, calculate the contribution

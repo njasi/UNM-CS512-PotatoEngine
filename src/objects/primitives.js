@@ -225,6 +225,8 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   const vertices = [];
   const normals = [];
   const indices = [];
+  const texCoords = [];
+  const tangents = [];
 
   for (let v = 0; v <= segments; v++) {
     const vRad = (Math.PI * v) / segments;
@@ -241,6 +243,8 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
       const ny = Math.sin(vRad) * Math.cos(uRad);
       const nz = Math.cos(vRad);
       normals.push(nx, ny, nz);
+      texCoords.push(u / segments, v / segments);
+      tangents.push(Math.cos(uRad), -Math.sin(uRad), 0);
     }
   }
 
@@ -257,7 +261,12 @@ export function generateSphere(segments, r, x_c = 0, y_c = 0, z_c = 0) {
   }
 
   // package it for the buffers
-  return new PrimitiveObject(vertices, { indices, normals });
+  return new PrimitiveObject(vertices, {
+    indices,
+    normals,
+    tangents,
+    texCoords,
+  });
 }
 
 /**

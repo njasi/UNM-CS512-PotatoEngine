@@ -123,13 +123,28 @@ const MAT_CYCLE = [
   "flat",
 ];
 
-const cube = generateCubeObject("testCube", colors.white);
+function addTextures() {
+  scene.createTexture("bricks", "./assets/brick.png");
+  scene.createTexture("brick2", "./assets/brick2.png");
+  scene.createTexture("texture2", "./assets/texture2.jpg");
+  if (window.location.host == "localhost:8080") {
+    document.getElementById("test-video-texture").src =
+      "./assets/hw4-preview.mp4";
+  }
+  scene.createTexture("video", document.getElementById("test-video-texture"), {
+    upload: true,
+    animated: true,
+  });
+}
+
+// const texturedObject = generateCubeObject("testCube", colors.white);
+const texturedObject = generateSphereObject("testSphere", colors.white, 32, 1);
 
 function initSceneObjects(shader = "phong") {
-  cube.materialLabel = "bricks_albedo_only";
-  scene.addObject(cube, shader);
-  cube.position = [0, 0, 0];
-  cube.lightingRadius = 2;
+  texturedObject.materialLabel = "bricks_albedo_only";
+  scene.addObject(texturedObject, shader);
+  texturedObject.position = [0, 0, 0];
+  texturedObject.lightingRadius = 2;
 }
 
 /**
@@ -137,11 +152,11 @@ function initSceneObjects(shader = "phong") {
  * @param {*} dt
  */
 function updateScene(dt) {
-  cube.rotation[0] += (dt * Math.PI) / 10;
-  cube.rotation[1] += (dt * Math.PI) / 10;
-  cube.rotation[2] += (dt * Math.PI) / 10;
+  texturedObject.rotation[0] += (dt * Math.PI) / 10;
+  texturedObject.rotation[1] += (dt * Math.PI) / 10;
+  texturedObject.rotation[2] += (dt * Math.PI) / 10;
 
-  cube.materialLabel =
+  texturedObject.materialLabel =
     MAT_CYCLE[Math.floor(scene.time / 2000) % MAT_CYCLE.length];
 
   scene
@@ -165,14 +180,7 @@ async function main() {
   addShaders();
   addMaterials();
   addLights();
-
-  scene.createTexture("bricks", "./assets/brick.png");
-  scene.createTexture("brick2", "./assets/brick2.png");
-  scene.createTexture("texture2", "./assets/texture2.jpg");
-  scene.createTexture("video", document.getElementById("test-video-texture"), {
-    upload: true,
-    animated: true,
-  });
+  addTextures();
 
   scene.setUpdateCB(updateScene);
 

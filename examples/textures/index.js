@@ -45,6 +45,7 @@ function addShaders() {
 }
 
 const colors = {
+  white: rgb(255, 255, 255),
   gold: rgb(255, 222, 33),
   floor: rgb(107, 107, 107),
 };
@@ -102,13 +103,19 @@ function addMaterials() {
     },
   });
 
+  const video_tex = new TexturedMaterial("video_tex", {
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "video" },
+  });
+
   scene.addMaterial(bricks_albedo_only, "phong");
   scene.addMaterial(bricks_bump_only, "phong");
   scene.addMaterial(bricks_normal_only, "phong");
   scene.addMaterial(bricks_bump_albedo, "phong");
+  scene.addMaterial(video_tex, "phong");
 }
 
 const MAT_CYCLE = [
+  "video_tex",
   "bricks_albedo_only",
   "bricks_normal_only",
   "bricks_bump_only",
@@ -116,7 +123,7 @@ const MAT_CYCLE = [
   "flat",
 ];
 
-const cube = generateCubeObject("testCube", colors.gold);
+const cube = generateCubeObject("testCube", colors.white);
 
 function initSceneObjects(shader = "phong") {
   cube.materialLabel = "bricks_albedo_only";
@@ -162,6 +169,10 @@ async function main() {
   scene.createTexture("bricks", "./assets/brick.png");
   scene.createTexture("brick2", "./assets/brick2.png");
   scene.createTexture("texture2", "./assets/texture2.jpg");
+  scene.createTexture("video", document.getElementById("test-video-texture"), {
+    upload: true,
+    animated: true,
+  });
 
   scene.setUpdateCB(updateScene);
 

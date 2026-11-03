@@ -18,6 +18,7 @@ export default class Texture2D {
    * @param {*} [options.wrapS=gl.REPEAT]
    * @param {*} [options.wrapT=gl.REPEAT]
    * @param {number[]} [options.placeholder=[128, 128, 255, 255]]
+   * @param {*} [options.animated=false]
    */
   constructor(
     gl,
@@ -29,6 +30,7 @@ export default class Texture2D {
       wrapS = gl.REPEAT,
       wrapT = gl.REPEAT,
       placeholder = [128, 128, 255, 255],
+      animated = false,
     } = {},
   ) {
     this.gl = gl;
@@ -38,6 +40,7 @@ export default class Texture2D {
     this.magFilter = magFilter;
     this.wrapS = wrapS;
     this.wrapT = wrapT;
+    this.animated = animated;
 
     this.texture = gl.createTexture();
     if (!this.texture) {
@@ -94,6 +97,12 @@ export default class Texture2D {
    * @param {TexImageSource} source
    */
   upload(source) {
+    if (!!source) {
+      this._source = source;
+    } else {
+      source = this._source;
+    }
+
     const gl = this.gl;
 
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -127,10 +136,23 @@ export default class Texture2D {
   }
 
   /**
+   * Refresh the texture from source if cached
+   */
+  _refresh() {
+    if (!!this._source) {
+      this.upload();
+    }
+  }
+
+  /**
    * bind this texture to a texture unit
    * @param {number} [unit=0] the unit
    */
   bind(unit = 0) {
+    // console.log("binding texture",this.label, this.animated)
+    if (this.animated) {
+      this._refresh();
+    }
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);

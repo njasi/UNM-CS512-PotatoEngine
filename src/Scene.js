@@ -440,18 +440,58 @@ export default class Scene {
    *
    * NOTE: ensure that you call load or loadTextures to finish the loading process
    * @param {string} label the label to use for this texture
-   * @param {string} url the source url of this texture
-   * @param {*} options
+   * @param {string|TexImageSource} source the source url of this texture
+   * @param {Object} [options={}]
+   * @param {boolean} [options.upload=false] if we are uploading a TexImageSource instead of image url
+   * @param {boolean} [options.animated=false] if the TexImageSource is animated (ie video, gif etc)
+   * @param {boolean} [options.flipY=true]
+   * @param {boolean} [options.mipmaps=true]
+   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
+   * @param {*} [options.magFilter=gl.LINEAR]
+   * @param {*} [options.wrapS=gl.REPEAT]
+   * @param {*} [options.wrapT=gl.REPEAT]
+   * @param {number[]} [options.placeholder=[128, 128, 255, 255]]
    * @returns {Texture2D}
    */
-  createTexture(label, url, options = {}) {
+  createTexture(
+    label,
+    source,
+    {
+      upload = false,
+      animated = false,
+      flipY = true,
+      mipmaps = true,
+      minFilter = this.gl.LINEAR_MIPMAP_LINEAR,
+      magFilter = this.gl.LINEAR,
+      wrapS = this.gl.REPEAT,
+      wrapT = this.gl.REPEAT,
+      placeholder = [128, 128, 255, 255],
+    } = {},
+  ) {
     if (this.textures.has(label)) {
       throw new Error(`Texture "${label}" already exists`);
     }
 
+    // reconstruct the options to pass to the texture creation
+    const options = {
+      animated,
+      flipY,
+      mipmaps,
+      minFilter,
+      magFilter,
+      wrapS,
+      wrapT,
+      placeholder,
+    };
+
     const texture = new Texture2D(this.gl, options);
     texture.label = label;
-    texture.ready = texture.load(url);
+
+    if (upload) {
+      texture.ready = texture.upload(source);
+    } else {
+      texture.ready = texture.load(source);
+    }
 
     this.textures.set(label, texture);
     return texture;

@@ -41,6 +41,7 @@ uniform sampler2D uDisplacementMap;
 uniform bool uUseDisplacementMap;
 uniform float uDisplacementU;
 uniform float uDisplacementV;
+uniform float uDisplacementStrength;
 
 layout(std140) uniform LightBlock {
     // x, y, z, type
@@ -72,7 +73,7 @@ float height(vec2 uv) {
 }
 
 // steal the normal shading from the provided hw6 source
-vec3 getShadingNormal() {
+vec3 getShadingNormal(vec2 uv) {
     vec3 N = normalize(vNormal);
 
     // if there is no normal/bump make sure we use the surface normal directly
@@ -90,7 +91,7 @@ vec3 getShadingNormal() {
 
     if(uUseNormalMap) {
         // Normal mapping: the texture stores the tangent-space normal in [0, 1]
-        n = texture(uNormalMap, vTexCoord).rgb * 2.0f - 1.0f;
+        n = texture(uNormalMap, uv).rgb * 2.0f - 1.0f;
         n.xy *= uNormalScale;
     }
 
@@ -99,10 +100,10 @@ vec3 getShadingNormal() {
         vec2 du = vec2(1.0f / float(textureSize(uBumpMap, 0).x), 0.0f);
         vec2 dv = vec2(0.0f, 1.0f / float(textureSize(uBumpMap, 0).y));
 
-        float dhdu = (height(vTexCoord + du) -
-            height(vTexCoord - du)) * 0.5f;
-        float dhdv = (height(vTexCoord + dv) -
-            height(vTexCoord - dv)) * 0.5f;
+        float dhdu = (height(uv + du) -
+            height(uv - du)) * 0.5f;
+        float dhdv = (height(uv + dv) -
+            height(uv - dv)) * 0.5f;
 
         n = vec3(-uBumpScale * dhdu, -uBumpScale * dhdv, 1.0f);
     }
@@ -161,6 +162,26 @@ vec3 phongShading(
     return fatt * intensity * color * vec3(mat.kd * baseColor * diff + mat.ks * spec);
 }
 
+// get the displaced uv coord if the displacement map is enabled
+vec2 getDisplacedUV() {
+    if(!uUseDisplacementMap) {
+        return vTexCoord;
+    }
+    vec2 displacementUV = vTexCoord + vec2(uDisplacementU, uDisplacementV);
+
+    // unsure if this is standard but this layout makes the most sense to me
+    // black (mapped to -1) shifts down-left
+    // white (mapped to+1) shifts up-right.
+    float displacement = texture(uDisplacementMap, displacementUV).r * 2.0f - 1.0f;
+
+    // base reasonable strength, may abandon the 0.05 for more transparent
+    // control on the user end?
+    float strength = uDisplacementStrength == 0.f ? 1.f : uDisplacementStrength;
+    float displacementScale = 0.05f * strength;
+    
+    return vTexCoord + vec2(displacement) * displacementScale;
+}
+
 void main() {
     mat.ka = vec3(0.2f, 0.2f, 0.2f);
     mat.kd = vec3(0.8f, 0.8f, 0.8f);
@@ -168,10 +189,11 @@ void main() {
     mat.specularExp = 1.0f;
     mat.alpha = 1.0f;
 
-    vec4 texel = uUseAlbedoMap ? texture(uAlbedoMap, vTexCoord) : vec4(1.0f);
+    vec2 uv = getDisplacedUV();
+    vec4 texel = uUseAlbedoMap ? texture(uAlbedoMap, uv) : vec4(1.0f);
 
     vec3 baseColor = vColor * texel.rgb;
-    vec3 N = getShadingNormal();
+    vec3 N = getShadingNormal(uv);
 
     // ambient only calcuated once
     vec3 totalColor = ambient(baseColor);

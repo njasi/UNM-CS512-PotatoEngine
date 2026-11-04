@@ -13,6 +13,8 @@ import { common, TexturedMaterial } from "../../src/materials";
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 
+const matSelector = document.getElementById("material-selector");
+
 const scene = new Scene("glcanvas");
 scene.camera.move(0, 0, 0);
 scene.rotationX += Math.PI / 6;
@@ -94,6 +96,48 @@ function addMaterials() {
     },
   });
 
+  const bricks_displaced = new TexturedMaterial("bricks_displaced", {
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "bricks" },
+    [TexturedMaterial.TEXTURE_TYPE_NORMAL]: {
+      textureLabel: "brick2",
+      extraUniforms: { uNormalScale: 1 },
+    },
+    [TexturedMaterial.TEXTURE_TYPE_DISPLACEMENT]: {
+      textureLabel: "displacement",
+      extraUniforms: {
+        uDisplacementStrength: 1,
+        uDisplacementU: 0.5,
+        uDisplacementV: 0.5,
+      },
+    },
+  });
+
+  const bricks_displaced_scrolling = new TexturedMaterial(
+    "bricks_displaced_scrolling",
+    {
+      [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "bricks" },
+      [TexturedMaterial.TEXTURE_TYPE_NORMAL]: {
+        textureLabel: "brick2",
+        extraUniforms: { uNormalScale: 1 },
+      },
+      [TexturedMaterial.TEXTURE_TYPE_DISPLACEMENT]: {
+        textureLabel: "displacement",
+        extraUniforms: {
+          uDisplacementStrength: 0.2,
+          uDisplacementU: 0.5,
+          uDisplacementV: 0.5,
+        },
+      },
+    },
+  );
+
+  const bricks_displacement_preview = new TexturedMaterial(
+    "bricks_displacement_preview",
+    {
+      [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "displacement" },
+    },
+  );
+
   const video_tex = new TexturedMaterial("video_tex", {
     [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "video" },
   });
@@ -102,15 +146,22 @@ function addMaterials() {
   scene.addMaterial(bricks_bump_only, "phong");
   scene.addMaterial(bricks_normal_only, "phong");
   scene.addMaterial(bricks_bump_albedo, "phong");
+  scene.addMaterial(bricks_displaced, "phong");
+  scene.addMaterial(bricks_displaced_scrolling, "phong");
+  scene.addMaterial(bricks_displacement_preview, "phong");
   scene.addMaterial(video_tex, "phong");
 }
 
+let selected_mat = -1;
 const MAT_CYCLE = [
   "video_tex",
   "bricks_albedo_only",
   "bricks_normal_only",
   "bricks_bump_only",
   "bricks_bump_albedo",
+  "bricks_displaced",
+  "bricks_displaced_scrolling",
+  "bricks_displacement_preview",
   "flat",
 ];
 
@@ -121,6 +172,7 @@ function addTextures() {
   scene.createTexture("bricks", "./assets/brick.png");
   scene.createTexture("brick2", "./assets/brick2.png");
   scene.createTexture("texture2", "./assets/texture2.jpg");
+  scene.createTexture("displacement", "./assets/displacement.png");
   if (window.location.host == "localhost:8080") {
     document.getElementById("test-video-texture").src =
       "./assets/hw4-preview.mp4";
@@ -182,12 +234,27 @@ function initSceneObjects(object = "cube", shader = "phong") {
   texturedObject.lightingRadius = 2;
 }
 
+let rotate = true;
 function attachListeners() {
   document
     .getElementById("prim-selector")
     .addEventListener("input", (event) => {
       initSceneObjects(event.target.value);
     });
+
+  document
+    .getElementById("rotate-checkbox")
+    .addEventListener("input", (event) => {
+      rotate = event.target.checked;
+    });
+
+  for (const mat of MAT_CYCLE) {
+    matSelector.innerHTML += `<option value=${mat}>${mat}</option>`;
+  }
+
+  matSelector.addEventListener("input", (event) => {
+    selected_mat = event.target.value;
+  });
 }
 
 /**
@@ -195,12 +262,21 @@ function attachListeners() {
  * @param {*} dt
  */
 function updateScene(dt) {
-  texturedObject.rotation[0] += (dt * Math.PI) / 10;
-  texturedObject.rotation[1] += (dt * Math.PI) / 10;
-  texturedObject.rotation[2] += (dt * Math.PI) / 10;
+  if (rotate) {
+    texturedObject.rotation[0] += (dt * Math.PI) / 10;
+    texturedObject.rotation[1] += (dt * Math.PI) / 10;
+    texturedObject.rotation[2] += (dt * Math.PI) / 10;
+  }
 
-  texturedObject.materialLabel =
-    MAT_CYCLE[Math.floor(scene.time / 2000) % MAT_CYCLE.length];
+  if (selected_mat == -1) {
+    texturedObject.materialLabel =
+      MAT_CYCLE[Math.floor(scene.time / 2000) % MAT_CYCLE.length];
+    if (matSelector) {
+      matSelector.value = texturedObject.materialLabel;
+    }
+  } else {
+    texturedObject.materialLabel = selected_mat;
+  }
 
   scene
     .getMaterial("bricks_bump_only")
@@ -208,6 +284,21 @@ function updateScene(dt) {
       TexturedMaterial.TEXTURE_TYPE_BUMP,
       "uBumpScale",
       Math.sin(scene.time / 100) * 10,
+    );
+
+  scene
+    .getMaterial("bricks_displaced_scrolling")
+    .setTextureExtraUniform(
+      TexturedMaterial.TEXTURE_TYPE_DISPLACEMENT,
+      "uDisplacementV",
+      scene.time / 10000,
+    );
+  scene
+    .getMaterial("bricks_displaced_scrolling")
+    .setTextureExtraUniform(
+      TexturedMaterial.TEXTURE_TYPE_DISPLACEMENT,
+      "uDisplacementU",
+      scene.time / 10000,
     );
 }
 

@@ -27,6 +27,10 @@ export default class TexturedMaterial extends Material {
    * Default texture type name for albedo (regular base color) texture maps
    */
   static TEXTURE_TYPE_ALBEDO = "albedo";
+  /**
+   * Default texture type name for displacement texture maps (shifts all other maps in the texture)
+   */
+  static TEXTURE_TYPE_DISPLACEMENT = "displacement";
 
   constructor(label, textures = {}) {
     super(label);

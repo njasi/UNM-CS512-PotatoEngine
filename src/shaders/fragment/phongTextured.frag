@@ -25,20 +25,35 @@ struct Material {
 Material mat;
 // uniform Material mat;
 
+// TODO secondary albedo map that can be blended?
+// an array of maps would be great, but easier to just have 2
+// think most effects will be achievable with 3 so maybe 3?
+// - normal (top layer only)
+// - multiply (direct multiplication of pixel colors)
+// - screen (inverse multiplication 1 - (1-top)(1-bottom))
+// - subtract (subtract pixel values (- value becomes black))
+// - additive (add pixel values (above 1 becomes white))
+// - darken (take the darkest pixel)
+// - lighten (take the lightest pixel)
+// these are all really easy to implement so this might be my next step
+// oh after reimplementing phong mat information on the textured materials....
 uniform sampler2D uAlbedoMap;
 uniform bool uUseAlbedoMap;
+uniform vec2 uTileAlbedo;
 
 uniform sampler2D uBumpMap;
 uniform bool uUseBumpMap;
+uniform vec2 uTileBump;
 uniform float uBumpScale;
 
 uniform sampler2D uNormalMap;
 uniform bool uUseNormalMap;
+uniform vec2 uTileNormal;
 uniform float uNormalScale;
 
-// TODO displacement map would be great for the toon water
 uniform sampler2D uDisplacementMap;
 uniform bool uUseDisplacementMap;
+uniform vec2 uTileDisplacement;
 uniform float uDisplacementU;
 uniform float uDisplacementV;
 uniform float uDisplacementStrength;
@@ -91,7 +106,7 @@ vec3 getShadingNormal(vec2 uv) {
 
     if(uUseNormalMap) {
         // Normal mapping: the texture stores the tangent-space normal in [0, 1]
-        n = texture(uNormalMap, uv).rgb * 2.0f - 1.0f;
+        n = texture(uNormalMap, uv * uTileNormal).rgb * 2.0f - 1.0f;
         n.xy *= uNormalScale;
     }
 
@@ -100,10 +115,10 @@ vec3 getShadingNormal(vec2 uv) {
         vec2 du = vec2(1.0f / float(textureSize(uBumpMap, 0).x), 0.0f);
         vec2 dv = vec2(0.0f, 1.0f / float(textureSize(uBumpMap, 0).y));
 
-        float dhdu = (height(uv + du) -
-            height(uv - du)) * 0.5f;
-        float dhdv = (height(uv + dv) -
-            height(uv - dv)) * 0.5f;
+        float dhdu = (height(uv * uTileBump + du) -
+            height(uv * uTileBump - du)) * 0.5f;
+        float dhdv = (height(uv * uTileBump + dv) -
+            height(uv * uTileBump - dv)) * 0.5f;
 
         n = vec3(-uBumpScale * dhdu, -uBumpScale * dhdv, 1.0f);
     }
@@ -168,7 +183,7 @@ vec2 getDisplacedUV() {
         return vTexCoord;
     }
     vec2 displacementUV = vTexCoord + vec2(uDisplacementU, uDisplacementV);
-
+    displacementUV *= uTileDisplacement;
     // unsure if this is standard but this layout makes the most sense to me
     // black (mapped to -1) shifts down-left
     // white (mapped to+1) shifts up-right.
@@ -178,7 +193,7 @@ vec2 getDisplacedUV() {
     // control on the user end?
     float strength = uDisplacementStrength == 0.f ? 1.f : uDisplacementStrength;
     float displacementScale = 0.05f * strength;
-    
+
     return vTexCoord + vec2(displacement) * displacementScale;
 }
 
@@ -190,8 +205,9 @@ void main() {
     mat.alpha = 1.0f;
 
     vec2 uv = getDisplacedUV();
-    vec4 texel = uUseAlbedoMap ? texture(uAlbedoMap, uv) : vec4(1.0f);
+    vec4 texel = uUseAlbedoMap ? texture(uAlbedoMap, uv * uTileAlbedo) : vec4(1.0f);
 
+    // maybe blending mode options between vColor & texel?
     vec3 baseColor = vColor * texel.rgb;
     vec3 N = getShadingNormal(uv);
 

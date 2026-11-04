@@ -31,6 +31,54 @@ export default class TexturedMaterial extends Material {
    * Default texture type name for displacement texture maps (shifts all other maps in the texture)
    */
   static TEXTURE_TYPE_DISPLACEMENT = "displacement";
+  /**
+   * Applies to TEXTURE_TYPE_BUMP
+   *
+   * The scale of bumps in bump maps
+   *
+   * type: float
+   */
+  static U_BUMP_SCALE = "uBumpScale";
+  /**
+   * Applies to TEXTURE_TYPE_NORMAL
+   *
+   * The scale of normals in normal map
+   *
+   * type: float
+   */
+  static U_NORMAL_SCALE = "uNormalScale";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The u coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_U = "uDisplacementU";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The c coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_V = "uDisplacementV";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_STRENGTH = "uDisplacementStrength";
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO, TEXTURE_TYPE_NORMAL, TEXTURE_TYPE_BUMP, TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: vec2
+   */
+  static U_TILE = "uTile";
 
   constructor(label, textures = {}) {
     super(label);
@@ -72,6 +120,15 @@ export default class TexturedMaterial extends Material {
     } = {},
   ) {
     const uLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+    // add tile to extra by default
+    extraUniforms = { ...extraUniforms, [`uTile${uLabel}`]: [1, 1] };
+    
+    if (TexturedMaterial.U_TILE in extraUniforms) {
+      extraUniforms[TexturedMaterial.U_TILE + uLabel] =
+        extraUniforms[TexturedMaterial.U_TILE];
+      delete extraUniforms[TexturedMaterial.U_TILE];
+    }
 
     const textureInfo = {
       textureLabel,
@@ -153,7 +210,6 @@ export default class TexturedMaterial extends Material {
 
       texture2d.bind(textureUnit);
 
-      // console.log("LOCS:", this._locs)
       if (!!locs.sampler) {
         this._gl.uniform1i(locs.sampler, textureUnit);
       }
@@ -165,10 +221,18 @@ export default class TexturedMaterial extends Material {
       for (const [uniformName, value] of Object.entries(
         texture.extraUniforms,
       )) {
-        // TODO: for now just support floats, maybe a robust
+        // TODO: for now just support floats, vec2, maybe a robust
         // type split later?
         if (typeof value == "number") {
+          // floats
           this._gl.uniform1f(locs[uniformName], value);
+        } else if (
+          // vec2 support
+          typeof value == "object" &&
+          Array.isArray(value) &&
+          value.length == 2
+        ) {
+          this._gl.uniform2fv(locs[uniformName], value);
         } else {
           console.error(
             `Unsupported extra uniform (type, value): (${typeof value}, ${value})`,
@@ -191,6 +255,10 @@ export default class TexturedMaterial extends Material {
     const texture = this._textures.get(type);
     if (!texture) {
       throw new Error(`Texture type "${type}" is not set`);
+    }
+
+    if (uniformName == TexturedMaterial.U_TILE) {
+      uniformName += type.charAt(0).toUpperCase() + type.slice(1);
     }
 
     // updated value will propagate to shader in updateUniforms

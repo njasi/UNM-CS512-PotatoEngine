@@ -12,6 +12,7 @@ import basicControls from "../../src/controls/basic";
 import { common, TexturedMaterial } from "../../src/materials";
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
+import flight from "../../src/controls/flight";
 
 const matSelector = document.getElementById("material-selector");
 
@@ -257,11 +258,17 @@ function attachListeners() {
   });
 }
 
+
+
+const cameraCB = flight.setupKeyboardControls(scene);
+
 /**
  * Update the scene
  * @param {*} dt
  */
 function updateScene(dt) {
+  cameraCB(dt)
+
   if (rotate) {
     texturedObject.rotation[0] += (dt * Math.PI) / 10;
     texturedObject.rotation[1] += (dt * Math.PI) / 10;
@@ -323,8 +330,8 @@ async function main() {
 
   initSceneObjects();
 
-  basicControls.setupMouseControls(scene);
-  basicControls.setupKeyboardControls(scene);
+  flight.setupMouseControls(scene);
+  flight.setupKeyboardControls(scene);
   attachListeners();
 
   setInterval(() => {

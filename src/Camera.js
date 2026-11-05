@@ -2,25 +2,27 @@ import {
   perspective,
   mat4Translate,
   matMul,
+  mat4RotateX,
+  mat4RotateY,
   box2Cube,
-  frustum2Box,
+  flipZ,
   mat4Identity,
 } from "./util/transformations";
 
 /**
- * Simple camera class for perspective / orthographic rendering.
+ * Camera operations wrapper class
  */
 class Camera {
   /**
-   * 
-   * @param {Number} aspect The aspect ratio of the camera
-   * @param {Number} x initial x position of the camera
-   * @param {Number} y initial y position of the camera
-   * @param {Number} z initial z position of the camera
-   * @param {Number} fov fov setting
-   * @param {Number} zNear z of the near plane
-   * @param {Number} zFar z of the far plane
-   * @param {Number} orthoSize orthographic projection size
+   * Create a new camera
+   * @param {number} aspect
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   * @param {number} fov
+   * @param {number} zNear
+   * @param {number} zFar
+   * @param {number} orthoSize
    */
   constructor(
     aspect,
@@ -35,6 +37,8 @@ class Camera {
     this.x = x;
     this.y = y;
     this.z = z;
+    this.yaw = 0;
+    this.pitch = 0;
 
     this.fov = fov;
     this.aspect = aspect;
@@ -85,7 +89,7 @@ class Camera {
 
   /**
    * Resize the viewport
-   * @param {Number} aspect
+   * @param {number} aspect
    */
   resize(aspect) {
     this.aspect = aspect;
@@ -94,9 +98,9 @@ class Camera {
 
   /**
    * Move the position of the camera
-   * @param {Number} x
-   * @param {Number} y
-   * @param {Number} z
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
    */
   move(x, y, z) {
     this.x += x;
@@ -105,16 +109,51 @@ class Camera {
   }
 
   /**
-   * get the view matrix of the camera
-   * @returns {Float32Array} mat4 representaton of the view matrix
+   * Rotate the camera.
+   * @param {number} yawDelta Horizontal rotation in radians
+   * @param {number} pitchDelta Vertical rotation in radians
    */
-  getViewMatrix() {
-    return mat4Translate(mat4Identity(), [this.x, this.y, this.z]);
+  rotate(yawDelta, pitchDelta) {
+    this.yaw += yawDelta;
+
+    // stop from flipping upside down cause that would be confusing
+    // maybe could allow it and add like a axis compass to the scene
+    const maxPitch = Math.PI / 2 - 0.01;
+    this.pitch = Math.max(
+      -maxPitch,
+      Math.min(maxPitch, this.pitch + pitchDelta),
+    );
   }
 
   /**
-   * get camera projection matrix
-   * @returns {Float32Array} mat4 representaton of the projection matrix
+   * Set the camera orientation.
+   * @param {number} yaw Horizontal rotation in radians
+   * @param {number} pitch Vertical rotation in radians
+   */
+  setRotation(yaw, pitch) {
+    this.yaw = yaw;
+    this.pitch = 0;
+    this.rotate(0, pitch);
+  }
+
+  /**
+   * Get the view transformation matrix for the camera
+   * @returns {Float32Array} (mat4)
+   */
+  getViewMatrix() {
+    // inverse rotation for camera view matrix
+    const rotation = mat4RotateX(
+      mat4RotateY(mat4Identity(), -this.yaw),
+      -this.pitch,
+    );
+    const translation = mat4Translate(rotation, [this.x, this.y, this.z]);
+
+    return translation;
+  }
+
+  /**
+   * get the projection matrix
+   * @returns {Float32Array}
    */
   getProjectionMatrix() {
     return this.projection;

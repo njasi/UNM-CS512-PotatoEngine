@@ -33,7 +33,7 @@ export default class Texture2D {
       animated = false,
     } = {},
   ) {
-    this.gl = gl;
+    this._gl = gl;
     this.flipY = flipY;
     this.mipmaps = mipmaps;
     this.minFilter = minFilter;
@@ -103,7 +103,7 @@ export default class Texture2D {
       source = this._source;
     }
 
-    const gl = this.gl;
+    const gl = this._gl;
 
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
@@ -153,7 +153,7 @@ export default class Texture2D {
     if (this.animated) {
       this._refresh();
     }
-    const gl = this.gl;
+    const gl = this._gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
   }
@@ -162,7 +162,7 @@ export default class Texture2D {
    * Clean up the allocated things
    */
   dispose() {
-    this.gl.deleteTexture(this.texture);
+    this._gl.deleteTexture(this.texture);
     this.texture = null;
   }
 }

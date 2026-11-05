@@ -144,12 +144,9 @@ function addMaterials() {
     [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "video" },
   });
 
-  const color_ramp = new TexturedMaterial(
-    "color_ramp",
-    {
-      [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "colorRamp" },
-    },
-  );
+  const color_ramp = new TexturedMaterial("color_ramp", {
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "colorRamp" },
+  });
 
   const color_ramp_displacement = new TexturedMaterial(
     "color_ramp_displacement",
@@ -158,6 +155,15 @@ function addMaterials() {
       [TexturedMaterial.TEXTURE_TYPE_COLOR_RAMP]: { textureLabel: "colorRamp" },
     },
   );
+
+  const color_ramp_blend = new TexturedMaterial("color_ramp_blend", {
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "displacement" },
+    [TexturedMaterial.TEXTURE_TYPE_ALBEDO2]: {
+      textureLabel: "displacement",
+      extraUniforms: { [TexturedMaterial.U_TILE]: [2, 2] },
+    },
+    [TexturedMaterial.TEXTURE_TYPE_COLOR_RAMP]: { textureLabel: "colorRamp" },
+  });
 
   scene.addMaterial(bricks_albedo_only, "phong");
   scene.addMaterial(bricks_bump_only, "phong");
@@ -169,6 +175,7 @@ function addMaterials() {
   scene.addMaterial(video_tex, "phong");
   scene.addMaterial(color_ramp, "phong");
   scene.addMaterial(color_ramp_displacement, "phong");
+  scene.addMaterial(color_ramp_blend, "phong");
 }
 
 let selected_mat = -1;
@@ -183,6 +190,7 @@ const MAT_CYCLE = [
   "bricks_displacement_preview",
   "color_ramp",
   "color_ramp_displacement",
+  "color_ramp_blend",
   "flat",
 ];
 

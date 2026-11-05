@@ -46,6 +46,11 @@ uniform sampler2D uAlbedoMap;
 uniform bool uUseAlbedoMap;
 uniform vec2 uTileAlbedo;
 
+uniform sampler2D uAlbedo2Map;
+uniform bool uUseAlbedo2Map;
+uniform vec2 uTileAlbedo2;
+// TODO actually use
+uniform vec2 uAlbedoBlendMode;
 
 uniform sampler2D uBumpMap;
 uniform bool uUseBumpMap;
@@ -221,8 +226,15 @@ void main() {
             float lum = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
             texel.rgb = texture(uColorRampMap, vec2(lum, 0.5)).rgb;
         }
+
+        // apply secondary albedo
+        if (uUseAlbedo2Map){
+            // later switch on uAlbedoBlendMode but for now i just need lighten
+            vec3 albedo2 = texture(uAlbedo2Map, uv * uTileAlbedo2).rgb;
+            texel.rgb = max(texel.rgb, albedo2);
+        }
     }
-    
+
     // maybe blending mode options between vColor & texel?
     vec3 baseColor = vColor * texel.rgb;
     vec3 N = getShadingNormal(uv);

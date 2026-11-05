@@ -28,6 +28,10 @@ export default class TexturedMaterial extends Material {
    */
   static TEXTURE_TYPE_ALBEDO = "albedo";
   /**
+   * Default texture type name for secondary albedo map ( to blend with TEXTURE_TYPE_ALBEDO) texture maps
+   */
+  static TEXTURE_TYPE_ALBEDO2 = "albedo2";
+  /**
    * Default texture type name for displacement texture maps (shifts all other maps in the texture)
    */
   static TEXTURE_TYPE_DISPLACEMENT = "displacement";
@@ -86,6 +90,18 @@ export default class TexturedMaterial extends Material {
    */
   static U_TILE = "uTile";
 
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO2 and TEXTURE_TYPE_ALBEDO
+   * 
+   * Select the blend mode between the two albedo maps
+   */
+  static U_BLEND_MODE = "uAlbedoBlendMode"
+
+  /**
+   * Make a new texturedmaterial
+   * @param {*} label 
+   * @param {*} textures 
+   */
   constructor(label, textures = {}) {
     super(label);
     // internal state for ease of use

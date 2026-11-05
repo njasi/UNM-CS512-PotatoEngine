@@ -34,7 +34,7 @@ export default class TextureColorRamp extends Texture2D {
       mipmaps = true,
       minFilter = gl.LINEAR_MIPMAP_LINEAR,
       magFilter = gl.LINEAR,
-      wrapS = gl.REPEAT,
+      wrapS = gl.CLAMP_TO_EDGE,
       wrapT = gl.REPEAT,
       placeholder = [128, 128, 255, 255],
       animated = false,

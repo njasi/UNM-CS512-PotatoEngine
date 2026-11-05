@@ -14,6 +14,7 @@ const int LIGHT_POINT = 0;
 const int LIGHT_SPOT = 1;
 const int LIGHT_DIRECTIONAL = 2;
 
+
 struct Material {
     vec3 ka;
     vec3 kd;
@@ -37,9 +38,14 @@ Material mat;
 // - lighten (take the lightest pixel)
 // these are all really easy to implement so this might be my next step
 // oh after reimplementing phong mat information on the textured materials....
+uniform sampler2D uColorRampMap;
+uniform bool uUseColorRampMap;
+uniform vec2 uTileColorRamp;
+
 uniform sampler2D uAlbedoMap;
 uniform bool uUseAlbedoMap;
 uniform vec2 uTileAlbedo;
+
 
 uniform sampler2D uBumpMap;
 uniform bool uUseBumpMap;
@@ -205,8 +211,18 @@ void main() {
     mat.alpha = 1.0f;
 
     vec2 uv = getDisplacedUV();
-    vec4 texel = uUseAlbedoMap ? texture(uAlbedoMap, uv * uTileAlbedo) : vec4(1.0f);
 
+    vec4 texel = vec4(1.0);
+    if (uUseAlbedoMap) {
+        texel = texture(uAlbedoMap, uv * uTileAlbedo);
+
+        if (uUseColorRampMap) {
+            // NOTE: get luminance => assuming we gonna color ramp only grayscale
+            float lum = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
+            texel.rgb = texture(uColorRampMap, vec2(lum, 0.5)).rgb;
+        }
+    }
+    
     // maybe blending mode options between vColor & texel?
     vec3 baseColor = vColor * texel.rgb;
     vec3 N = getShadingNormal(uv);

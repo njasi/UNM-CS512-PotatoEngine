@@ -31,6 +31,12 @@ export default class TexturedMaterial extends Material {
    * Default texture type name for displacement texture maps (shifts all other maps in the texture)
    */
   static TEXTURE_TYPE_DISPLACEMENT = "displacement";
+
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   */
+  static TEXTURE_TYPE_COLOR_RAMP = "colorramp";
+
   /**
    * Applies to TEXTURE_TYPE_BUMP
    *
@@ -123,7 +129,7 @@ export default class TexturedMaterial extends Material {
 
     // add tile to extra by default
     extraUniforms = { ...extraUniforms, [`uTile${uLabel}`]: [1, 1] };
-    
+
     if (TexturedMaterial.U_TILE in extraUniforms) {
       extraUniforms[TexturedMaterial.U_TILE + uLabel] =
         extraUniforms[TexturedMaterial.U_TILE];

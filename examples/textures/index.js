@@ -13,6 +13,7 @@ import { common, TexturedMaterial } from "../../src/materials";
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 import flight from "../../src/controls/flight";
+import TextureColorRamp from "../../src/materials/TextureColorRamp";
 
 const matSelector = document.getElementById("material-selector");
 
@@ -143,6 +144,13 @@ function addMaterials() {
     [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "video" },
   });
 
+  const color_ramp = new TexturedMaterial(
+    "color_ramp",
+    {
+      [TexturedMaterial.TEXTURE_TYPE_ALBEDO]: { textureLabel: "colorRamp" },
+    },
+  );
+
   scene.addMaterial(bricks_albedo_only, "phong");
   scene.addMaterial(bricks_bump_only, "phong");
   scene.addMaterial(bricks_normal_only, "phong");
@@ -151,6 +159,7 @@ function addMaterials() {
   scene.addMaterial(bricks_displaced_scrolling, "phong");
   scene.addMaterial(bricks_displacement_preview, "phong");
   scene.addMaterial(video_tex, "phong");
+  scene.addMaterial(color_ramp, "phong");
 }
 
 let selected_mat = -1;
@@ -163,6 +172,7 @@ const MAT_CYCLE = [
   "bricks_displaced",
   "bricks_displaced_scrolling",
   "bricks_displacement_preview",
+  "color_ramp",
   "flat",
 ];
 
@@ -182,6 +192,11 @@ function addTextures() {
     upload: true,
     animated: true,
   });
+
+  scene.addTexture(
+    "colorRamp",
+    new TextureColorRamp(scene.gl, rgb(0, 0, 255), rgb(255, 255, 255)),
+  );
 }
 
 let texturedObject;
@@ -258,8 +273,6 @@ function attachListeners() {
   });
 }
 
-
-
 const cameraCB = flight.setupKeyboardControls(scene);
 
 /**
@@ -267,7 +280,7 @@ const cameraCB = flight.setupKeyboardControls(scene);
  * @param {*} dt
  */
 function updateScene(dt) {
-  cameraCB(dt)
+  cameraCB(dt);
 
   if (rotate) {
     texturedObject.rotation[0] += (dt * Math.PI) / 10;

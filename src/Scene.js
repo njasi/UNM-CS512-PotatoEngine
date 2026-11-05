@@ -549,6 +549,30 @@ export default class Scene {
   }
 
   /**
+   * Add a new texture to the scene & start loading it
+   * @param {string} label
+   * @param {Texture2D} texture
+   * @param {Object} options
+   * @param {boolean} options.upload if we are uploading a TexImageSource instead of image url
+   * @param {boolean} options.load if we want to start load function on the texture
+   * @param {string | TexImageSource} options.source if you want to use a source
+   */
+  addTexture(label, texture, { upload = false, load = true, source = undefined } = {}) {
+    if (this.textures.has(label)) {
+      throw new Error(`Texture "${label}" already exists`);
+    }
+
+    if (upload) {
+      texture.ready = texture.upload(source);
+    } else if (load) {
+      console.log("loading texture", label)
+      texture.ready = texture.load(source);
+    }
+
+    this.textures.set(label, texture);
+  }
+
+  /**
    * Get a texture by its label
    * @param {string} label
    * @returns {Texture2D}

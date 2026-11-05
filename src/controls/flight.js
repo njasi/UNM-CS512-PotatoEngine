@@ -62,12 +62,26 @@ export function setupKeyboardControls(
 ) {
   const pressed = new Set();
   const velocity = [0, 0, 0];
+  let orthographic = false;
 
   function normalizeKey(key) {
     return key === " " ? key : key.toLowerCase();
   }
 
-  const handledKeys = new Set(["w", "a", "s", "d", " ", "shift"]);
+  const handledKeys = new Set([
+    "w",
+    "a",
+    "s",
+    "d",
+    " ",
+    "shift",
+    "alt",
+    "0",
+    "-",
+    "=",
+    "o",
+    "p",
+  ]);
 
   /**
    * key down listener, add key to set
@@ -75,6 +89,13 @@ export function setupKeyboardControls(
    */
   function handleKeyDown(event) {
     const key = normalizeKey(event.key);
+
+    if (key == "o") {
+      orthographic = true;
+    } else if (key == "p") {
+      orthographic = false;
+    }
+
     if (!handledKeys.has(key)) return;
     event.preventDefault();
     pressed.add(key);
@@ -102,10 +123,16 @@ export function setupKeyboardControls(
    * @param {number} dt time in seconds since last frame
    */
   function moveCameraUpdate(dt) {
+    if (pressed.has("0")) {
+      scene.camera.fov = Math.PI / 4;
+      scene.camera.usePerspective();
+    }
+
     dt = Math.min(Math.max(dt, 0), 0.05);
 
     const yaw = scene.camera.yaw ?? 0;
 
+    const zoom = Number(pressed.has("=")) - Number(pressed.has("-"));
     const strafe = Number(pressed.has("a")) - Number(pressed.has("d"));
     const forward = Number(pressed.has("w")) - Number(pressed.has("s"));
     const vertical = Number(pressed.has("shift")) - Number(pressed.has(" "));
@@ -117,7 +144,8 @@ export function setupKeyboardControls(
 
     // console.log(x, y, z);
 
-    const target = [x * speed, y * speed, z * speed];
+    let adjustedSpeed = pressed.has("alt") ? speed * 2 : speed;
+    const target = [x * adjustedSpeed, y * adjustedSpeed, z * adjustedSpeed];
     const expSmoothing = 1 - Math.exp(-dt / response);
 
     for (let i = 0; i < 3; i++) {
@@ -125,6 +153,12 @@ export function setupKeyboardControls(
     }
 
     scene.camera.move(velocity[0] * dt, velocity[1] * dt, velocity[2] * dt);
+    scene.camera.fov += dt * zoom;
+    if (orthographic) {
+      scene.camera.useOrthographic();
+    } else {
+      scene.camera.usePerspective();
+    }
   }
 
   return moveCameraUpdate;

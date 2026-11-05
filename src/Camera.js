@@ -142,9 +142,9 @@ class Camera {
    */
   getViewMatrix() {
     // inverse rotation for camera view matrix
-    const rotation = mat4RotateX(
-      mat4RotateY(mat4Identity(), -this.yaw),
-      -this.pitch,
+    const rotation = mat4RotateY(
+      mat4RotateX(mat4Identity(), -this.pitch),
+      -this.yaw,
     );
     const translation = mat4Translate(rotation, [this.x, this.y, this.z]);
 

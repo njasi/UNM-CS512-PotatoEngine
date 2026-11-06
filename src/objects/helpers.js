@@ -1,7 +1,7 @@
 /**
  * @module objects/helpers
- * @description Helper functions to make generating SceneObjects / primitives easier. 
- * Most of these functions are just direct wrappers over a corresponding function in 
+ * @description Helper functions to make generating SceneObjects / primitives easier.
+ * Most of these functions are just direct wrappers over a corresponding function in
  * ./primitives.js
  */
 
@@ -35,13 +35,7 @@ export function makeSceneObjectGenerator(generatePrimitive) {
         ? generateFillerColors(prim.vertexCount, color, true)
         : prim.colors;
 
-    return new SceneObject(
-      objectName,
-      new Float32Array(prim.vertices),
-      new Float32Array(prim.colors),
-      new Uint16Array(prim.indices),
-      new Float32Array(prim.normals),
-    );
+    return prim.toSceneObject(objectName);
   };
 }
 
@@ -89,13 +83,15 @@ export const generateBarrelObject = makeSceneObjectGenerator(generateBarrel);
  * Generate a cone
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
- * @param {*} segments how many divisions there are
- * @param {*} r the radius of the base of the cone
- * @param {*} h the height of the cone
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
- * @param {*} solid if the bottom of the cone should be closed
+ * @param {number} segments how many divisions there are
+ * @param {number} r the radius of the base of the cone
+ * @param {number} h the hright of the cone
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the cylinder
+ * @param {number} options.y_c y coord of the center of the cylinder
+ * @param {number} options.z_c z coord of the center of the cylinder
+ * @param {boolean} options.solid if the bottom of the cone should be closed
+ * @returns {PrimitiveObject}
  * @returns {SceneObject}
  */
 export const generateConeObject = makeSceneObjectGenerator(generateCone);
@@ -135,11 +131,12 @@ export const generateCylinderObject =
  * Generate a square grid centered on the origin
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
- * @param {*} segments
- * @param {*} size
- * @param {*} x_c x coord of the center of the cylinder
- * @param {*} y_c y coord of the center of the cylinder
- * @param {*} z_c z coord of the center of the cylinder
+ * @param {number} segments
+ * @param {number} size
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the grid
+ * @param {number} options.y_c y coord of the center of the grid
+ * @param {number} options.z_c z coord of the center of the grid
  * @returns {SceneObject}
  */
 export const generateGridObject = makeSceneObjectGenerator(generateGrid);
@@ -164,12 +161,13 @@ export const generateNGonPrismObject =
  *
  * @param {string} name the name of the object
  * @param {*} color the color the object should have
- * @param {*} segments how many divisions there are
- * @param {*} R the big radius of the torus
- * @param {*} r the radius of the tube part of the torus
- * @param {*} x_c x coord of the center of the torus
- * @param {*} y_c y coord of the center of the torus
- * @param {*} z_c z coord of the center of the torus
+ * @param {number} segments how many divisions there are
+ * @param {number} R the big radius of the torus
+ * @param {number} r the radius of the tube part of the torus
+ * @param {*} options
+ * @param {number} options.x_c x coord of the center of the torus
+ * @param {number} options.y_c y coord of the center of the torus
+ * @param {number} options.z_c z coord of the center of the torus
  * @returns {SceneObject}
  */
 export const generateTorusObject = makeSceneObjectGenerator(generateTorus);

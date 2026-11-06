@@ -16,6 +16,7 @@ import FloatingObject from "../../src/objects/FloatingObject";
 import PhysicsObject from "../../src/objects/PhysicsObject";
 import { generateBarrel, generateBomb } from "../../src/objects/compositions";
 import { scaleVec4 } from "../../src/util/vec4";
+import flight from "../../src/controls/flight";
 
 const canvas = document.getElementById("glcanvas");
 const vertEditor = document.getElementById("vertEditor");
@@ -31,7 +32,7 @@ scene.addShader(
   new Shader(
     "basicVertex",
     scene.gl.VERTEX_SHADER,
-    "../../src/shaders/vertex.vert",
+    "../../src/shaders/vertex/vertex.vert",
   ),
 );
 
@@ -39,7 +40,7 @@ scene.addShader(
   new Shader(
     "basicFragment",
     scene.gl.FRAGMENT_SHADER,
-    "../../src/shaders/fragment.frag",
+    "../../src/shaders/fragment/fragment.frag",
   ),
 );
 
@@ -341,7 +342,7 @@ function setupInputControls() {
  */
 async function main() {
   scene.addProgram("basic", "basicVertex", "basicFragment");
-  
+
   await scene.load();
 
   initSceneObjects();
@@ -352,9 +353,10 @@ async function main() {
   vertEditor.value = vertexShader.source;
   fragEditor.value = fragmentShader.source;
 
-  setupKeyboardControls(scene);
-  setupMouseControls(scene);
   setupInputControls();
+  flight.setupMouseControls(scene);
+  const updateCamera = flight.setupKeyboardControls(scene);
+  scene.setUpdateCB(updateCamera);
 
   // Initialize when page loads
   // dont need onload since we defer this script

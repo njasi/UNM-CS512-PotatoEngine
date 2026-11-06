@@ -1,24 +1,24 @@
 /** @module materials/Texture2D */
 
-
 /**
  * Convience representation of a 2D texture
  * @class
  * @alias module:materials/Texture2D
- * 
+ *
  */
 export default class Texture2D {
   /**
-   * 
-   * @param {*} gl 
-   * @param {Object} [options={}] 
-   * @param {boolean} [options.flipY=true] 
-   * @param {boolean} [options.mipmaps=true] 
-   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR] 
-   * @param {*} [options.magFilter=gl.LINEAR] 
-   * @param {*} [options.wrapS=gl.REPEAT] 
-   * @param {*} [options.wrapT=gl.REPEAT] 
-   * @param {number[]} [options.placeholder=[128, 128, 255, 255]] 
+   * Create a new 2d texture...
+   * @param {WebGL2RenderingContext} gl
+   * @param {Object} [options={}]
+   * @param {boolean} [options.flipY=true]
+   * @param {boolean} [options.mipmaps=true]
+   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
+   * @param {*} [options.magFilter=gl.LINEAR]
+   * @param {*} [options.wrapS=gl.REPEAT]
+   * @param {*} [options.wrapT=gl.REPEAT]
+   * @param {number[]} [options.placeholder=[128, 128, 255, 255]]
+   * @param {*} [options.animated=false]
    */
   constructor(
     gl,
@@ -30,15 +30,17 @@ export default class Texture2D {
       wrapS = gl.REPEAT,
       wrapT = gl.REPEAT,
       placeholder = [128, 128, 255, 255],
+      animated = false,
     } = {},
   ) {
-    this.gl = gl;
+    this._gl = gl;
     this.flipY = flipY;
     this.mipmaps = mipmaps;
     this.minFilter = minFilter;
     this.magFilter = magFilter;
     this.wrapS = wrapS;
     this.wrapT = wrapT;
+    this.animated = animated;
 
     this.texture = gl.createTexture();
     if (!this.texture) {
@@ -91,11 +93,17 @@ export default class Texture2D {
 
   /**
    * parse some valid source to the texture
-   * 
-   * @param {TexImageSource} source 
+   *
+   * @param {TexImageSource} source
    */
   upload(source) {
-    const gl = this.gl;
+    if (!!source) {
+      this._source = source;
+    } else {
+      source = this._source;
+    }
+
+    const gl = this._gl;
 
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
@@ -128,11 +136,24 @@ export default class Texture2D {
   }
 
   /**
+   * Refresh the texture from source if cached
+   */
+  _refresh() {
+    if (!!this._source) {
+      this.upload();
+    }
+  }
+
+  /**
    * bind this texture to a texture unit
    * @param {number} [unit=0] the unit
    */
   bind(unit = 0) {
-    const gl = this.gl;
+    // console.log("binding texture",this.label, this.animated)
+    if (this.animated) {
+      this._refresh();
+    }
+    const gl = this._gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
   }
@@ -141,7 +162,7 @@ export default class Texture2D {
    * Clean up the allocated things
    */
   dispose() {
-    this.gl.deleteTexture(this.texture);
+    this._gl.deleteTexture(this.texture);
     this.texture = null;
   }
 }

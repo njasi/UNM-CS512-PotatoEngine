@@ -1,7 +1,7 @@
 /**
  * @module objects/loaders/objLoader
  * @description
- * simple setup to allow loading an obj file: 
+ * simple setup to allow loading an obj file:
  * https://en.wikipedia.org/wiki/Wavefront_.obj_file
  */
 import { makeSceneObjectGenerator } from "../helpers";
@@ -27,6 +27,7 @@ export async function cacheOBJ(url, id) {
   const vertices = [];
   const normals = [];
   const indices = [];
+  const texCoords = [];
 
   const lines = text.split("\n");
   for (let i = 0; i < lines.length; i++) {
@@ -45,6 +46,10 @@ export async function cacheOBJ(url, id) {
         normals.push(...data.slice(1, 4).map(toNum));
         break;
 
+      case "vt":
+        texCoords.push(...data.slice(1, 4).map(toNum));
+        break;
+
       case "f":
         // assume faces are already triangulated
         const faceVerts = data.slice(1);
@@ -60,10 +65,12 @@ export async function cacheOBJ(url, id) {
 
   // slap into loaded objects so we dont need to reload them ever
   // would make sense to have the scene handle these tbh
-  LOADED_OBJECTS[id] = new PrimitiveObject(vertices, {
+  LOADED_OBJECTS[id] = {
+    vertices,
     indices,
     normals,
-  });
+    texCoords,
+  };
 }
 
 /**
@@ -72,13 +79,20 @@ export async function cacheOBJ(url, id) {
  * @returns {PrimitiveObject}
  */
 export function loadOBJ(id) {
-  return structuredClone(LOADED_OBJECTS[id]);
+  const { vertices, indices, normals, texCoords } = structuredClone(
+    LOADED_OBJECTS[id],
+  );
+  return new PrimitiveObject(vertices, {
+    normals,
+    indices,
+    texCoords,
+  });
 }
 
 /**
  * Load a cached obj file into a scene object
  * @param {string} label label of the new object
- * @param {rgb()} color color to use 
+ * @param {rgb()} color color to use
  * @param {string} id id of the cached object file
  * @returns {SceneObject}
  */

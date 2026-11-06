@@ -11,7 +11,6 @@
     <link href="/common/styles.css" rel="stylesheet" />
     <link href="/common/navbar.css" rel="stylesheet" />
     <script defer src="/common/navbar.js"></script>
-
 </head>
 
 <body>
@@ -53,11 +52,39 @@
                         <div class="spinner"></div>
                     </div>
                 </div>
-                <!-- <div class="controls">
-        </div> -->
+                <div class="controls">
+                    <label>
+                        Primitive
+                        <select id="prim-selector">
+                            <option value="cube">Cube</option>
+                            <option value="sphere">Sphere</option>
+                            <option value="cone">Cone</option>
+                            <option value="torus">Torus</option>
+                            <option value="grid">Grid</option>
+                        </select>
+                    </label>
+                    <label>
+                        Active Material: <select id="material-selector">
+                            <option value=-1>Cycle</option>
+                        </select>
+                    </label>
+                    <label>
+                        Secondary Material: <select id="material-selector-secondary">
+                        </select>
+                    </label>
+                    <label>
+                        Rotate
+                        <input id="rotate-checkbox" type="checkbox" checked>
+                    </label>
+                </div>
             </div>
         </div>
 
+        <p>Download the test video source with <code>examples/textures/assets/download.sh</code> (I didn't want to bloat
+            the repo lol)</p>
+        <video style="display:none" id="test-video-texture" autoplay muted loop
+            src="https://cs512.njasi.com/media/hw4-preview.mp4">
+        </video>
     </main>
 </body>
 

@@ -305,6 +305,57 @@ export default class Scene {
     });
   }
 
+  /**
+   * Create a new shader program directly from source urls
+   * To create a shader program of a type other than the default
+   * ShaderProgram class, provide a class to the wrapperClass
+   * argument. For example the PhongShaderProgram class...
+   *
+   * @param {string} label the label of the shader program being created
+   * @param {string} vertShaderUrl the url of the vertex shader source to load for creating the program
+   * @param {string} fragShaderUrl the url of the fragment shader source to load for creating the program
+   * @param {ShaderProgram} [wrapperClass=ShaderProgram] The shader program class to use while creating it.
+   * @param {Object} [options={}]
+   * @param {string | undefined} [options.vertLabel=vertShaderUrl.split("/").pop()] set to override vertex shader label
+   * @param {string | undefined} [options.fragLabel=fragShaderUrl.split("/").pop()] set to override fragment shader label
+   */
+  createProgram(
+    label,
+    vertShaderUrl,
+    fragShaderUrl,
+    wrapperClass = shaderProg,
+    {
+      vertLabel = vertShaderUrl.split("/").pop(),
+      fragLabel = fragShaderUrl.split("/").pop(),
+    } = {},
+  ) {
+    if (!vertLabel.endsWith(".vert")) {
+      throw new Error(`Vertex shader should end in .vert: ${vertShaderUrl}`);
+    }
+
+    if (!fragLabel.endsWith(".frag")) {
+      throw new Error(`Fragment shader should end in .frag: ${fragShaderUrl}`);
+    }
+
+    try {
+      this.getShader(vertLabel);
+    } catch {
+      this.addShader(
+        new Shader(vertLabel, this.gl.VERTEX_SHADER, vertShaderUrl),
+      );
+    }
+
+    try {
+      this.getShader(fragLabel);
+    } catch {
+      this.addShader(
+        new Shader(fragLabel, this.gl.FRAGMENT_SHADER, fragShaderUrl),
+      );
+    }
+
+    this.addProgram(label, vertLabel, fragLabel, wrapperClass);
+  }
+
   /////////////////////////
   // MATERIAL MANAGEMENT //
   /////////////////////////
@@ -314,7 +365,7 @@ export default class Scene {
    * - setup its uniforms when we init shaders later
    *
    * @param {Material} material the material wrapper
-   * @param {ShaderProgram} program the shader program to use this material in
+   * @param {string} program the label of the shader program to use this material in
    */
   addMaterial(material, program) {
     material.programLabel = program;
@@ -440,21 +491,89 @@ export default class Scene {
    *
    * NOTE: ensure that you call load or loadTextures to finish the loading process
    * @param {string} label the label to use for this texture
-   * @param {string} url the source url of this texture
-   * @param {*} options
+   * @param {string|TexImageSource} source the source url of this texture
+   * @param {Object} [options={}]
+   * @param {boolean} [options.upload=false] if we are uploading a TexImageSource instead of image url
+   * @param {boolean} [options.animated=false] if the TexImageSource is animated (ie video, gif etc)
+   * @param {boolean} [options.flipY=true]
+   * @param {boolean} [options.mipmaps=true]
+   * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
+   * @param {*} [options.magFilter=gl.LINEAR]
+   * @param {*} [options.wrapS=gl.REPEAT]
+   * @param {*} [options.wrapT=gl.REPEAT]
+   * @param {number[]} [options.placeholder=[128, 128, 255, 255]]
    * @returns {Texture2D}
    */
-  createTexture(label, url, options = {}) {
+  createTexture(
+    label,
+    source,
+    {
+      upload = false,
+      animated = false,
+      flipY = true,
+      mipmaps = true,
+      minFilter = this.gl.LINEAR_MIPMAP_LINEAR,
+      magFilter = this.gl.LINEAR,
+      wrapS = this.gl.REPEAT,
+      wrapT = this.gl.REPEAT,
+      placeholder = [128, 128, 255, 255],
+    } = {},
+  ) {
     if (this.textures.has(label)) {
       throw new Error(`Texture "${label}" already exists`);
     }
 
+    // reconstruct the options to pass to the texture creation
+    const options = {
+      animated,
+      flipY,
+      mipmaps,
+      minFilter,
+      magFilter,
+      wrapS,
+      wrapT,
+      placeholder,
+    };
+
     const texture = new Texture2D(this.gl, options);
     texture.label = label;
-    texture.ready = texture.load(url);
+
+    if (upload) {
+      texture.ready = texture.upload(source);
+    } else {
+      texture.ready = texture.load(source);
+    }
 
     this.textures.set(label, texture);
     return texture;
+  }
+
+  /**
+   * Add a new texture to the scene & start loading it
+   * @param {string} label
+   * @param {Texture2D} texture
+   * @param {Object} options
+   * @param {boolean} options.upload if we are uploading a TexImageSource instead of image url
+   * @param {boolean} options.load if we want to start load function on the texture
+   * @param {string | TexImageSource} options.source if you want to use a source
+   */
+  addTexture(
+    label,
+    texture,
+    { upload = false, load = true, source = undefined } = {},
+  ) {
+    if (this.textures.has(label)) {
+      throw new Error(`Texture "${label}" already exists`);
+    }
+
+    if (upload) {
+      texture.ready = texture.upload(source);
+    } else if (load) {
+      console.log("loading texture", label);
+      texture.ready = texture.load(source);
+    }
+
+    this.textures.set(label, texture);
   }
 
   /**
@@ -595,6 +714,16 @@ export default class Scene {
   }
 
   /**
+   * Cleanup the active material and set it to undefined
+   */
+  _clearActiveMaterial() {
+    if (this.activeMaterial !== undefined) {
+      this.getMaterial(this.activeMaterial).cleanup();
+      this.activeMaterial = undefined;
+    }
+  }
+
+  /**
    * view, projection, scene transform
    *
    * might need these in render passes so sectioning out...
@@ -626,6 +755,8 @@ export default class Scene {
 
       // if we are rendering with a new program switch over
       if (obj.programLabel != this.activeProgram) {
+        this._clearActiveMaterial();
+
         shaderProgram.use(this.gl);
 
         // TODO: I should really move these functions into the shader class
@@ -648,25 +779,32 @@ export default class Scene {
 
         //
         this.activeProgram = obj.programLabel;
-        this.activeMaterial = undefined;
       }
+      const nextMaterial = shaderProgram.hasMaterial
+        ? obj.materialLabel
+        : undefined;
 
       // if shader uses mats and the active material is not this
       // one then update it
-      if (
-        shaderProgram.hasMaterial &&
-        obj.materialLabel != this.activeMaterial &&
-        obj.materialLabel != undefined
-      ) {
-        this.getMaterial(obj.materialLabel).updateUniforms(this.gl);
-        this.activeMaterial = obj.materialLabel;
+      if (nextMaterial !== this.activeMaterial) {
+        this._clearActiveMaterial();
+        if (nextMaterial !== undefined) {
+          this.getMaterial(nextMaterial).updateUniforms(this.gl, this);
+          this.activeMaterial = nextMaterial;
+        }
       }
 
       if (shaderProgram.hasLight) {
         shaderProgram.updateLightMask(this.gl, obj, lights);
       }
 
+      let secondaryMat = undefined;
+      if (shaderProgram.hasMaterial && !!obj.materialLabelSecondary) {
+        secondaryMat = this.getMaterial(obj.materialLabelSecondary);
+        secondaryMat.updateUniforms(this.gl, this);
+      }
       obj.draw(this.gl, this);
+      secondaryMat?.cleanup();
     }
   }
 
@@ -696,7 +834,7 @@ export default class Scene {
       // reset switch flags
       // NOTE: if end up in a situation with only one program
       // can remove the flag. might be worth a dynamic check
-      this.activeMaterial = undefined;
+      // this.activeMaterial = undefined;
       this.activeProgram = undefined;
 
       this._renderPass(pass, matrices);

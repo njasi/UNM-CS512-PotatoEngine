@@ -2,6 +2,7 @@
 
 import ShaderProgram from "../shaders/ShaderProgram";
 import { rgb } from "../util/color";
+import { vertColor } from "./common";
 import Material from "./Material";
 
 /**
@@ -10,6 +11,14 @@ import Material from "./Material";
  * @alias module:materials/PhongMaterial
  */
 export default class PhongMaterial extends Material {
+  static DEFAULT_MATERIAL = {
+    ka: [0.8, 0.8, 0.8],
+    kd: [0.2, 0.2, 0.2],
+    ks: [0.2, 0.2, 0.2],
+    specularExp: 16,
+    alpha: 1,
+  };
+
   /**
    * Create a (phong shader) material interface object.
    * @param {rgb()} ka
@@ -39,7 +48,7 @@ export default class PhongMaterial extends Material {
    * @param {ShaderProgram} shader
    */
   initUniforms(gl, shader) {
-    super.initUniforms();
+    super.initUniforms(gl, shader);
     this.kaLoc = gl.getUniformLocation(shader.program, "mat.ka");
     this.kdLoc = gl.getUniformLocation(shader.program, "mat.kd");
     this.ksLoc = gl.getUniformLocation(shader.program, "mat.ks");
@@ -61,5 +70,37 @@ export default class PhongMaterial extends Material {
     gl.uniform3f(this.ksLoc, this.ks[0], this.ks[1], this.ks[2]);
     gl.uniform1f(this.specularExpLoc, this.specularExp);
     gl.uniform1f(this.alphaLoc, this.alpha);
+  }
+
+  /**
+   * Clean up the uniforms after material was used
+   * useful for the secondary optional material
+   */
+  cleanup() {
+    super.cleanup();
+    const gl = this._gl;
+    gl.uniform3f(
+      this.kaLoc,
+      PhongMaterial.DEFAULT_MATERIAL.ka[0],
+      PhongMaterial.DEFAULT_MATERIAL.ka[1],
+      PhongMaterial.DEFAULT_MATERIAL.ka[2],
+    );
+    gl.uniform3f(
+      this.kdLoc,
+      PhongMaterial.DEFAULT_MATERIAL.kd[0],
+      PhongMaterial.DEFAULT_MATERIAL.kd[1],
+      PhongMaterial.DEFAULT_MATERIAL.kd[2],
+    );
+    gl.uniform3f(
+      this.ksLoc,
+      PhongMaterial.DEFAULT_MATERIAL.ks[0],
+      PhongMaterial.DEFAULT_MATERIAL.ks[1],
+      PhongMaterial.DEFAULT_MATERIAL.ks[2],
+    );
+    gl.uniform1f(
+      this.specularExpLoc,
+      PhongMaterial.DEFAULT_MATERIAL.specularExp,
+    );
+    gl.uniform1f(this.alphaLoc, PhongMaterial.DEFAULT_MATERIAL.alpha);
   }
 }

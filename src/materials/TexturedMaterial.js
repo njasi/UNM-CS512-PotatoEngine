@@ -27,14 +27,83 @@ export default class TexturedMaterial extends Material {
    * Default texture type name for albedo (regular base color) texture maps
    */
   static TEXTURE_TYPE_ALBEDO = "albedo";
+  /**
+   * Default texture type name for secondary albedo map ( to blend with TEXTURE_TYPE_ALBEDO) texture maps
+   */
+  static TEXTURE_TYPE_ALBEDO2 = "albedo2";
+  /**
+   * Default texture type name for displacement texture maps (shifts all other maps in the texture)
+   */
+  static TEXTURE_TYPE_DISPLACEMENT = "displacement";
 
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   */
+  static TEXTURE_TYPE_COLOR_RAMP = "colorRamp";
+
+  /**
+   * Applies to TEXTURE_TYPE_BUMP
+   *
+   * The scale of bumps in bump maps
+   *
+   * type: float
+   */
+  static U_BUMP_SCALE = "uBumpScale";
+  /**
+   * Applies to TEXTURE_TYPE_NORMAL
+   *
+   * The scale of normals in normal map
+   *
+   * type: float
+   */
+  static U_NORMAL_SCALE = "uNormalScale";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The u coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_U = "uDisplacementU";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The c coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_V = "uDisplacementV";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_STRENGTH = "uDisplacementStrength";
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO, TEXTURE_TYPE_NORMAL, TEXTURE_TYPE_BUMP, TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: vec2
+   */
+  static U_TILE = "uTile";
+
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO2 and TEXTURE_TYPE_ALBEDO
+   * 
+   * Select the blend mode between the two albedo maps
+   */
+  static U_BLEND_MODE = "uAlbedoBlendMode"
+
+  /**
+   * Make a new texturedmaterial
+   * @param {*} label 
+   * @param {*} textures 
+   */
   constructor(label, textures = {}) {
-    // internal state for ease of use
-    // TODO should do this across the other classes...
-    // would be cleaner than the current annoying pass
-    // gl everywhere structure
-    this._gl = undefined;
-    this._program = undefined;
+    super(label);
 
     // texture information
     this._textures = new Map();
@@ -68,6 +137,15 @@ export default class TexturedMaterial extends Material {
   ) {
     const uLabel = type.charAt(0).toUpperCase() + type.slice(1);
 
+    // add tile to extra by default
+    extraUniforms = { ...extraUniforms, [`uTile${uLabel}`]: [1, 1] };
+
+    if (TexturedMaterial.U_TILE in extraUniforms) {
+      extraUniforms[TexturedMaterial.U_TILE + uLabel] =
+        extraUniforms[TexturedMaterial.U_TILE];
+      delete extraUniforms[TexturedMaterial.U_TILE];
+    }
+
     const textureInfo = {
       textureLabel,
       samplerUniform: samplerUniform ?? `u${uLabel}Map`,
@@ -78,11 +156,11 @@ export default class TexturedMaterial extends Material {
     // TODO proper cleaning check here, this should work for now
     // to make sure an old texture is removed properly
     this.removeTexture(type);
-    this.textures.set(type, textureInfo);
+    this._textures.set(type, textureInfo);
 
     if (this._gl && this._program) {
       // add after the program has started...
-      this._getLocs(type, texture);
+      this._getLocs(type, textureInfo);
     }
   }
 
@@ -103,7 +181,7 @@ export default class TexturedMaterial extends Material {
     // ignore related locs if the use loc is false, but
     // it might be better to not have garbage left behind
 
-    this.textures.delete(type);
+    this._textures.delete(type);
     this._locs.delete(type);
   }
 
@@ -114,16 +192,12 @@ export default class TexturedMaterial extends Material {
    */
   initUniforms(gl, shaderProgram) {
     super.initUniforms(gl, shaderProgram);
-    // honestly i should start tracking gl and related objects everywhere
-    // since it makes other functions easier to work with
-    this._gl = gl;
-    this._program = shaderProgram.program;
     this._locs.clear();
 
     // will still need this to interface with my render loop in scene.
     this.programLabel = shaderProgram.label;
 
-    for (const [type, texture] of this.textures) {
+    for (const [type, texture] of this._textures) {
       this._getLocs(type, texture);
     }
   }
@@ -131,16 +205,16 @@ export default class TexturedMaterial extends Material {
   /**
    * Bind the textures & update related uniforms
    * @param {WebGL2RenderingContext} gl
-   * @param {Scene} scene
+   * @param {Scene} scene the scene prompting the update
    */
   updateUniforms(gl, scene) {
     super.updateUniforms(gl);
 
-    const textureUnit = 0;
+    let textureUnit = 0;
 
-    for (const [type, texture] of this.textures) {
+    for (const [type, texture] of this._textures) {
       const locs = this._locs.get(type);
-      const texture2d = scene.getTexture(this.textureLabel);
+      const texture2d = scene.getTexture(texture.textureLabel);
 
       // TODO: do we need to verify the texture still exists?
       // might be useful since user could remove a texture while things
@@ -159,10 +233,18 @@ export default class TexturedMaterial extends Material {
       for (const [uniformName, value] of Object.entries(
         texture.extraUniforms,
       )) {
-        // TODO: for now just support floats, maybe a robust
+        // TODO: for now just support floats, vec2, maybe a robust
         // type split later?
         if (typeof value == "number") {
+          // floats
           this._gl.uniform1f(locs[uniformName], value);
+        } else if (
+          // vec2 support
+          typeof value == "object" &&
+          Array.isArray(value) &&
+          value.length == 2
+        ) {
+          this._gl.uniform2fv(locs[uniformName], value);
         } else {
           console.error(
             `Unsupported extra uniform (type, value): (${typeof value}, ${value})`,
@@ -171,6 +253,47 @@ export default class TexturedMaterial extends Material {
       }
 
       textureUnit++;
+    }
+  }
+
+  /**
+   * Set the value of a extra uniform on a texture map
+   * without re setting the entire texture
+   * @param {String} type
+   * @param {String} uniformName
+   * @param {*} value
+   */
+  setTextureExtraUniform(type, uniformName, value) {
+    const texture = this._textures.get(type);
+    if (!texture) {
+      throw new Error(`Texture type "${type}" is not set`);
+    }
+
+    if (uniformName == TexturedMaterial.U_TILE) {
+      uniformName += type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    // updated value will propagate to shader in updateUniforms
+    texture.extraUniforms[uniformName] = value;
+
+    // update the locations as well
+    // since we could be adding an extra loc
+    const locs = this._locs.get(type);
+    if (this._gl && this._program && locs && !(uniformName in locs)) {
+      locs[uniformName] = this._gl.getUniformLocation(
+        this._program,
+        uniformName,
+      );
+    }
+  }
+
+  /**
+   * Clean up the uniforms after material was used
+   */
+  cleanup() {
+    super.cleanup();
+    for (const [type, _] of this._textures) {
+      this.disableTexture(type);
     }
   }
 
@@ -218,7 +341,7 @@ export default class TexturedMaterial extends Material {
     // get the cursed extra uniforms, may want to nest these or prefix them with
     // the type by default?
     for (const extraUniformName of Object.keys(texture.extraUniforms)) {
-      locs[extraUniformName] = gl.getUniformLocation(
+      locs[extraUniformName] = this._gl.getUniformLocation(
         this._program,
         extraUniformName,
       );

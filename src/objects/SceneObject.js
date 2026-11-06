@@ -80,6 +80,7 @@ export default class SceneObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      materialLabelSecondary = undefined,
       lightingCenter = [0, 0, 0],
       lightingRadius = 1,
       child = false,
@@ -131,6 +132,7 @@ export default class SceneObject {
     // attached in scene if not set at init
     this.programLabel = programLabel;
     this.materialLabel = materialLabel;
+    this.materialLabelSecondary = materialLabelSecondary;
   }
 
   /**

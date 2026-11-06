@@ -16,6 +16,7 @@ import flight from "../../src/controls/flight";
 import TextureColorRamp from "../../src/materials/TextureColorRamp";
 
 const matSelector = document.getElementById("material-selector");
+const mat2Selector = document.getElementById("material-selector-secondary");
 
 const scene = new Scene("glcanvas");
 scene.camera.move(0, 0, 0);
@@ -179,6 +180,7 @@ function addMaterials() {
 }
 
 let selected_mat = -1;
+let selected_secondary_mat = "flat";
 const MAT_CYCLE = [
   "video_tex",
   "bricks_albedo_only",
@@ -192,6 +194,15 @@ const MAT_CYCLE = [
   "color_ramp_displacement",
   "color_ramp_blend",
   "flat",
+  "ambientOnly",
+];
+const SECONDARY_MATS = [
+  "flat",
+  "ambientOnly",
+  "diffuseOnly",
+  "specularOnly",
+  "gold",
+  "glass",
 ];
 
 /**
@@ -263,6 +274,7 @@ function initSceneObjects(object = "cube", shader = "phong") {
   }
 
   texturedObject.materialLabel = "bricks_albedo_only";
+  texturedObject.materialLabelSecondary = selected_secondary_mat;
   scene.addObject(texturedObject, shader);
   texturedObject.position = [0, 0, 0];
   texturedObject.lightingRadius = 2;
@@ -286,8 +298,18 @@ function attachListeners() {
     matSelector.innerHTML += `<option value=${mat}>${mat}</option>`;
   }
 
+  for (const mat of SECONDARY_MATS) {
+    mat2Selector.innerHTML += `<option value=${mat}>${mat}</option>`;
+  }
+
   matSelector.addEventListener("input", (event) => {
     selected_mat = event.target.value;
+  });
+
+  mat2Selector.addEventListener("input", (event) => {
+    selected_secondary_mat = event.target.value;
+    texturedObject.materialLabelSecondary = event.target.value;
+    console.log(texturedObject);
   });
 }
 

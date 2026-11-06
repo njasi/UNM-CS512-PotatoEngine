@@ -104,12 +104,6 @@ export default class TexturedMaterial extends Material {
    */
   constructor(label, textures = {}) {
     super(label);
-    // internal state for ease of use
-    // TODO should do this across the other classes...
-    // would be cleaner than the current annoying pass
-    // gl everywhere structure
-    this._gl = undefined;
-    this._program = undefined;
 
     // texture information
     this._textures = new Map();
@@ -198,10 +192,6 @@ export default class TexturedMaterial extends Material {
    */
   initUniforms(gl, shaderProgram) {
     super.initUniforms(gl, shaderProgram);
-    // honestly i should start tracking gl and related objects everywhere
-    // since it makes other functions easier to work with
-    this._gl = gl;
-    this._program = shaderProgram.program;
     this._locs.clear();
 
     // will still need this to interface with my render loop in scene.

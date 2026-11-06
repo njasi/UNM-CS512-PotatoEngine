@@ -23,8 +23,8 @@ struct Material {
     float alpha;
 };
 
-Material mat;
-// uniform Material mat;
+// Material mat;
+uniform Material mat;
 
 // TODO secondary albedo map that can be blended?
 // an array of maps would be great, but easier to just have 2
@@ -209,11 +209,11 @@ vec2 getDisplacedUV() {
 }
 
 void main() {
-    mat.ka = vec3(0.2f, 0.2f, 0.2f);
-    mat.kd = vec3(0.8f, 0.8f, 0.8f);
-    mat.ks = vec3(0.f, 0.f, 0.f);
-    mat.specularExp = 1.0f;
-    mat.alpha = 1.0f;
+    // mat.ka = vec3(0.2f, 0.2f, 0.2f);
+    // mat.kd = vec3(0.8f, 0.8f, 0.8f);
+    // mat.ks = vec3(0.f, 0.f, 0.f);
+    // mat.specularExp = 1.0f;
+    // mat.alpha = 1.0f;
 
     vec2 uv = getDisplacedUV();
 

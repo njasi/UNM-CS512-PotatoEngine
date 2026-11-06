@@ -557,7 +557,11 @@ export default class Scene {
    * @param {boolean} options.load if we want to start load function on the texture
    * @param {string | TexImageSource} options.source if you want to use a source
    */
-  addTexture(label, texture, { upload = false, load = true, source = undefined } = {}) {
+  addTexture(
+    label,
+    texture,
+    { upload = false, load = true, source = undefined } = {},
+  ) {
     if (this.textures.has(label)) {
       throw new Error(`Texture "${label}" already exists`);
     }
@@ -565,7 +569,7 @@ export default class Scene {
     if (upload) {
       texture.ready = texture.upload(source);
     } else if (load) {
-      console.log("loading texture", label)
+      console.log("loading texture", label);
       texture.ready = texture.load(source);
     }
 
@@ -794,7 +798,13 @@ export default class Scene {
         shaderProgram.updateLightMask(this.gl, obj, lights);
       }
 
+      let secondaryMat = undefined;
+      if (shaderProgram.hasMaterial && !!obj.materialLabelSecondary) {
+        secondaryMat = this.getMaterial(obj.materialLabelSecondary);
+        secondaryMat.updateUniforms(this.gl, this);
+      }
       obj.draw(this.gl, this);
+      secondaryMat?.cleanup();
     }
   }
 

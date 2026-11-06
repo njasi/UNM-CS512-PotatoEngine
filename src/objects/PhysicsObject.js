@@ -12,7 +12,7 @@ import SceneObject from "./SceneObject";
  * - movement velocity
  * - rotational velocity
  * - basic collisions (spheres atm)
- * 
+ *
  * @class
  * @alias module:objects/PhysicsObject
  */
@@ -54,6 +54,8 @@ export default class PhysicsObject extends SceneObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      tangents = undefined,
+      texCoords = undefined,
       // physics object options
       velocity = [0, 0, 0, 0],
       rotVelocity = [0, 0, 0, 0],
@@ -63,7 +65,7 @@ export default class PhysicsObject extends SceneObject {
       onCollision = undefined,
     } = {},
   ) {
-    super(label, vertices, colors, indices, normals, parent, {
+    super(label, vertices, colors, indices, normals, {
       parent,
       position,
       rotation,
@@ -71,6 +73,8 @@ export default class PhysicsObject extends SceneObject {
       shouldDraw,
       programLabel,
       materialLabel,
+      tangents,
+      texCoords,
     });
 
     this.velocity = velocity;

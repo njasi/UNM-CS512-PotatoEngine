@@ -10,11 +10,11 @@ import PhysicsObject from "./PhysicsObject";
  * Might just combine being "floaty" on the normal physics object later
  *
  * Floating calculations are very lazy but good enough for now.
- * 
+ *
  * These objects will slow down their velocity and rotational velocity while in water.
- * and accelerate upwards while under water. Eventually if speed is low enough they snap to the 
+ * and accelerate upwards while under water. Eventually if speed is low enough they snap to the
  * water surface.
- * 
+ *
  * @class
  * @alias module:objects/FloatingObject
  */
@@ -58,6 +58,8 @@ export default class FloatingObject extends PhysicsObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      tangents = undefined,
+      texCoords = undefined,
       // physics object options
       velocity = [0, 0, 0, 0],
       rotVelocity = [0, 0, 0, 0],
@@ -79,6 +81,8 @@ export default class FloatingObject extends PhysicsObject {
       shouldDraw,
       programLabel,
       materialLabel,
+      tangents,
+      texCoords,
       velocity,
       rotVelocity,
       gravity,
@@ -102,13 +106,13 @@ export default class FloatingObject extends PhysicsObject {
    * additionally apply the PhysicsObject based updates
    * - gravity, pos & rot velocity
    * - detect collisions in the scene
-   * 
+   *
    * finally apply FloatingObject updates:
    * - check water level
-   * - float up 
+   * - float up
    * - decelerate in water
    * - snap to water if speed low & close to surface
-   * 
+   *
    * @param {number} dt change since last update in ms
    * @param {Scene} scene the scene updating the object
    */

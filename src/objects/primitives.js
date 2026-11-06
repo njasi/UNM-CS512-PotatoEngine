@@ -455,11 +455,11 @@ export function generateCylinder(
           -dRadius1,
         );
 
-        for (const [radius, angle, z, normal] of [
-          [trueRadius0, uRad0, vertZ0, n0],
-          [trueRadius0, uRad1, vertZ0, n0],
-          [trueRadius1, uRad0, vertZ1, n1],
-          [trueRadius1, uRad1, vertZ1, n1],
+        for (const [radius, angle, z, normal, uCoord, vCoord] of [
+          [trueRadius0, uRad0, vertZ0, n0, u / segments, vFrac],
+          [trueRadius0, uRad1, vertZ0, n0, (u + 1) / segments, vFrac],
+          [trueRadius1, uRad0, vertZ1, n1, u / segments, vFrac1],
+          [trueRadius1, uRad1, vertZ1, n1, (u + 1) / segments, vFrac1],
         ]) {
           vertices.push(
             x_c + radius * Math.cos(angle),
@@ -468,6 +468,8 @@ export function generateCylinder(
             1,
           );
           normals.push(...normal);
+          texCoords.push(uCoord, vCoord);
+          tangents.push(-Math.sin(angle), Math.cos(angle), 0);
         }
 
         indices.push(
@@ -501,6 +503,8 @@ export function generateCylinder(
 
         vertices.push(vertX, vertY, vertZ, 1);
         normals.push(...normalizeV3(Math.cos(uRad), Math.sin(uRad), -dRadius));
+        texCoords.push(u / segments, vFrac);
+        tangents.push(-Math.sin(uRad), Math.cos(uRad), 0);
       }
     }
 
@@ -534,6 +538,8 @@ export function generateCylinder(
     const centerIndex = vertices.length / 4;
     vertices.push(x_c, y_c, z, 1);
     normals.push(0, 0, nz);
+    texCoords.push(0.5, 0.5);
+    tangents.push(1, 0, 0);
 
     const capStart = vertices.length / 4;
     for (let u = 0; u < segments; u++) {
@@ -544,6 +550,8 @@ export function generateCylinder(
 
       vertices.push(vertX, vertY, z, 1);
       normals.push(0, 0, nz);
+      texCoords.push(0.5 + 0.5 * Math.cos(uRad), 0.5 + 0.5 * Math.sin(uRad));
+      tangents.push(1, 0, 0);
     }
 
     for (let u = 0; u < segments; u++) {
@@ -575,6 +583,8 @@ export function generateCylinder(
   return new PrimitiveObject(vertices, {
     indices,
     normals,
+    texCoords,
+    tangents,
     vertexCount: vertices.length / 4,
   });
 }
@@ -654,7 +664,11 @@ export function generateTorus(
  * @param {number} options.z_c z coord of the center of the grid
  * @returns {PrimitiveObject}
  */
-export function generateGrid(segments, size, {x_c = 0, y_c = 0, z_c = 0} = {}) {
+export function generateGrid(
+  segments,
+  size,
+  { x_c = 0, y_c = 0, z_c = 0 } = {},
+) {
   const vertices = [];
   const normals = [];
   const indices = [];

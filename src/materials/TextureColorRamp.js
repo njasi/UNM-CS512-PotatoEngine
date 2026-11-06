@@ -29,6 +29,7 @@ export default class TextureColorRamp extends Texture2D {
     colorStart,
     colorEnd,
     {
+      label = undefined,
       width = 255,
       flipY = true,
       mipmaps = true,
@@ -51,6 +52,7 @@ export default class TextureColorRamp extends Texture2D {
       animated,
     });
 
+    this.label = label;
     this.width = width;
     this.colorStart = colorStart;
     this.colorEnd = colorEnd;
@@ -64,6 +66,12 @@ export default class TextureColorRamp extends Texture2D {
    */
   load() {
     const gl = this._gl;
+
+    // dont overwrite texture state...
+    // this was very annoying to find im so tired
+    const activeTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
+    const previousBinding = gl.getParameter(gl.TEXTURE_BINDING_2D);
+
     const pixels = new Uint8Array(this.width * 4);
 
     for (let i = 0; i < this.width; i++) {
@@ -77,16 +85,15 @@ export default class TextureColorRamp extends Texture2D {
               (this.colorEnd[channel] - this.colorStart[channel]) * ratio),
         );
       }
-      pixels[i * 4];
+
+      pixels[i * 4 + 3] = 255;
     }
 
     // extra binding of the texture i could technically avoid here
     // by caching the result until we actually call the texture.bind
     // not sure its worth it though...
-
-    console.log(this.colorStart, this.colorEnd, pixels);
-
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -98,6 +105,14 @@ export default class TextureColorRamp extends Texture2D {
       gl.UNSIGNED_BYTE,
       pixels,
     );
+
+    if (this.mipmaps) {
+      gl.generateMipmap(gl.TEXTURE_2D);
+    }
+
+    // rebind the texture info 
+    gl.bindTexture(gl.TEXTURE_2D, previousBinding);
+    gl.activeTexture(activeTexture);
   }
 
   /**

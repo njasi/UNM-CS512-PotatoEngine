@@ -41,9 +41,9 @@ uniform sampler2D uColorRampMap;
 uniform bool uUseColorRampMap;
 uniform vec2 uTileColorRamp;
 
-uniform sampler2D uColorRamp2Map;
-uniform bool uUseColorRamp2Map;
-uniform vec2 uTileColorRamp2;
+uniform sampler2D uColorRampSecondaryMap;
+uniform bool uUseColorRampSecondaryMap;
+uniform vec2 uTileColorRampSecondary;
 
 uniform sampler2D uAlbedoMap;
 uniform bool uUseAlbedoMap;
@@ -221,27 +221,31 @@ void main() {
     vec2 uv = getDisplacedUV();
 
     vec4 texel = vec4(1.0f);
+
     if(uUseAlbedoMap) {
         texel = texture(uAlbedoMap, uv * uTileAlbedo);
 
         if(uUseColorRampMap) {
+
             // NOTE: get luminance => assuming we gonna color ramp only grayscale
             float lum = dot(texel.rgb, vec3(0.299f, 0.587f, 0.114f));
+            texel.rgb = vec3(1.0f);
             texel.rgb = texture(uColorRampMap, vec2(lum, 0.5f)).rgb;
         }
+    }
 
-        // apply secondary albedo
-        if(uUseAlbedo2Map) {
-            // later switch on uAlbedoBlendMode but for now i just need lighten
-            vec3 albedo2 = texture(uAlbedo2Map, uv * uTileAlbedo2).rgb;
+    // apply secondary albedo
+    if(uUseAlbedo2Map) {
+        vec3 albedo2 = texture(uAlbedo2Map, uv * uTileAlbedo2).rgb;
 
-            if(uUseColorRamp2Map) {
-                // NOTE: get luminance => assuming we gonna color ramp only grayscale
-                float lum = dot(albedo2, vec3(0.299f, 0.587f, 0.114f));
-                albedo2 = texture(uColorRamp2Map, vec2(lum, 0.5f)).rgb;
-            }
-            texel.rgb = max(texel.rgb, albedo2);
+        if(uUseColorRampSecondaryMap) {
+            // NOTE: get luminance => assuming we gonna color ramp only grayscale
+            float lum = dot(albedo2, vec3(0.299f, 0.587f, 0.114f));
+            albedo2 = texture(uColorRampSecondaryMap, vec2(lum, 0.5f)).rgb;
         }
+
+        // later switch on uAlbedoBlendMode but for now i just need lighten
+        texel.rgb = max(texel.rgb, albedo2);
     }
 
     // maybe blending mode options between vColor & texel?

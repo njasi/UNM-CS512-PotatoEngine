@@ -40,6 +40,7 @@ export default class TexturedMaterial extends Material {
    * Default texture type name for color ramp texture (TextureColorRamp)
    */
   static TEXTURE_TYPE_COLOR_RAMP = "colorRamp";
+  static TEXTURE_TYPE_COLOR_RAMP2 = "colorRamp2";
 
   /**
    * Applies to TEXTURE_TYPE_BUMP

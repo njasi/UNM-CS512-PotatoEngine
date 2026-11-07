@@ -502,6 +502,7 @@ export default class Scene {
    * @param {boolean} [options.animated=false] if the TexImageSource is animated (ie video, gif etc)
    * @param {boolean} [options.flipY=true]
    * @param {boolean} [options.mipmaps=true]
+   * @param {number} [options.blackMipmaps=0]
    * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
    * @param {*} [options.magFilter=gl.LINEAR]
    * @param {*} [options.wrapS=gl.REPEAT]
@@ -517,6 +518,7 @@ export default class Scene {
       animated = false,
       flipY = true,
       mipmaps = true,
+      blackMipmaps = 0,
       minFilter = this.gl.LINEAR_MIPMAP_LINEAR,
       magFilter = this.gl.LINEAR,
       wrapS = this.gl.REPEAT,
@@ -533,6 +535,7 @@ export default class Scene {
       animated,
       flipY,
       mipmaps,
+      blackMipmaps,
       minFilter,
       magFilter,
       wrapS,

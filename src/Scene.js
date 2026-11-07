@@ -15,6 +15,7 @@ import {
 import RenderPass from "./renderers/RenderPass";
 import { renderers } from ".";
 import { Texture2D, Material } from "./materials";
+import { calculateLightMatrices } from "./renderers/shadow";
 
 /**
  * Overall state management for a scene
@@ -759,23 +760,30 @@ export default class Scene {
 
         shaderProgram.use(this.gl);
 
+        // use a shader passes matrices if it has them set
+        let matOverride = pass.matrices ? pass.matrices : matrices;
+
         // TODO: I should really move these functions into the shader class
         //       like the material class with its updateUniforms call
         this._updateShaderGeneralLocs(
           shaderProgram,
-          matrices.projectionTransform,
-          matrices.viewTransform,
-          matrices.sceneTransform,
+          matOverride.projectionTransform,
+          matOverride.viewTransform,
+          matOverride.sceneTransform,
         );
 
         // transformation needed to correct light positions to correct space
         // this will probably conflict if I ever want to attach a light to an object
         // TODO these probably get moved into the shader passes?
         const lightTransformation = multiplyMat4(
-          matrices.viewTransform,
-          matrices.sceneTransform,
+          matOverride.viewTransform,
+          matOverride.sceneTransform,
         );
         this._updateShaderLights(shaderProgram, lightTransformation);
+
+        if (!!pass.updateUniforms) {
+          pass.updateUniforms(this.gl, shaderProgram, scene, pass, matOverride);
+        }
 
         //
         this.activeProgram = obj.programLabel;

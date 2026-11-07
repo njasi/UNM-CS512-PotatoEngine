@@ -25,6 +25,7 @@ export default class RenderPass {
    * @param {rgb()} options.clearColor the color to clear with
    * @param {function} options.setup callback function for before we start the pass
    * @param {function} options.cleanup callback function for after we've finished the pass
+   * @param {function} options.updateUniforms callback function to call
    * @param {function} options.sort function that defines the render order of objects by sorting them
    */
   constructor(
@@ -36,6 +37,7 @@ export default class RenderPass {
       clearColor = null,
       setup = null,
       cleanup = null,
+      updateUniforms = null,
       sort = null,
     } = {},
   ) {
@@ -46,9 +48,17 @@ export default class RenderPass {
     this.clearColor = clearColor;
     this.setup = setup;
     this.cleanup = cleanup;
+    this.updateUniforms = updateUniforms;
     this.sort = sort;
 
+    // override the default scene view / transform matrices
+    this.matrices = undefined
+
     this.objects = new Set();
+
+    this.setup = this.setup.bind(this);
+    this.cleanup = this.cleanup.bind(this);
+    this.updateUniforms = this.updateUniforms.bind(this);
   }
 
   /**

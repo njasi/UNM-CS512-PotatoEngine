@@ -101,8 +101,6 @@ export default class PhysicsObject extends SceneObject {
    * @param {Scene} scene the scene prompting the update
    */
   update(dt, scene) {
-    super.update(dt, scene);
-
     // update the position & rotation & apply gravity
     this.position = sumVec4(this.position, scaleVec4(this.velocity, dt));
     this.rotation = sumVec4(this.rotation, scaleVec4(this.rotVelocity, dt));
@@ -132,5 +130,8 @@ export default class PhysicsObject extends SceneObject {
         }
       }
     }
+
+    //update at end so parent matricies are correct
+    super.update(dt, scene);
   }
 }

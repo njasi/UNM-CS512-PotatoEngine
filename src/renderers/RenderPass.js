@@ -56,9 +56,15 @@ export default class RenderPass {
 
     this.objects = new Set();
 
-    this.setup = this.setup.bind(this);
-    this.cleanup = this.cleanup.bind(this);
-    this.updateUniforms = this.updateUniforms.bind(this);
+    if(this.setup){
+      this.setup = this.setup.bind(this);
+    }
+    if(this.cleanup){ 
+      this.cleanup = this.cleanup.bind(this);
+    }
+    if(this.updateUniforms){
+      this.updateUniforms = this.updateUniforms.bind(this);
+    }
   }
 
   /**

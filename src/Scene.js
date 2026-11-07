@@ -15,7 +15,6 @@ import {
 import RenderPass from "./renderers/RenderPass";
 import { renderers } from ".";
 import { Texture2D, Material } from "./materials";
-import { calculateLightMatrices } from "./renderers/shadow";
 
 /**
  * Overall state management for a scene
@@ -84,9 +83,14 @@ export default class Scene {
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
 
-    // baisc render passes
+    // still cant get the shadows working ugh
+    // renderers.addShadowAndMainPasses(this);
+    // this.defaultPasses = ["shadow", "main"];
+
+    // basic render passes
     renderers.addBasicRenderPass(this);
     renderers.addTransparentRenderPass(this);
+    this.defaultPasses = ["basic"];
   }
 
   ///////////////////////
@@ -113,7 +117,7 @@ export default class Scene {
     materialLabel = obj.materialLabel,
     {
       child = obj.child,
-      passes = obj.passes || ["basic"],
+      passes = obj.passes || this.defaultPasses,
       addChildren = false,
     } = {},
   ) {
@@ -782,7 +786,7 @@ export default class Scene {
         this._updateShaderLights(shaderProgram, lightTransformation);
 
         if (!!pass.updateUniforms) {
-          pass.updateUniforms(this.gl, shaderProgram, scene, pass, matOverride);
+          pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
         }
 
         //

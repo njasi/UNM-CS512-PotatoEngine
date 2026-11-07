@@ -1,4 +1,4 @@
-// TODO pass for shadow? may have to combine 
+// TODO pass for shadow? may have to combine
 // with other passes to get working
 // think ill need some extra components in the render pass
 

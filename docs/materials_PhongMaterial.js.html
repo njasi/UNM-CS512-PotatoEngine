@@ -30,6 +30,7 @@
 
 import ShaderProgram from "../shaders/ShaderProgram";
 import { rgb } from "../util/color";
+import { vertColor } from "./common";
 import Material from "./Material";
 
 /**
@@ -38,6 +39,14 @@ import Material from "./Material";
  * @alias module:materials/PhongMaterial
  */
 export default class PhongMaterial extends Material {
+  static DEFAULT_MATERIAL = {
+    ka: [0.8, 0.8, 0.8],
+    kd: [0.2, 0.2, 0.2],
+    ks: [0.2, 0.2, 0.2],
+    specularExp: 16,
+    alpha: 1,
+  };
+
   /**
    * Create a (phong shader) material interface object.
    * @param {rgb()} ka
@@ -67,7 +76,7 @@ export default class PhongMaterial extends Material {
    * @param {ShaderProgram} shader
    */
   initUniforms(gl, shader) {
-    super.initUniforms();
+    super.initUniforms(gl, shader);
     this.kaLoc = gl.getUniformLocation(shader.program, "mat.ka");
     this.kdLoc = gl.getUniformLocation(shader.program, "mat.kd");
     this.ksLoc = gl.getUniformLocation(shader.program, "mat.ks");
@@ -90,6 +99,38 @@ export default class PhongMaterial extends Material {
     gl.uniform1f(this.specularExpLoc, this.specularExp);
     gl.uniform1f(this.alphaLoc, this.alpha);
   }
+
+  /**
+   * Clean up the uniforms after material was used
+   * useful for the secondary optional material
+   */
+  cleanup() {
+    super.cleanup();
+    const gl = this._gl;
+    gl.uniform3f(
+      this.kaLoc,
+      PhongMaterial.DEFAULT_MATERIAL.ka[0],
+      PhongMaterial.DEFAULT_MATERIAL.ka[1],
+      PhongMaterial.DEFAULT_MATERIAL.ka[2],
+    );
+    gl.uniform3f(
+      this.kdLoc,
+      PhongMaterial.DEFAULT_MATERIAL.kd[0],
+      PhongMaterial.DEFAULT_MATERIAL.kd[1],
+      PhongMaterial.DEFAULT_MATERIAL.kd[2],
+    );
+    gl.uniform3f(
+      this.ksLoc,
+      PhongMaterial.DEFAULT_MATERIAL.ks[0],
+      PhongMaterial.DEFAULT_MATERIAL.ks[1],
+      PhongMaterial.DEFAULT_MATERIAL.ks[2],
+    );
+    gl.uniform1f(
+      this.specularExpLoc,
+      PhongMaterial.DEFAULT_MATERIAL.specularExp,
+    );
+    gl.uniform1f(this.alphaLoc, PhongMaterial.DEFAULT_MATERIAL.alpha);
+  }
 }
 </code></pre>
         </article>
@@ -101,13 +142,13 @@ export default class PhongMaterial extends Material {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Nov 03 2026 15:46:23 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Nov 07 2026 22:19:43 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

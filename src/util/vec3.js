@@ -56,10 +56,21 @@ function normalize(a) {
   return [a[0] / h, a[1] / h, a[2] / h];
 }
 
+/**
+ * Copy vec values to stop mutation
+ * @param {number[]} a vector [x,y,z]
+ * @returns {number[]}
+ */
+function copy(a = [0, 0, 0]) {
+  return [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0];
+}
+
+
 export default {
   scale,
   sum,
   sumList,
   distance,
   normalize,
+  copy
 };

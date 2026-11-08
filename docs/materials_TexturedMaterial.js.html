@@ -55,15 +55,92 @@ export default class TexturedMaterial extends Material {
    * Default texture type name for albedo (regular base color) texture maps
    */
   static TEXTURE_TYPE_ALBEDO = "albedo";
+  /**
+   * Default texture type name for secondary albedo map ( to blend with TEXTURE_TYPE_ALBEDO) texture maps
+   */
+  static TEXTURE_TYPE_ALBEDO2 = "albedo2";
+  /**
+   * Default texture type name for displacement texture maps (shifts all other maps in the texture)
+   */
+  static TEXTURE_TYPE_DISPLACEMENT = "displacement";
 
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   *
+   * Applies to TEXTURE_TYPE_ALBEDO
+   */
+  static TEXTURE_TYPE_COLOR_RAMP = "colorRamp";
+
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   *
+   * Applies to TEXTURE_TYPE_ALBEDO2
+   */
+  static TEXTURE_TYPE_COLOR_RAMP2 = "colorRampSecondary";
+
+  /**
+   * Applies to TEXTURE_TYPE_BUMP
+   *
+   * The scale of bumps in bump maps
+   *
+   * type: float
+   */
+  static U_BUMP_SCALE = "uBumpScale";
+  /**
+   * Applies to TEXTURE_TYPE_NORMAL
+   *
+   * The scale of normals in normal map
+   *
+   * type: float
+   */
+  static U_NORMAL_SCALE = "uNormalScale";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The u coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_U = "uDisplacementU";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The c coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_V = "uDisplacementV";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_STRENGTH = "uDisplacementStrength";
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO, TEXTURE_TYPE_NORMAL, TEXTURE_TYPE_BUMP, TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: vec2
+   */
+  static U_TILE = "uTile";
+
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO2 and TEXTURE_TYPE_ALBEDO
+   *
+   * Select the blend mode between the two albedo maps
+   */
+  static U_BLEND_MODE = "uAlbedoBlendMode";
+
+  /**
+   * Make a new texturedmaterial
+   * @param {*} label
+   * @param {*} textures
+   */
   constructor(label, textures = {}) {
     super(label);
-    // internal state for ease of use
-    // TODO should do this across the other classes...
-    // would be cleaner than the current annoying pass
-    // gl everywhere structure
-    this._gl = undefined;
-    this._program = undefined;
 
     // texture information
     this._textures = new Map();
@@ -96,6 +173,15 @@ export default class TexturedMaterial extends Material {
     } = {},
   ) {
     const uLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+    // add tile to extra by default
+    extraUniforms = { ...extraUniforms, [`uTile${uLabel}`]: [1, 1] };
+
+    if (TexturedMaterial.U_TILE in extraUniforms) {
+      extraUniforms[TexturedMaterial.U_TILE + uLabel] =
+        extraUniforms[TexturedMaterial.U_TILE];
+      delete extraUniforms[TexturedMaterial.U_TILE];
+    }
 
     const textureInfo = {
       textureLabel,
@@ -143,10 +229,6 @@ export default class TexturedMaterial extends Material {
    */
   initUniforms(gl, shaderProgram) {
     super.initUniforms(gl, shaderProgram);
-    // honestly i should start tracking gl and related objects everywhere
-    // since it makes other functions easier to work with
-    this._gl = gl;
-    this._program = shaderProgram.program;
     this._locs.clear();
 
     // will still need this to interface with my render loop in scene.
@@ -177,7 +259,6 @@ export default class TexturedMaterial extends Material {
 
       texture2d.bind(textureUnit);
 
-      // console.log("LOCS:", this._locs)
       if (!!locs.sampler) {
         this._gl.uniform1i(locs.sampler, textureUnit);
       }
@@ -189,10 +270,18 @@ export default class TexturedMaterial extends Material {
       for (const [uniformName, value] of Object.entries(
         texture.extraUniforms,
       )) {
-        // TODO: for now just support floats, maybe a robust
+        // TODO: for now just support floats, vec2, maybe a robust
         // type split later?
         if (typeof value == "number") {
+          // floats
           this._gl.uniform1f(locs[uniformName], value);
+        } else if (
+          // vec2 support
+          typeof value == "object" &amp;&amp;
+          Array.isArray(value) &amp;&amp;
+          value.length == 2
+        ) {
+          this._gl.uniform2fv(locs[uniformName], value);
         } else {
           console.error(
             `Unsupported extra uniform (type, value): (${typeof value}, ${value})`,
@@ -215,6 +304,10 @@ export default class TexturedMaterial extends Material {
     const texture = this._textures.get(type);
     if (!texture) {
       throw new Error(`Texture type "${type}" is not set`);
+    }
+
+    if (uniformName == TexturedMaterial.U_TILE) {
+      uniformName += type.charAt(0).toUpperCase() + type.slice(1);
     }
 
     // updated value will propagate to shader in updateUniforms
@@ -304,13 +397,13 @@ export default class TexturedMaterial extends Material {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Nov 03 2026 15:46:23 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Nov 07 2026 22:19:43 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

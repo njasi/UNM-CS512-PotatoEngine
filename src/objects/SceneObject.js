@@ -42,16 +42,14 @@ import PrimitiveObject from "./PrimitiveObject";
  * @alias module:objects/SceneObject
  */
 export default class SceneObject {
-  static DEFAULT_OPTIONS = {};
-
   /**
    * Make an scene object (basic object to render)
-   * @param {string} label
-   * @param {Float32Array} vertices
-   * @param {Float32Array} colors
-   * @param {Int16Array} indices
-   * @param {Float32Array} normals
    * @param {*} options
+   * @param {string} label
+   * @param {Float32Array} options.vertices
+   * @param {Float32Array} options.colors
+   * @param {Int16Array} options.indices
+   * @param {Float32Array} options.normals
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
    * @param {number[]} options.position             initial position of the object
    * @param {number[]} options.rotation             initial rotation of the object
@@ -68,11 +66,11 @@ export default class SceneObject {
    */
   constructor(
     label,
-    vertices,
-    colors,
-    indices,
-    normals,
     {
+      vertices = undefined,
+      colors = undefined,
+      indices = undefined,
+      normals = undefined,
       parent = undefined,
       position = [0, 0, 0],
       rotation = [0, 0, 0],

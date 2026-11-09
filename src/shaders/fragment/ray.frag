@@ -49,10 +49,10 @@ Sphere glassSphere;
 Cube cube;
 
 void initScene(float time) {
-  float a = time * 0.5f;
+  float a = time * 2.f;
   sphere = Sphere(vec3(cos(a) * 2.5f, sin(a * 1.3f) * 0.8f, -6.0f + sin(a) * 0.5f), 1.0f, vec3(1.0f, 0.3f, 0.3f));
 
-  float b = time * 0.3f;
+  float b = time * 2.f;
   cube = Cube(vec3(sin(b) * 2.0f, cos(b * 1.5f) + 0.5f, -9.0f + cos(b * 0.7f)), 0.8f, vec3(0.3f, 0.8f, 0.3f), 0.85f);
 }
 

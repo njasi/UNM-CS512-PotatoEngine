@@ -20,11 +20,11 @@ export default class PhysicsObject extends SceneObject {
   /**
    * Make a new PhysicsObject, a scene object with simple physics builtin
    * @param {string} label
-   * @param {Float32Array} vertices
-   * @param {Float32Array} colors
-   * @param {Int16Array} indices
-   * @param {Float32Array} normals
    * @param {*} options
+   * @param {Float32Array} options.vertices
+   * @param {Float32Array} options.colors
+   * @param {Int16Array} options.indices
+   * @param {Float32Array} options.normals
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
    * @param {number[]} options.position             initial three tuple [x,y,z] position of the object
    * @param {number[]} options.rotation             initial three tuple [x,y,z] rotation of the object
@@ -41,12 +41,12 @@ export default class PhysicsObject extends SceneObject {
    */
   constructor(
     label,
-    vertices,
-    colors,
-    indices,
-    normals,
     {
       // basic scene object options
+      vertices = undefined,
+      colors = undefined,
+      indices = undefined,
+      normals = undefined,
       parent = undefined,
       position = [0, 0, 0],
       rotation = [0, 0, 0],

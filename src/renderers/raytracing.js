@@ -3,6 +3,7 @@
  */
 
 import { Scene } from "..";
+import { RayObject } from "../objects";
 import { ShaderProgram } from "../shaders";
 import RayShaderProgram from "../shaders/RayShaderProgram";
 import RenderPass from "./RenderPass";
@@ -34,7 +35,7 @@ export function addRayTracingRenderPass(scene, programLabel = "ray") {
  * @param {Scene} scene
  */
 function setup(gl, scene) {
-  // gl.
+  // no setup rn
 }
 
 /**
@@ -61,6 +62,10 @@ function updateUniforms(gl, shaderProgram, scene) {
     scene.camera.yaw,
   ]);
 
+  packObjects(gl, [...this.objects], shaderProgram);
+  // packLights()
+  // packMaterials()
+
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
@@ -73,8 +78,32 @@ function cleanup(gl, scene) {}
 
 /**
  * Pack objects into the object buffer
+ * @param {WebGL2RenderingContext} gl
+ * @param {RayObject[]} objects
+ * @param {RayShaderProgram} shaderProgram
  */
-function packObjects() {}
+function packObjects(gl, objects, shaderProgram) {
+  const bytes = new ArrayBuffer(
+    RayObject.OBJECT_BYTE_SIZE * shaderProgram.maxObjects,
+  );
+  const view = new DataView(bytes);
+  const objectUpload = new Uint8Array(bytes);
+
+  for (let i = 0; i < objects.length; i++) {
+    objects[i].packData(view, i * RayObject.OBJECT_BYTE_SIZE);
+  }
+
+  // throw the data into the buffer
+  gl.bindBuffer(gl.UNIFORM_BUFFER, shaderProgram.objectBuffer);
+  gl.bufferSubData(
+    gl.UNIFORM_BUFFER,
+    0,
+    objectUpload.subarray(0, objects.length * RayObject.OBJECT_BYTE_SIZE),
+  );
+  gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+
+  shaderProgram.uniforms.u_objectCount = objects.length;
+}
 
 /**
  * Pack materials into the material buffer

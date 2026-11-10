@@ -3,6 +3,7 @@ import RayShaderProgram from "../../src/shaders/RayShaderProgram";
 import controls from "../../src/controls";
 import { addRayTracingRenderPass } from "../../src/renderers/raytracing";
 import flight from "../../src/controls/flight";
+import { RayObject } from "../../src/objects";
 
 const SHADER_PROGRAM_RAY = "ray";
 
@@ -26,7 +27,12 @@ function setupInputControls() {}
  * Initalize all the objects in the starting scene
  * - the segments of the arm
  */
-function initSceneObjects() {}
+function initSceneObjects() {
+  const sphere = new RayObject("testSphere", RayObject.OBJECT_TYPE_SPHERE, {
+    radius: 20,
+  });
+  scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
+}
 
 flight.setupMouseControls(scene);
 const cameraCB = flight.setupKeyboardControls(scene);

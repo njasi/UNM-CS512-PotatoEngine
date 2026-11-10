@@ -80,7 +80,7 @@ export default class RayObject extends SceneObject {
       lightingRadius = 1,
 
       // ray object geometry
-      materialIndex = 0,
+      materialIndex = -1,
       radius = undefined,
       halfSize = undefined,
       height = undefined,
@@ -137,11 +137,11 @@ export default class RayObject extends SceneObject {
    *
    * TODO can probably cache this to not recomput every time
    * maybe a dirty attribute on it or smth
+   *
+   * @param {DataView} view the view we want to pack the object into
+   * @param {int} offset offset bytes this object starts at
    */
-  packData() {
-    const bytes = new ArrayBuffer(RayObject.OBJECT_BYTE_SIZE);
-    const view = new DataView(bytes);
-
+  packData(view, offset) {
     const center = this.position;
     let mat = this.M;
 
@@ -153,10 +153,10 @@ export default class RayObject extends SceneObject {
     }
 
     // ivec4 meta (offset 0)
-    view.setInt32(0, this.type, true);
-    view.setInt32(4, this.materialIndex, true);
-    view.setInt32(8, this.faceted ? 1 : 0, true);
-    view.setInt32(12, this.faces ?? 0, true);
+    view.setInt32(0 + offset, this.type, true);
+    view.setInt32(4 + offset, this.materialIndex, true);
+    view.setInt32(8 + offset, this.faceted ? 1 : 0, true);
+    view.setInt32(12 + offset, this.faces ?? 0, true);
 
     // vec4 centerRadius (offset 16)
     let size = 0;
@@ -180,10 +180,10 @@ export default class RayObject extends SceneObject {
     // NOTE: this.M should already contain the position transform
     //       but we ignore it for now since its not parsed in
     //       the fragment shader
-    view.setFloat32(16, center[0], true);
-    view.setFloat32(20, center[1], true);
-    view.setFloat32(24, center[2], true);
-    view.setFloat32(28, size, true);
+    view.setFloat32(16 + offset, center[0], true);
+    view.setFloat32(20 + offset, center[1], true);
+    view.setFloat32(24 + offset, center[2], true);
+    view.setFloat32(28 + offset, size, true);
 
     // vec4 options (offset 32)
     let options = { x: 0, y: 0, z: 0, w: 0 };
@@ -201,17 +201,15 @@ export default class RayObject extends SceneObject {
         break;
     }
 
-    view.setFloat32(32, options.x, true);
-    view.setFloat32(36, options.y, true);
-    view.setFloat32(40, options.z, true);
-    view.setFloat32(44, options.w, true);
+    view.setFloat32(32 + offset, options.x, true);
+    view.setFloat32(36 + offset, options.y, true);
+    view.setFloat32(40 + offset, options.z, true);
+    view.setFloat32(44 + offset, options.w, true);
 
-    // mat4 transform (offset 48)
+    // mat4 transform (offset 48 -> 48 + 64 = 112)
     for (let i = 0; i < 16; i++) {
-      view.setFloat32(48 + i * 4, mat[i], true);
+      view.setFloat32(48 + i * 4 + offset, mat[i], true);
     }
-
-    return bytes;
   }
 
   loadBuffers() {

@@ -3,7 +3,8 @@
  */
 
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../lights/Light";
-import { SceneObject } from "../objects";
+import { RayMaterial } from "../materials";
+import { RayObject, SceneObject } from "../objects";
 import { transformPoint } from "../util/transformations";
 import ShaderProgram from "./ShaderProgram";
 
@@ -48,7 +49,7 @@ export default class RayShaderProgram extends ShaderProgram {
 
     this.maxLights = 585;
     this.maxObjects = 585;
-    this.maxMaterials = 64;
+    this.maxMaterials = 256;
   }
 
   /**
@@ -83,17 +84,21 @@ export default class RayShaderProgram extends ShaderProgram {
       "u_target",
       "u_objectCount",
       "u_lightCount",
+      "u_materialCount",
     ];
 
     for (const loc of defaultLocs) {
       this.locs[loc] = gl.getUniformLocation(this.program, loc);
     }
 
-    this.timeLoc = this.locs["u_time"]
+    this.timeLoc = this.locs["u_time"];
 
-    gl.useProgram(this.program)
+    gl.useProgram(this.program);
 
-    this.uniforms.u_resolution = new Float32Array([scene.canvas.width, scene.canvas.height]);
+    this.uniforms.u_resolution = new Float32Array([
+      scene.canvas.width,
+      scene.canvas.height,
+    ]);
     this.uniforms.u_maxBounces = 2;
     this.uniforms.u_ambientStrength = 0.2;
 
@@ -117,37 +122,42 @@ export default class RayShaderProgram extends ShaderProgram {
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   _initBuffers(gl = this._gl) {
-    this.lightBuffer = gl.createBuffer();
-    this.objectBuffer = gl.createBuffer();
-    this.materialBuffer = gl.createBuffer();
-
-    gl.bindBuffer(gl.UNIFORM_BUFFER, this.lightBuffer);
-    gl.bindBuffer(gl.UNIFORM_BUFFER, this.objectBuffer);
-    gl.bindBuffer(gl.UNIFORM_BUFFER, this.materialBuffer);
-
-    gl.bufferData(
-      gl.UNIFORM_BUFFER,
-      this.maxLights * 16 * Float32Array.BYTES_PER_ELEMENT,
-      gl.DYNAMIC_DRAW,
+    this.lightBuffer = this._initBuffer(
+      0,
+      this.maxLights,
+      RayObject.OBJECT_BYTE_SIZE,
     );
-    gl.bufferData(
-      gl.UNIFORM_BUFFER,
-      this.maxObjects * 16 * Float32Array.BYTES_PER_ELEMENT,
-      gl.DYNAMIC_DRAW,
+    this.objectBuffer = this._initBuffer(
+      1,
+      this.maxObjects,
+      RayObject.OBJECT_BYTE_SIZE,
     );
-    gl.bufferData(
-      gl.UNIFORM_BUFFER,
-      this.maxMaterials * 16 * Float32Array.BYTES_PER_ELEMENT,
-      gl.DYNAMIC_DRAW,
+    this.materialBuffer = this._initBuffer(
+      2,
+      this.maxMaterials,
+      RayMaterial.MATERIAL_BYTE_SIZE,
     );
 
-    gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, this.lightBuffer);
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+  }
 
-    gl.bindBufferBase(gl.UNIFORM_BUFFER, 1, this.objectBuffer);
-    gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+  _initBuffer(binding, capacity, stride, gl = this._gl) {
+    const size = capacity * stride;
+    const maxBlockSize = gl.getParameter(gl.MAX_UNIFORM_BLOCK_SIZE);
 
-    gl.bindBufferBase(gl.UNIFORM_BUFFER, 2, this.materialBuffer);
-    gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+    // should probably auto adjust capacity but error works for now
+    if (size > maxBlockSize) {
+      throw new Error(
+        `block needs ${size} bytes; device limit is ${maxBlockSize}`,
+      );
+    }
+
+    const buffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.UNIFORM_BUFFER, buffer);
+    gl.bufferData(gl.UNIFORM_BUFFER, size, gl.DYNAMIC_DRAW);
+    gl.bindBufferBase(gl.UNIFORM_BUFFER, binding, buffer);
+
+    return buffer;
   }
 }

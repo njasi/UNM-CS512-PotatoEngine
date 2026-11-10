@@ -1,9 +1,26 @@
 #version 300 es
 precision highp float;
 
-#define MAX_MATERIALS 64
-#define MAX_OBJECTS 585 // max possible with this layout, not bad tbh
+// calculated from the max possible with the object struct in a block
+// ie  
+//   - min guaranteed buffer block = 16384 bytes
+//     - most machines should have 65536 bytes
+//     - check with => gl.getParameter(gl.MAX_UNIFORM_BLOCK_SIZE);
+//     - if we need more objects we have options 
+//       - optimize object struct
+//       - add another obj buffer
+//       - use texture as data buffer (guaranteed 4096x4096 so ~16MiB i think?)
+//   - object struct byte size = 16 + 16 + 16 + 64 = 112 bytes
+//   - so max objects = 
+//     - 65536 / 112 = 585.14...
+//     - 16384 / 112 = 146.29... 
+#define MAX_OBJECTS 585 
 #define MAX_LIGHTS 585
+// mat struct bytes = 64, 16384 / 64 = 256
+#define MAX_MATERIALS 256
+// materials not provided by js, but rather defined in this shader
+// see materials section below
+#define INTERNAL_MATERIALS 1
 
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -11,11 +28,19 @@ uniform int u_maxBounces;
 uniform float u_ambientStrength; // Ambient fill light for better visual
 uniform vec2 u_cameraOrbit;
 uniform vec3 u_target; // essentially camera position
+
+// track the sizes of buffers, since you cant 
+// really check the buffer itself for this info
+// well you kinda can but not worth it when can just set a uniform
 uniform int u_objectCount;
 uniform int u_lightCount;
+uniform int u_materialCount;
 
 out vec4 fragColor;
 
+
+// holdouts to replace from the provided code
+// we dont need to hardcode stuff we are better than that smh
 const float LIGHT_POWER = 3.0f;
 const float FLOOR_Y = -2.0f;
 const float CHECKER_SIZE = 3.0f;
@@ -45,18 +70,18 @@ layout(std140) uniform materialBlock {
   Material materials[MAX_MATERIALS];
 };
 
+// materials defined inside the shader rather than provided by js
+// should allow me some flexibility, can probably do something similar with the objects
+// although objects that are very advanced might make more sense in a second renderpass?
+// internal default mat, just a solid grey (id = -1)
+const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
+const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default);
+
 //////////////////
 // OBJECT SETUP //
 //////////////////
 
-// maybe for convince i should
-// be able to unpack an object into structs like these
-// so they can be read... if the byte layout is correct
-// can probably shove the bytes directly in...
-// nope for whatever reason glsl doesnt have that
-// but it seems like the compiler will abstract away
-// assignments to the struct so thats good ig
-
+// Convenience layout of a sphere
 struct Sphere {
   int material;
   vec3 center;
@@ -64,6 +89,7 @@ struct Sphere {
   mat4 transform;
 };
 
+// Convenience layout of a cube
 struct Cube {
   int material;
   vec3 center;
@@ -71,6 +97,7 @@ struct Cube {
   mat4 transform;
 };
 
+// Convenience layout of a cone
 struct Cone {
   int material;
   vec3 center;
@@ -79,6 +106,7 @@ struct Cone {
   mat4 transform;
 };
 
+// Convenience layout of a torus
 struct Torus {
   int material;
   vec3 center;
@@ -87,6 +115,7 @@ struct Torus {
   mat4 transform;
 };
 
+// Convenience layout of a cylinder
 struct Cylinder {
   int material;
   vec3 center;
@@ -98,6 +127,7 @@ struct Cylinder {
   mat4 transform;
 };
 
+// Convenience layout of a plane
 struct Plane {
   int material;
   vec3 center;
@@ -106,6 +136,7 @@ struct Plane {
   mat4 transform;
 };
 
+// type flags used in the general object struct below
 const int OBJECT_TYPE_SPHERE = 0;
 const int OBJECT_TYPE_CUBE = 1;
 const int OBJECT_TYPE_CONE = 2;
@@ -117,13 +148,16 @@ const int OBJECT_TYPE_PLANE = 5;
 // single int since object type probably < 10, 
 // but we arent that desperate
 
+// all encompassing object layout passed from js.
 struct Object {
-  ivec4 meta;         // x    => type;    y => material?; z=> cyl: faceted ; w => cyl: faces (prism) ; 
+  ivec4 meta;         // x    => type;    y => material?; z=> cyl: faceted (could actually be for all) ; w => cyl: faces (prism) ; 
   vec4 centerRadius;  // xyz  => center;  w => cone, sphere, cyl: r, cube: half-size, torus: R, plane: width
   vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge 
   mat4 transform;     // overall transformation to apply 
 };
 
+// block of objects we use to receive information from the
+// js end 
 layout(std140) uniform objectBlock {
   Object objects[MAX_OBJECTS];
 };
@@ -132,13 +166,22 @@ layout(std140) uniform objectBlock {
 // LIGHT CONFIG  //
 ///////////////////
 
+// block of lights we use to receive information from the
+// js end, for now we say they are all objects, see below
 layout(std140) uniform lightBlock {
   Object lights[MAX_LIGHTS];
 };
 
-// i guess lights are objects in this basic representation?
-// maybe use a lightblock of objects, could use the same 
-// object array but then you lose information space
+// NOTE: i guess lights are objects in this basic representation?
+//       for now use a lightblock of objects, could use the same 
+//       object array but then you lose information space
+//       of either lower cap of objects overall, or using a byte to
+//       signal its a light, although could shove into meta.x with 
+//       a bitshift for free basically
+
+// NOTE: old light block layout from phong shaders
+//       adding this back in some capacity would be nice
+//       since directional & spotlights are cool
 
 // const int LIGHT_POINT = 0;
 // const int LIGHT_SPOT = 1;
@@ -159,11 +202,13 @@ layout(std140) uniform lightBlock {
 // RAY TRACING STRUCTURE //
 ///////////////////////////
 
+// basic structure of a ray
 struct Ray {
   vec3 origin;
   vec3 direction;
 };
 
+// wrapper around hit information
 struct HitData {
   bool hit;
   float t;
@@ -260,7 +305,7 @@ bool intersectPlane(Plane p, Ray ray, out float t, out vec3 n) {
 }
 
 // TODO
-Ray toObjectSpace(Ray r, mat4 transform){
+Ray toObjectSpace(Ray r, mat4 transform) {
   return r;
 }
 
@@ -268,55 +313,39 @@ Ray toObjectSpace(Ray r, mat4 transform){
 // apply the transform before to put the light ray in the correct space
 // Replace the original intersectObject with this version.
 bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal) {
-  
+
   // TODO transform ray to local object space...
   Ray localRay = toObjectSpace(worldRay, obj.transform);
-  
+
   float localT;
   vec3 localNormal;
   bool didHit = false;
 
-  if (obj.meta.x == OBJECT_TYPE_SPHERE) {
-    Sphere s = Sphere(
-      obj.meta.y,
-      obj.centerRadius.xyz,
-      obj.centerRadius.w,
-      obj.transform
-    );
+  if(obj.meta.x == OBJECT_TYPE_SPHERE) {
+    Sphere s = Sphere(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform);
 
     didHit = intersectSphere(s, localRay, localT);
-    if (didHit) {
+    if(didHit) {
       vec3 p = localRay.origin + localRay.direction * localT;
       localNormal = normalize((p - s.center) / s.radius);
     }
-  } else if (obj.meta.x == OBJECT_TYPE_CUBE) {
-    Cube c = Cube(
-      obj.meta.y,
-      obj.centerRadius.xyz,
-      obj.centerRadius.w,
-      obj.transform
-    );
+  } else if(obj.meta.x == OBJECT_TYPE_CUBE) {
+    Cube c = Cube(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform);
 
     didHit = intersectCube(c, localRay, localT, localNormal);
-  } else if (obj.meta.x == OBJECT_TYPE_PLANE) {
-    Plane p = Plane(
-      obj.meta.y,
-      obj.centerRadius.xyz,
-      obj.centerRadius.w,
-      obj.options.x,
-      obj.transform
-    );
+  } else if(obj.meta.x == OBJECT_TYPE_PLANE) {
+    Plane p = Plane(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.options.x, obj.transform);
 
     didHit = intersectPlane(p, localRay, localT, localNormal);
-  } else if (obj.meta.x == OBJECT_TYPE_CONE) {
+  } else if(obj.meta.x == OBJECT_TYPE_CONE) {
     // TODO
-  } else if (obj.meta.x == OBJECT_TYPE_TORUS) {
+  } else if(obj.meta.x == OBJECT_TYPE_TORUS) {
     // TODO
-  } else if (obj.meta.x == OBJECT_TYPE_CYLINDER) {
+  } else if(obj.meta.x == OBJECT_TYPE_CYLINDER) {
     // TODO
   }
 
-  if (!didHit)
+  if(!didHit)
     return false;
 
   t = localT;
@@ -324,33 +353,30 @@ bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal
   return true;
 }
 
-
 // calculate hitdata for a hit on a object
 HitData calculateHit(Object obj, Ray ray) {
-  HitData result = HitData(
-    false,
-    1e10f,
-    vec3(0.0f),
-    vec3(0.0f),
-    vec3(0.0f),
-    0.0f,
-    false,
-    false
-  );
+  HitData result = HitData(false, 1e10f, vec3(0.0f), vec3(0.0f), vec3(0.0f), 0.0f, false, false);
 
   // if the material is out of range then we ignore
-  if(obj.meta.y < 0 || obj.meta.y >= MAX_MATERIALS){
+  // - if less than 0, ensure it is in range of the internal materials
+  // - check if above max material count
+  if((obj.meta.y < 0 && obj.meta.y < -INTERNAL_MATERIALS) || obj.meta.y >= MAX_MATERIALS) {
     return result;
   }
 
   float t;
   vec3 normal;
+  Material mat;
 
-  if(!intersectObject(obj, ray, t, normal)){
+  if(!intersectObject(obj, ray, t, normal)) {
     return result;
   }
 
-  Material mat = materials[obj.meta.y];
+  if(obj.meta.y < 0) {
+    mat = shaderMaterials[-1 * (obj.meta.y + 1)];
+  } else {
+    mat = materials[obj.meta.y];
+  }
 
   float ior = mat.optics.y;
   float reflectivity = mat.optics.z;
@@ -402,12 +428,11 @@ HitData traceScene(Ray ray, bool includeLight) {
 
   // keep the closest hit in the scene 
   // wonder if we can depth sort objects to make faster?
-  for (int i = 0; i < u_objectCount; ++i) {
+  for(int i = 0; i < u_objectCount; ++i) {
     HitData candidate = calculateHit(objects[i], ray);
-    if (candidate.hit && candidate.t < hit.t)
+    if(candidate.hit && candidate.t < hit.t)
       hit = candidate;
   }
-
 
   // if(intersectPlane(ray, t) && t < hit.t) {
   //   vec3 p = ray.origin + ray.direction * t;
@@ -442,10 +467,10 @@ vec3 trace(Ray ray) {
       break;
     }
 
-    if(hit.isLight) {
-      color += attenuation * lightSphere.color * LIGHT_POWER;
-      break;
-    }
+    // if(hit.isLight) {
+    //   color += attenuation * lightSphere.color * LIGHT_POWER;
+    //   break;
+    // }
 
     // Refraction: (option 1)either reflects or refracts the ray, whichever Schlick says is stronger
     // (option 2): finalColor = hit.color * (F * reflectionColor + (1.0 - F) * refractionColor)

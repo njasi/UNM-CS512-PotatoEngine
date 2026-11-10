@@ -14,7 +14,7 @@ export default class RayMaterial extends Material {
   static MATERIAL_BYTE_SIZE = 64;
 
   /**
-   * Create a (phong shader) material interface object.
+   * Create a (ray tracing shader) material interface object.
    * @param {rgb()} ka
    * @param {rgb()} kd
    * @param {rgb()} ks

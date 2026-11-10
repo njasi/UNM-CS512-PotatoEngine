@@ -142,7 +142,6 @@ export function setupKeyboardControls(
     let y = vertical;
     let z = -strafe * Math.sin(yaw) + forward * Math.cos(yaw);
 
-    // console.log(x, y, z);
 
     let adjustedSpeed = pressed.has("alt") ? speed * 2 : speed;
     const target = [x * adjustedSpeed, y * adjustedSpeed, z * adjustedSpeed];

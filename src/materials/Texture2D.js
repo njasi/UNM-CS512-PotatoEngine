@@ -190,7 +190,6 @@ export default class Texture2D {
    * @param {number} [unit=0] the unit
    */
   bind(unit = 0) {
-    // console.log("binding texture",this.label, this.animated)
     if (this.animated) {
       this._refresh();
     }

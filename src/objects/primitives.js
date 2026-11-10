@@ -581,12 +581,6 @@ export function generateCylinder(
     generateCap(z_c + h / 2, 1, false);
   }
 
-  // console.log("vert len:", vertices.length / 4);
-  // console.log(
-  //   "max indc:",
-  //   indices.reduce((prev, curr) => Math.max(prev, curr), 0),
-  // );
-
   // package it for the buffers
   return new PrimitiveObject(vertices, {
     indices,

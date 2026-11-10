@@ -684,7 +684,6 @@ export default class Scene {
   ) {
     // set time in seconds
     if (shaderProgram.timeLoc !== null) {
-      console.log("update time");
       this.gl.uniform1f(shaderProgram.timeLoc, this.time / 1000);
     }
 
@@ -764,7 +763,7 @@ export default class Scene {
     if (pass.objIndependent && pass.programLabel) {
       const shaderProgram = this.getProgram(pass.programLabel);
       shaderProgram.use(this.gl);
-      
+
       this._updateShaderGeneralLocs(
         shaderProgram,
         matOverride.projectionTransform,

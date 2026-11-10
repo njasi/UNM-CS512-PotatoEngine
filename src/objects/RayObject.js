@@ -134,7 +134,7 @@ export default class RayObject extends SceneObject {
    *     mat4 transform;     // overall transformation to apply
    *   };
    * </pre>
-   * 
+   *
    * TODO can probably cache this to not recomput every time
    * maybe a dirty attribute on it or smth
    */
@@ -178,11 +178,11 @@ export default class RayObject extends SceneObject {
     }
 
     // NOTE: this.M should already contain the position transform
-    //       but we ignore it for now since its not parsed in 
+    //       but we ignore it for now since its not parsed in
     //       the fragment shader
-    view.setFloat32(16, this.position[0], true);
-    view.setFloat32(20, this.position[1], true);
-    view.setFloat32(24, this.position[2], true);
+    view.setFloat32(16, center[0], true);
+    view.setFloat32(20, center[1], true);
+    view.setFloat32(24, center[2], true);
     view.setFloat32(28, size, true);
 
     // vec4 options (offset 32)

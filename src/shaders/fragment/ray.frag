@@ -39,6 +39,8 @@ struct Material {
   // specular map?
 };
 
+// should allow materials calculated in the shader as well
+// perhaps use negative value in obj.meta.y to signal to the shader? 
 layout(std140) uniform materialBlock {
   Material materials[MAX_MATERIALS];
 };

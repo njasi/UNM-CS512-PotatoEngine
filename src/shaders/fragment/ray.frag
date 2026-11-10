@@ -38,7 +38,6 @@ uniform int u_materialCount;
 
 out vec4 fragColor;
 
-
 // holdouts to replace from the provided code
 // we dont need to hardcode stuff we are better than that smh
 const float LIGHT_POWER = 3.0f;
@@ -74,7 +73,7 @@ layout(std140) uniform materialBlock {
 // should allow me some flexibility, can probably do something similar with the objects
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
-const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
+const Material _01_default = Material(vec4(0.6f, 0,0,0), vec4(0.8f,0,0,0), vec4(0.2f), vec4(0.f));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default);
 
 //////////////////
@@ -224,7 +223,7 @@ struct HitData {
 // SETUP //
 ///////////
 
-const Sphere lightSphere = Sphere(-1, vec3(4.0f, 3.0f, -4.0f), 0.3f, mat4(0));
+const Sphere lightSphere = Sphere(-1, vec3(0.), 0.3f, mat4(0));
 Sphere sphere;
 Sphere glassSphere;
 Cube cube;
@@ -323,7 +322,7 @@ bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal
 
   if(obj.meta.x == OBJECT_TYPE_SPHERE) {
     Sphere s = Sphere(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform);
-
+    // s.radius = 5.0;
     didHit = intersectSphere(s, localRay, localT);
     if(didHit) {
       vec3 p = localRay.origin + localRay.direction * localT;
@@ -349,6 +348,7 @@ bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal
     return false;
 
   t = localT;
+  worldNormal = localNormal;
 
   return true;
 }

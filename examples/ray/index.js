@@ -8,7 +8,7 @@ import { RayObject } from "../../src/objects";
 const SHADER_PROGRAM_RAY = "ray";
 
 const scene = new Scene("glcanvas");
-scene.camera.move(0, -2.5, -25);
+// scene.camera.move(0, 0, -25);
 scene.rotationX += Math.PI / 6;
 
 scene.createProgram(
@@ -23,15 +23,27 @@ scene.createProgram(
  */
 function setupInputControls() {}
 
+let sphere;
 /**
  * Initalize all the objects in the starting scene
  * - the segments of the arm
  */
 function initSceneObjects() {
-  const sphere = new RayObject("testSphere", RayObject.OBJECT_TYPE_SPHERE, {
-    radius: 20,
+  sphere = new RayObject("testSphere", RayObject.OBJECT_TYPE_SPHERE, {
+    radius: 2,
+  });
+  let cube = new RayObject("testCube", RayObject.OBJECT_TYPE_CUBE, {
+    halfSize: 1,
+    position: [0, 0, -5],
+  });
+  let plane = new RayObject("testPlant", RayObject.OBJECT_TYPE_PLANE, {
+    position: [0, -5, 0],
+    width: 10,
+    depth: 10,
   });
   scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
+  scene.addObject(cube, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
+  scene.addObject(plane, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
 }
 
 flight.setupMouseControls(scene);
@@ -39,6 +51,9 @@ const cameraCB = flight.setupKeyboardControls(scene);
 
 function updateScene(dt) {
   cameraCB(dt);
+
+  sphere.position[0] = 5 * Math.sin(scene.time / 500);
+  sphere.position[1] = 5 * -Math.cos(scene.time / 500);
 }
 
 scene.setUpdateCB(updateScene);

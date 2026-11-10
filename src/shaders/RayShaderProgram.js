@@ -138,6 +138,21 @@ export default class RayShaderProgram extends ShaderProgram {
       RayMaterial.MATERIAL_BYTE_SIZE,
     );
 
+    const blockBindings = [
+      ["lightBlock", 0],
+      ["objectBlock", 1],
+      ["materialBlock", 2],
+    ];
+
+    for (const [blockName, bindingPoint] of blockBindings) {
+      const blockIndex = gl.getUniformBlockIndex(this.program, blockName);
+
+      // might be inactive if unused or nonexistanct
+      if (blockIndex !== gl.INVALID_INDEX) {
+        gl.uniformBlockBinding(this.program, blockIndex, bindingPoint);
+      }
+    }
+
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
   }
 

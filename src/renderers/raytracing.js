@@ -87,21 +87,17 @@ function packObjects(gl, objects, shaderProgram) {
     RayObject.OBJECT_BYTE_SIZE * shaderProgram.maxObjects,
   );
   const view = new DataView(bytes);
-  const objectUpload = new Uint8Array(bytes);
 
   for (let i = 0; i < objects.length; i++) {
-    objects[i].packData(view, i * RayObject.OBJECT_BYTE_SIZE);
+    const offset = i * RayObject.OBJECT_BYTE_SIZE;
+    objects[i].packData(view, offset);
   }
 
   // throw the data into the buffer
   gl.bindBuffer(gl.UNIFORM_BUFFER, shaderProgram.objectBuffer);
-  gl.bufferSubData(
-    gl.UNIFORM_BUFFER,
-    0,
-    objectUpload.subarray(0, objects.length * RayObject.OBJECT_BYTE_SIZE),
-  );
+  gl.bufferSubData(gl.UNIFORM_BUFFER, 0, new Uint8Array(bytes));
   gl.bindBuffer(gl.UNIFORM_BUFFER, null);
-
+  
   shaderProgram.uniforms.u_objectCount = objects.length;
 }
 

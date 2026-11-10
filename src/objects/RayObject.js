@@ -8,11 +8,7 @@ import { vec4distance, scaleVec4, sumVec4 } from "../util/vec4";
 import SceneObject from "./SceneObject";
 
 /**
- * Physics Scene object class, these objects have
- * - simple gravity
- * - movement velocity
- * - rotational velocity
- * - basic collisions (spheres atm)
+ * Raytracing Scene object class
  *
  * @class
  * @alias module:objects/RayObject
@@ -61,6 +57,16 @@ export default class RayObject extends SceneObject {
    * @param {string} options.passes                 the renderpasses to render this object with
    * @param {string} options.lightingCenter         the center of the object to calculate light culling with
    * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
+   * @param {number} [options.materialIndex=-1]
+   * @param {number} [options.radius=undefined]     the radius used for sphere, cylinder, torus(R), and cone
+   * @param {number} [options.halfSize=undefined]   the size used for cubes
+   * @param {number} [options.height=undefined]     the height used for cylinders, cones
+   * @param {number} [options.width=undefined]      the width of a plane (-val is inf)
+   * @param {number} [options.depth=undefined]      the depth of a plane (-val is inf)
+   * @param {number} [options.radiusMinor=undefined]  the radius of the tube of a torus
+   * @param {number} [options.bulge=undefined]      the bulge ratio of a cylinder
+   * @param {number} [options.faceted=undefined]    if the object is faceted
+   * @param {number} [options.faces=undefined]      how many faces the faceted object has...
    */
   constructor(
     label,

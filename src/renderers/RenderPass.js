@@ -31,14 +31,14 @@ export default class RenderPass {
   constructor(
     label,
     {
-      framebuffer = null,
-      viewport = null,
+      framebuffer = undefined,
+      viewport = undefined,
       clearMask = 0,
-      clearColor = null,
-      setup = null,
-      cleanup = null,
-      updateUniforms = null,
-      sort = null,
+      clearColor = undefined,
+      setup = undefined,
+      cleanup = undefined,
+      updateUniforms = undefined,
+      sort = undefined,
     } = {},
   ) {
     this.label = label;

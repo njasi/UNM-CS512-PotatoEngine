@@ -1,11 +1,16 @@
 #version 300 es
 precision highp float;
 
+#define MAX_MATERIALS 64;
+#define MAX_OBJECTS 585; // max possible with this layout, not bad tbh
+#define MAX_LIGHTS 585;
+
 uniform float u_time;
 uniform vec2 u_resolution;
 uniform int u_maxBounces;
-uniform float u_ambientStrength; //Ambient fill light for better visual
+uniform float u_ambientStrength; // Ambient fill light for better visual
 uniform vec2 u_cameraOrbit;
+uniform vec3 u_target; // essentially camera position
 
 out vec4 fragColor;
 
@@ -14,22 +19,129 @@ const float FLOOR_Y = -2.0f;
 const float CHECKER_SIZE = 3.0f;
 const float GLASS_IOR = 1.5f;  // refractive index of the glass sphere
 
+/////////////////////
+// MATERIAL CONFIG //
+/////////////////////
+
+// struct to pack material data into so objects
+// dont have to store all of this
+struct Material {
+  vec4 ka; // w unused
+  vec4 kd; // w unused
+  vec4 ks; // w unused
+  vec4 optics; // specular, refractiveIndex, reflectivity
+  // textures? => maybe shove texuture ids into the unused ws?
+  // albedo (with transparency), 
+  // => this could be an emission map if the object is in the light block
+  // normals or bump map?, 
+  // specular map?
+};
+
+layout(std140) uniform materialBlock {
+  Material materials[MAX_MATERIALS]
+}
+
+//////////////////
+// OBJECT SETUP //
+//////////////////
+
+
+// maybe for convince i should
+// be able to unpack an object into structs like these
+// so they can be read... if the byte layout is correct
+// can probably shove the bytes directly in...
+
+// like a sphere with the layout of an object would look like
+// struct Sphere {
+//   int type;
+//   int material;
+//   int _;
+//   int _;
+//   vec3 center;
+//   float radius;
+//   vec4 _;
+//   mat4 transform
+// };
+
+// struct Sphere {
+//   vec3 center;
+//   float radius;
+//   vec3 color;
+// };
+
+// struct Cube {
+//   vec3 center;
+//   float halfSize;
+//   vec3 color;
+//   float reflectivity;
+// };
+
+const int OBJECT_TYPE_SPHERE = 0;
+const int OBJECT_TYPE_CUBE = 1;
+const int OBJECT_TYPE_CONE = 2;
+const int OBJECT_TYPE_TORUS = 3;
+const int OBJECT_TYPE_CYLINDER = 4;
+const int OBJECT_TYPE_PLANE = 5;
+
+// honestly i could or more information into a 
+// single int since object type probably < 10, 
+// but we arent that desperate
+
+struct Object {
+  ivec4 meta;         // x    => type;    y => material?; z=> ____ ; w => ____ ; 
+  vec4 centerRadius;  // xyz  => center;  w => cone, sphere, cyl: r, cube: half-size, torus: R, plane: width
+  vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge 
+  mat4 transform;     // overall transformation to apply 
+};
+
+layout(std140) uniform objectBlock {
+  Object objects[MAX_OBJECTS];
+};
+
+uniform u_object_count;
+
+///////////////////
+// LIGHT CONFIG  //
+///////////////////
+
+layout(std140) uniform lightBlock {
+  Object lights[MAX_LIGHTS];
+};
+
+uniform u_object_count;
+
+
+// i guess lights are objects in this basic representation?
+// maybe use a lightblock of objects, could use the same 
+// object array but then you lose information space
+
+// const int LIGHT_POINT = 0;
+// const int LIGHT_SPOT = 1;
+// const int LIGHT_DIRECTIONAL = 2;
+
+// layout(std140) uniform LightBlock {
+//   // x, y, z, type
+//   vec4 positionType[MAX_LIGHTS];
+//   // r, g, b, intensity
+//   vec4 colorIntensity[MAX_LIGHTS];
+//   // attA, attB, attC, cutoff
+//   vec4 attenuationCutoff[MAX_LIGHTS];
+//   // dirX, dirY, dirZ, spotExponent
+//   vec4 directionExponent[MAX_LIGHTS];
+// };
+
+
+
+// uniform int uLightCount;
+
+
+///////////////////////////
+// RAY TRACING STRUCTURE //
+///////////////////////////
+
 struct Ray {
   vec3 origin;
   vec3 direction;
-};
-
-struct Sphere {
-  vec3 center;
-  float radius;
-  vec3 color;
-};
-
-struct Cube {
-  vec3 center;
-  float halfSize;
-  vec3 color;
-  float reflectivity;
 };
 
 struct HitData {
@@ -42,6 +154,10 @@ struct HitData {
   bool isLight;
   bool isGlass;
 };
+
+//////////////////////
+// CALCULATION TIME //
+//////////////////////
 
 const Sphere lightSphere = Sphere(vec3(4.0f, 3.0f, -4.0f), 0.3f, vec3(1.0f, 1.0f, 0.9f));
 Sphere sphere;
@@ -146,7 +262,7 @@ vec3 trace(Ray ray) {
   vec3 color = vec3(0.0f);
   vec3 attenuation = vec3(1.0f);
 
-    //use loop to simulate the recursive process as GLSL doesn't support recursions
+  // use loop to simulate the recursive process as GLSL doesn't support recursions
   for(int bounce = 0; bounce < u_maxBounces; bounce++) {
     HitData hit = traceScene(ray, true);
 
@@ -161,26 +277,26 @@ vec3 trace(Ray ray) {
       break;
     }
 
-        // Refraction: (option 1)either reflects or refracts the ray, whichever Schlick says is stronger
-        // (option 2): finalColor = hit.color * (F * reflectionColor + (1.0 - F) * refractionColor)
-        // (option 3): Monte Carlo Sampling (multiple rays per pixel), reflect with probability F (random() < schlick_value), else refract, and average many samples per pixel
-        //<!-- if (hit.isGlass) {
-        //    <!-- insert your code here -->
+    // Refraction: (option 1)either reflects or refracts the ray, whichever Schlick says is stronger
+    // (option 2): finalColor = hit.color * (F * reflectionColor + (1.0 - F) * refractionColor)
+    // (option 3): Monte Carlo Sampling (multiple rays per pixel), reflect with probability F (random() < schlick_value), else refract, and average many samples per pixel
+    //<!-- if (hit.isGlass) {
+    //    <!-- insert your code here -->
 
-        //    vec3 direction;
-        //    if (total_internal_reflection || schlick_value > 0.5) {
-                //direction = reflection ray
-        //        <!-- insert your code here -->
-        //    } else {
-                //direction = refraction ray
-        //        <!-- insert your code here -->
-        //    }
+    //    vec3 direction;
+    //    if (total_internal_reflection || schlick_value > 0.5) {
+            //direction = reflection ray
+    //        <!-- insert your code here -->
+    //    } else {
+            //direction = refraction ray
+    //        <!-- insert your code here -->
+    //    }
 
-        //    ray = Ray(hit.point + direction * 0.001, direction);
-        ////Use Schlick approximation to determine contributions from reflection and refraction
-        //    attenuation *= hit.color;
-        //    continue;
-        //}
+    //    ray = Ray(hit.point + direction * 0.001, direction);
+    ////Use Schlick approximation to determine contributions from reflection and refraction
+    //    attenuation *= hit.color;
+    //    continue;
+    //}
 
     vec3 toLight = lightSphere.center - hit.point;
     float lightDist = length(toLight);
@@ -191,7 +307,7 @@ vec3 trace(Ray ray) {
     float diff = max(dot(hit.normal, lightDir), 0.0f);
     float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
-        //  (optional) Ambient fill light approximates indirect light we don't trace.
+    //  (optional) Ambient fill light approximates indirect light we don't trace.
     vec3 shading = hit.color * (LIGHT_POWER * diff * falloff * visible + u_ambientStrength);
     color += attenuation * shading * (1.0f - hit.reflectivity);
 
@@ -207,16 +323,15 @@ vec3 trace(Ray ray) {
 void main() {
   initScene(u_time);
 
-    // Orbit camera around the scene center
+  // Orbit camera around the scene center
   float cp = cos(u_cameraOrbit.x), sp = sin(u_cameraOrbit.x);
   float cy = cos(u_cameraOrbit.y), sy = sin(u_cameraOrbit.y);
   mat3 rotX = mat3(1.0f, 0.0f, 0.0f, 0.0f, cp, -sp, 0.0f, sp, cp);
   mat3 rotY = mat3(cy, 0.0f, -sy, 0.0f, 1.0f, 0.0f, sy, 0.0f, cy);
   mat3 camera = rotY * rotX;
 
-  vec3 target = vec3(0.0f, 0.0f, -5.0f);
   vec2 uv = (gl_FragCoord.xy - 0.5f * u_resolution) / u_resolution.y;
-  Ray ray = Ray(target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(uv, -1.5f)));
+  Ray ray = Ray(u_target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(uv, -1.5f)));
 
   fragColor = vec4(pow(trace(ray), vec3(1.0f / 2.2f)), 1.0f);  // gamma correction
 }

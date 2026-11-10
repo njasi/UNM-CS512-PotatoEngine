@@ -34,7 +34,24 @@ export default class ShaderProgram {
     this.hasLight = hasLight;
 
     this.extraLocsNames = extraLocs;
-    this.extraLocs = {};
+    this.locs = {};
+
+    this._gl = undefined;
+
+    this.uniforms = new Proxy(
+      {},
+      {
+        set(target, key, value) {
+          if (key in locs) {
+            target[key] = value;
+            this._setUniform(key, value);
+          }
+        },
+        get(target, key) {
+          return target[key];
+        },
+      },
+    );
   }
 
   /**
@@ -44,11 +61,7 @@ export default class ShaderProgram {
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
   _init(gl) {
-    // NOTE: we are assuming here that all of our shaders will use these
-    //       values if we do this here, may need extensions for other custom shaders
-    this.posLoc = gl.getAttribLocation(this.program, "aPosition");
-    this.colorLoc = gl.getAttribLocation(this.program, "aColor");
-
+    this._gl = gl;
     // can also define locs per object if needed...
     // materials work this way, bvh objects etc
 
@@ -60,8 +73,8 @@ export default class ShaderProgram {
       "uModelTransformationMatrix",
     );
 
-    for (const loc of this.extraLocsNames) {
-      this.extraLocs[loc] = gl.getUniformLocation(this.program, loc);
+    for (const loc of [...this.extraLocsNames]) {
+      this.locs[loc] = gl.getUniformLocation(this.program, loc);
     }
   }
 
@@ -71,7 +84,7 @@ export default class ShaderProgram {
    *
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
-  load(gl) {
+  load(gl = this._gl) {
     this.program = gl.createProgram();
 
     gl.attachShader(this.program, this.vertexShader.shader);
@@ -89,23 +102,90 @@ export default class ShaderProgram {
   }
 
   /**
-   * Add an extra loc to the shader,
+   * Add an extra loc to the shader program,
    * @param {string} loc uniform to locate in the shader program
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
+   * @returns {WebGLUniformLocation | null}
    */
-  addLoc(loc, gl) {
-    this.extra[loc] = gl.getUniformLocation(this.program, loc);
+  addLoc(loc, gl = this._gl) {
+    this.locs[loc] = gl.getUniformLocation(this.program, loc);
+    return this.locs[loc];
   }
 
   /**
    * Use the shader program as the active program
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
-  use(gl) {
+  use(gl = this._gl) {
     if (!this.program) {
       console.warn("Cannot render before initializing the shader program");
       return;
     }
     gl.useProgram(this.program);
+  }
+
+  /**
+   * Set a uniform value
+   *
+   * supports:
+   *  float
+   *  int
+   *  vec2
+   *  vec3
+   *  vec4
+   *
+   * @param {string} loc the string name of the uniform
+   * @param {number | number[]} value
+   */
+  _setUniform(loc, value) {
+    const gl = this.gl;
+    const location = this.locs[loc];
+
+    if (location == null) {
+      console.warn("COuld not find location ", loc);
+      return;
+    }
+
+    if (typeof value === "boolean") {
+      gl.uniform1i(location, value ? 1 : 0);
+      return;
+    }
+
+    if (typeof value === "number") {
+      if (Number.isInteger(value)) {
+        gl.uniform1i(location, value);
+      } else {
+        gl.uniform1f(location, value);
+      }
+      return;
+    }
+
+    if (!Array.isArray(value) && !ArrayBuffer.isView(value)) {
+      throw new TypeError(`Unsupported value for uniform "${loc}"`);
+    }
+
+    const n = value.length;
+    if (n < 2 || n > 4) {
+      throw new RangeError(`Uniform "${loc}" expects a vec2, vec3, or vec4`);
+    }
+
+    const isFloatTypedArray =
+      value instanceof Float32Array || value instanceof Float64Array;
+
+    const isIntegerTypedArray =
+      value instanceof Int8Array ||
+      value instanceof Uint8Array ||
+      value instanceof Int16Array ||
+      value instanceof Uint16Array ||
+      value instanceof Int32Array ||
+      value instanceof Uint32Array;
+
+    const isInteger =
+      isIntegerTypedArray ||
+      (!isFloatTypedArray && Array.from(value).every(Number.isInteger));
+
+    const suffix = isInteger ? "iv" : "fv";
+
+    gl[`uniform${n}${suffix}`](location, value);
   }
 }

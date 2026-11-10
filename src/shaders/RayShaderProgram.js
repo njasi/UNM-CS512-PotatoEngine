@@ -74,10 +74,8 @@ export default class RayShaderProgram extends ShaderProgram {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
 
-    // dont feel like making uTime changes eveywhere
-    // so that stays in camel format
     const defaultLocs = [
-      "uTime",
+      "u_time",
       "u_resolution",
       "u_maxBounces",
       "u_ambientStrength",
@@ -91,7 +89,7 @@ export default class RayShaderProgram extends ShaderProgram {
       this.locs[loc] = gl.getUniformLocation(this.program, loc);
     }
 
-    this.timeLoc = this.locs["uTime"]
+    this.timeLoc = this.locs["u_time"]
 
     gl.useProgram(this.program)
 

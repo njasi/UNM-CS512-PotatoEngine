@@ -1,16 +1,18 @@
 #version 300 es
 precision highp float;
 
-#define MAX_MATERIALS 64;
-#define MAX_OBJECTS 585; // max possible with this layout, not bad tbh
-#define MAX_LIGHTS 585;
+#define MAX_MATERIALS 64
+#define MAX_OBJECTS 585 // max possible with this layout, not bad tbh
+#define MAX_LIGHTS 585
 
-uniform float uTime;
+uniform float u_time;
 uniform vec2 u_resolution;
 uniform int u_maxBounces;
 uniform float u_ambientStrength; // Ambient fill light for better visual
 uniform vec2 u_cameraOrbit;
 uniform vec3 u_target; // essentially camera position
+uniform int u_objectCount;
+uniform int u_lightCount;
 
 out vec4 fragColor;
 
@@ -37,43 +39,69 @@ struct Material {
   // specular map?
 };
 
-// layout(std140) uniform materialBlock {
-//   Material materials[MAX_MATERIALS]
-// }
+layout(std140) uniform materialBlock {
+  Material materials[MAX_MATERIALS];
+};
 
 //////////////////
 // OBJECT SETUP //
 //////////////////
 
-
 // maybe for convince i should
 // be able to unpack an object into structs like these
 // so they can be read... if the byte layout is correct
 // can probably shove the bytes directly in...
-
-// like a sphere with the layout of an object would look like
-// struct Sphere {
-//   int type;
-//   int material;
-//   int _;
-//   int _;
-//   vec3 center;
-//   float radius;
-//   vec4 _;
-//   mat4 transform
-// };
+// nope for whatever reason glsl doesnt have that
+// but it seems like the compiler will abstract away
+// assignments to the struct so thats good ig
 
 struct Sphere {
+  int material;
   vec3 center;
   float radius;
-  vec3 color;
+  mat4 transform;
 };
 
 struct Cube {
+  int material;
   vec3 center;
   float halfSize;
-  vec3 color;
-  float reflectivity;
+  mat4 transform;
+};
+
+struct Cone {
+  int material;
+  vec3 center;
+  float r;
+  float h;
+  mat4 transform;
+};
+
+struct Torus {
+  int material;
+  vec3 center;
+  float R;
+  float r;
+  mat4 transform;
+};
+
+struct Cylinder {
+  int material;
+  vec3 center;
+  float r;
+  float h;
+  float bulge;
+  bool faceted;
+  int faces;
+  mat4 transform;
+};
+
+struct Plane {
+  int material;
+  vec3 center;
+  float width;
+  float depth;
+  mat4 transform;
 };
 
 const int OBJECT_TYPE_SPHERE = 0;
@@ -94,22 +122,17 @@ struct Object {
   mat4 transform;     // overall transformation to apply 
 };
 
-// layout(std140) uniform objectBlock {
-//   Object objects[MAX_OBJECTS];
-// };
-
-// uniform u_objectCount;
+layout(std140) uniform objectBlock {
+  Object objects[MAX_OBJECTS];
+};
 
 ///////////////////
 // LIGHT CONFIG  //
 ///////////////////
 
-// layout(std140) uniform lightBlock {
-//   Object lights[MAX_LIGHTS];
-// };
-
-// uniform u_objectCount;
-
+layout(std140) uniform lightBlock {
+  Object lights[MAX_LIGHTS];
+};
 
 // i guess lights are objects in this basic representation?
 // maybe use a lightblock of objects, could use the same 
@@ -129,11 +152,6 @@ struct Object {
 //   // dirX, dirY, dirZ, spotExponent
 //   vec4 directionExponent[MAX_LIGHTS];
 // };
-
-
-
-// uniform int uLightCount;
-
 
 ///////////////////////////
 // RAY TRACING STRUCTURE //
@@ -155,24 +173,20 @@ struct HitData {
   bool isGlass;
 };
 
-//////////////////////
-// CALCULATION TIME //
-//////////////////////
+///////////
+// SETUP //
+///////////
 
-const Sphere lightSphere = Sphere(vec3(4.0f, 3.0f, -4.0f), 0.3f, vec3(1.0f, 1.0f, 0.9f));
+const Sphere lightSphere = Sphere(-1, vec3(4.0f, 3.0f, -4.0f), 0.3f, mat4(0));
 Sphere sphere;
 Sphere glassSphere;
 Cube cube;
 
-void initScene(float time) {
-  float a = time * 2.f;
-  sphere = Sphere(vec3(cos(a) * 2.5f, sin(a * 1.3f) * 0.8f, -6.0f + sin(a) * 0.5f), 1.0f, vec3(1.0f, 0.3f, 0.3f));
+///////////////////////////////
+// INTERSECTION CALCULATIONS //
+///////////////////////////////
 
-  float b = time * 2.f;
-  cube = Cube(vec3(sin(b) * 2.0f, cos(b * 1.5f) + 0.5f, -9.0f + cos(b * 0.7f)), 0.8f, vec3(0.3f, 0.8f, 0.3f), 0.85f);
-}
-
-bool intersectSphere(Ray ray, Sphere s, out float t) {
+bool intersectSphere(Sphere s, Ray ray, out float t) {
   vec3 oc = ray.origin - s.center;
   float b = dot(oc, ray.direction);
   float d = b * b - dot(oc, oc) + s.radius * s.radius;
@@ -186,7 +200,7 @@ bool intersectSphere(Ray ray, Sphere s, out float t) {
 }
 
 // Slab test
-bool intersectCube(Ray ray, out float t, out vec3 normal) {
+bool intersectCube(Cube cube, Ray ray, out float t, out vec3 normal) {
   vec3 t0s = (cube.center - cube.halfSize - ray.origin) / ray.direction;
   vec3 t1s = (cube.center + cube.halfSize - ray.origin) / ray.direction;
   vec3 tmin = min(t0s, t1s);
@@ -211,6 +225,44 @@ bool intersectCube(Ray ray, out float t, out vec3 normal) {
   return true;
 }
 
+bool intersectPlane(Plane p, Ray ray, out float t) {
+  if(abs(ray.direction.y) < 0.0001f)
+    return false;
+  t = (p.center.y - ray.origin.y) / ray.direction.y;
+  return t > 0.001f;
+}
+
+// switch on the object type and select the correct one from above
+// apply the transform before to put the light ray in the correct space
+bool intersectObject(Object obj, Ray ray, out float t, vec3 n) {
+  if(obj.meta.x == OBJECT_TYPE_CUBE) {
+    return intersectCube(Cube(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform), ray, t, n);
+  } else if(obj.meta.x == OBJECT_TYPE_SPHERE) {
+    return intersectSphere(Sphere(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform), ray, t);
+  } else if(obj.meta.x == OBJECT_TYPE_PLANE) {
+    return intersectPlane(Plane(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.options.x, obj.transform), ray, t);
+  } else if(obj.meta.x == OBJECT_TYPE_CONE) {
+
+  } else if(obj.meta.x == OBJECT_TYPE_TORUS) {
+
+  } else if(obj.meta.x == OBJECT_TYPE_CYLINDER) {
+
+  }
+  return false;
+}
+
+//////////////////////
+// CALCULATION TIME //
+//////////////////////
+
+void initScene(float time) {
+  // float a = time * 2.f;
+  // sphere = Sphere(vec3(cos(a) * 2.5f, sin(a * 1.3f) * 0.8f, -6.0f + sin(a) * 0.5f), 1.0f, vec3(1.0f, 0.3f, 0.3f));
+
+  // float b = time * 2.f;
+  // cube = Cube(vec3(sin(b) * 2.0f, cos(b * 1.5f) + 0.5f, -9.0f + cos(b * 0.7f)), 0.8f, vec3(0.3f, 0.8f, 0.3f), 0.85f);
+}
+
 //eta = n1 / n2
 //vec3 refraction(vec3 I, vec3 N, float eta) {
 //    <!-- insert your code here -->
@@ -220,13 +272,6 @@ bool intersectCube(Ray ray, out float t, out vec3 normal) {
 //float schlick(float cosine, float ref_idx) {
 //    <!-- insert your code here -->
 //}
-
-bool intersectFloor(Ray ray, out float t) {
-  if(abs(ray.direction.y) < 0.0001f)
-    return false;
-  t = (FLOOR_Y - ray.origin.y) / ray.direction.y;
-  return t > 0.001f;
-}
 
 HitData traceScene(Ray ray, bool includeLight) {
   HitData hit;
@@ -239,7 +284,7 @@ HitData traceScene(Ray ray, bool includeLight) {
     hit = HitData(true, t, ray.origin + ray.direction * t, vec3(0.0f), lightSphere.color, 0.0f, true, false);
   }
 
-  if(intersectFloor(ray, t) && t < hit.t) {
+  if(intersectPlane(ray, t) && t < hit.t) {
     vec3 p = ray.origin + ray.direction * t;
     vec2 cell = floor(p.xz / CHECKER_SIZE);
     vec3 color = mod(cell.x + cell.y, 2.0f) < 1.0f ? vec3(1.0f) : vec3(0.05f);
@@ -321,7 +366,7 @@ vec3 trace(Ray ray) {
 }
 
 void main() {
-  initScene(uTime);
+  initScene(u_time);
 
   // Orbit camera around the scene center
   float cp = cos(u_cameraOrbit.x), sp = sin(u_cameraOrbit.x);

@@ -116,7 +116,7 @@ const int OBJECT_TYPE_PLANE = 5;
 // but we arent that desperate
 
 struct Object {
-  ivec4 meta;         // x    => type;    y => material?; z=> ____ ; w => ____ ; 
+  ivec4 meta;         // x    => type;    y => material?; z=> cyl: faceted ; w => cyl: faces (prism) ; 
   vec4 centerRadius;  // xyz  => center;  w => cone, sphere, cyl: r, cube: half-size, torus: R, plane: width
   vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge 
   mat4 transform;     // overall transformation to apply 

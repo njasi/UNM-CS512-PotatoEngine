@@ -3,6 +3,7 @@
  */
 
 import { Scene } from "..";
+import { mat4Identity } from "../util/transformations";
 import { vec4distance, scaleVec4, sumVec4 } from "../util/vec4";
 import SceneObject from "./SceneObject";
 
@@ -17,13 +18,14 @@ import SceneObject from "./SceneObject";
  * @alias module:objects/RayObject
  */
 export default class RayObject extends SceneObject {
-
   static OBJECT_TYPE_SPHERE = 0;
   static OBJECT_TYPE_CUBE = 1;
   static OBJECT_TYPE_CONE = 2;
   static OBJECT_TYPE_TORUS = 3;
   static OBJECT_TYPE_CYLINDER = 4;
   static OBJECT_TYPE_PLANE = 5;
+
+  static OBJECT_BYTE_SIZE = 112; // 16 + 16 + 16 + 64
 
   /**
    * Make a new RayObject, a scene object meant to run in the
@@ -76,6 +78,18 @@ export default class RayObject extends SceneObject {
       passes = undefined,
       lightingCenter = [0, 0, 0],
       lightingRadius = 1,
+
+      // ray object geometry
+      materialIndex = 0,
+      radius = undefined,
+      halfSize = undefined,
+      height = undefined,
+      width = undefined,
+      depth = undefined,
+      radiusMinor = undefined,
+      bulge = undefined,
+      faceted = undefined,
+      faces = undefined,
     } = {},
   ) {
     super(label, {
@@ -92,24 +106,56 @@ export default class RayObject extends SceneObject {
       passes,
     });
 
+    // TODO update this based on the label if it exists
+    this.materialIndex = materialIndex;
+
+    this.radius = radius;
+    this.halfSize = halfSize;
+    this.height = height;
+    this.width = width;
+    this.depth = depth;
+    this.radiusMinor = radiusMinor;
+    this.bulge = bulge;
+    this.faceted = faceted;
+    this.faces = faces;
+
     this.type = type;
   }
 
   /**
    * Pack the data into a predefined structure i can pass down to the
    * shader to render
+   *
+   * <pre>
+   *  struct Object {
+   *     ivec4 meta;         // x    => type;    y => material?; z=> ____ ; w => ____ ;
+   *     vec4 centerRadius;  // xyz  => center;  w => cone, sphere, cyl: r, cube: half-size, torus: R, plane: width
+   *     vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge
+   *     mat4 transform;     // overall transformation to apply
+   *   };
+   * </pre>
    */
   packData() {
-    // TODO: need to decide on information format...
-    // buffer like I use with lights?
-    // position => center
-    // scale => ~ radius...
-    // shouldDraw => pack nothing and report this
-    // would be nice to still have parent relations but that highly
-    //    relies on the parent transformation matrix which applies to
-    //    vertices which we don't have anymore... will need to think abt that
-  
-  
+    const bytes = new ArrayBuffer(RayObject.OBJECT_BYTE_SIZE);
+    const view = new DataView(bytes);
+
+    const center = this.position;
+    let mat = this.M;
+
+    if (!this.M || mat.length != 16) {
+      console.warn(
+        `RayObject ${this.label}: this.M must be defined as a 16 element array; defaulting to identity`,
+      );
+      mat = mat4Identity();
+    }
+
+    // ivec4 meta
+    view.setInt32(0, this.type, true);
+    view.setInt32(4, this.materialIndex, true);
+    view.setInt32(8, this.faceted ? 1 : 0, true);
+    view.setInt32(12, this.faces ?? 0, true);
+
+    
   }
 
   loadBuffers() {

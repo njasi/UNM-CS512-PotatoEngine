@@ -186,6 +186,7 @@ Cube cube;
 // INTERSECTION CALCULATIONS //
 ///////////////////////////////
 
+// basic sphere intersection
 bool intersectSphere(Sphere s, Ray ray, out float t) {
   vec3 oc = ray.origin - s.center;
   float b = dot(oc, ray.direction);
@@ -199,7 +200,8 @@ bool intersectSphere(Sphere s, Ray ray, out float t) {
   return t > 0.001f;
 }
 
-// Slab test
+// cube intersection
+// Slab test 
 bool intersectCube(Cube cube, Ray ray, out float t, out vec3 normal) {
   vec3 t0s = (cube.center - cube.halfSize - ray.origin) / ray.direction;
   vec3 t1s = (cube.center + cube.halfSize - ray.origin) / ray.direction;
@@ -225,30 +227,142 @@ bool intersectCube(Cube cube, Ray ray, out float t, out vec3 normal) {
   return true;
 }
 
-bool intersectPlane(Plane p, Ray ray, out float t) {
+// bool intersectPlane(Plane p, Ray ray, out float t) {
+//   if(abs(ray.direction.y) < 0.0001f)
+//     return false;
+//   t = (p.center.y - ray.origin.y) / ray.direction.y;
+//   return t > 0.001f;
+// }
+
+bool intersectPlane(Plane p, Ray ray, out float t, out vec3 n) {
   if(abs(ray.direction.y) < 0.0001f)
     return false;
+
   t = (p.center.y - ray.origin.y) / ray.direction.y;
-  return t > 0.001f;
+  if(t <= 0.001f)
+    return false;
+
+  vec3 point = ray.origin + ray.direction * t;
+
+  // negative width/depth means an infinite plane in that direction
+  if(p.width > 0.0f && abs(point.x - p.center.x) > 0.5f * p.width)
+    return false;
+  if(p.depth > 0.0f && abs(point.z - p.center.z) > 0.5f * p.depth)
+    return false;
+
+  n = vec3(0.0f, 1.0f, 0.0f);
+  if(dot(n, ray.direction) > 0.0f)
+    n = -n;
+
+  return true;
+}
+
+// TODO
+Ray toObjectSpace(Ray r, mat4 transform){
+  return r;
 }
 
 // switch on the object type and select the correct one from above
 // apply the transform before to put the light ray in the correct space
-bool intersectObject(Object obj, Ray ray, out float t, vec3 n) {
-  if(obj.meta.x == OBJECT_TYPE_CUBE) {
-    return intersectCube(Cube(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform), ray, t, n);
-  } else if(obj.meta.x == OBJECT_TYPE_SPHERE) {
-    return intersectSphere(Sphere(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.transform), ray, t);
-  } else if(obj.meta.x == OBJECT_TYPE_PLANE) {
-    return intersectPlane(Plane(obj.meta.y, obj.centerRadius.xyz, obj.centerRadius.w, obj.options.x, obj.transform), ray, t);
-  } else if(obj.meta.x == OBJECT_TYPE_CONE) {
+// Replace the original intersectObject with this version.
+bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal) {
+  
+  // TODO transform ray to local object space...
+  Ray localRay = toObjectSpace(worldRay, obj.transform);
+  
+  float localT;
+  vec3 localNormal;
+  bool didHit = false;
 
-  } else if(obj.meta.x == OBJECT_TYPE_TORUS) {
+  if (obj.meta.x == OBJECT_TYPE_SPHERE) {
+    Sphere s = Sphere(
+      obj.meta.y,
+      obj.centerRadius.xyz,
+      obj.centerRadius.w,
+      obj.transform
+    );
 
-  } else if(obj.meta.x == OBJECT_TYPE_CYLINDER) {
+    didHit = intersectSphere(s, localRay, localT);
+    if (didHit) {
+      vec3 p = localRay.origin + localRay.direction * localT;
+      localNormal = normalize((p - s.center) / s.radius);
+    }
+  } else if (obj.meta.x == OBJECT_TYPE_CUBE) {
+    Cube c = Cube(
+      obj.meta.y,
+      obj.centerRadius.xyz,
+      obj.centerRadius.w,
+      obj.transform
+    );
 
+    didHit = intersectCube(c, localRay, localT, localNormal);
+  } else if (obj.meta.x == OBJECT_TYPE_PLANE) {
+    Plane p = Plane(
+      obj.meta.y,
+      obj.centerRadius.xyz,
+      obj.centerRadius.w,
+      obj.options.x,
+      obj.transform
+    );
+
+    didHit = intersectPlane(p, localRay, localT, localNormal);
+  } else if (obj.meta.x == OBJECT_TYPE_CONE) {
+    // TODO
+  } else if (obj.meta.x == OBJECT_TYPE_TORUS) {
+    // TODO
+  } else if (obj.meta.x == OBJECT_TYPE_CYLINDER) {
+    // TODO
   }
-  return false;
+
+  if (!didHit)
+    return false;
+
+  t = localT;
+
+  return true;
+}
+
+
+// calculate hitdata for a hit on a object
+HitData calculateHit(Object obj, Ray ray) {
+  HitData result = HitData(
+    false,
+    1e10f,
+    vec3(0.0f),
+    vec3(0.0f),
+    vec3(0.0f),
+    0.0f,
+    false,
+    false
+  );
+
+  // if the material is out of range then we ignore
+  if(obj.meta.y < 0 || obj.meta.y >= MAX_MATERIALS){
+    return result;
+  }
+
+  float t;
+  vec3 normal;
+
+  if(!intersectObject(obj, ray, t, normal)){
+    return result;
+  }
+
+  Material mat = materials[obj.meta.y];
+
+  float ior = mat.optics.y;
+  float reflectivity = mat.optics.z;
+
+  result.hit = true;
+  result.t = t;
+  result.point = ray.origin + ray.direction * t;
+  result.normal = normal;
+  result.color = mat.kd.rgb;
+  result.reflectivity - reflectivity;
+  result.isLight = false;
+  result.isGlass = false;
+
+  return result;
 }
 
 //////////////////////
@@ -280,25 +394,34 @@ HitData traceScene(Ray ray, bool includeLight) {
   float t;
   vec3 n;
 
-  if(includeLight && intersectSphere(ray, lightSphere, t) && t < hit.t) {
-    hit = HitData(true, t, ray.origin + ray.direction * t, vec3(0.0f), lightSphere.color, 0.0f, true, false);
+  // if(includeLight && intersectSphere(ray, lightSphere, t) && t < hit.t) {
+  //   hit = HitData(true, t, ray.origin + ray.direction * t, vec3(0.0f), lightSphere.color, 0.0f, true, false);
+  // }
+
+  // keep the closest hit in the scene 
+  // wonder if we can depth sort objects to make faster?
+  for (int i = 0; i < u_objectCount; ++i) {
+    HitData candidate = calculateHit(objects[i], ray);
+    if (candidate.hit && candidate.t < hit.t)
+      hit = candidate;
   }
 
-  if(intersectPlane(ray, t) && t < hit.t) {
-    vec3 p = ray.origin + ray.direction * t;
-    vec2 cell = floor(p.xz / CHECKER_SIZE);
-    vec3 color = mod(cell.x + cell.y, 2.0f) < 1.0f ? vec3(1.0f) : vec3(0.05f);
-    hit = HitData(true, t, p, vec3(0.0f, 1.0f, 0.0f), color, 0.0f, false, false);
-  }
 
-  if(intersectCube(ray, t, n) && t < hit.t) {
-    hit = HitData(true, t, ray.origin + ray.direction * t, n, cube.color, cube.reflectivity, false, false);
-  }
+  // if(intersectPlane(ray, t) && t < hit.t) {
+  //   vec3 p = ray.origin + ray.direction * t;
+  //   vec2 cell = floor(p.xz / CHECKER_SIZE);
+  //   vec3 color = mod(cell.x + cell.y, 2.0f) < 1.0f ? vec3(1.0f) : vec3(0.05f);
+  //   hit = HitData(true, t, p, vec3(0.0f, 1.0f, 0.0f), color, 0.0f, false, false);
+  // }
 
-  if(intersectSphere(ray, sphere, t) && t < hit.t) {
-    vec3 p = ray.origin + ray.direction * t;
-    hit = HitData(true, t, p, (p - sphere.center) / sphere.radius, sphere.color, 0.0f, false, false);
-  }
+  // if(intersectCube(ray, t, n) && t < hit.t) {
+  //   hit = HitData(true, t, ray.origin + ray.direction * t, n, cube.color, cube.reflectivity, false, false);
+  // }
+
+  // if(intersectSphere(ray, sphere, t) && t < hit.t) {
+  //   vec3 p = ray.origin + ray.direction * t;
+  //   hit = HitData(true, t, p, (p - sphere.center) / sphere.radius, sphere.color, 0.0f, false, false);
+  // }
 
   return hit;
 }

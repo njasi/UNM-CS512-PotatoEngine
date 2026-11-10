@@ -306,7 +306,7 @@ export default class Scene {
 
   loadPrograms() {
     this.programs.forEach((program) => {
-      program.load(this.gl);
+      program.load(this.gl, this);
     });
   }
 

@@ -73,7 +73,11 @@ export default class FloatingObject extends PhysicsObject {
       waterFunction = undefined,
     },
   ) {
-    super(label, vertices, colors, indices, normals, {
+    super(label, {
+      vertices,
+      colors,
+      indices,
+      normals,
       parent,
       position,
       rotation,

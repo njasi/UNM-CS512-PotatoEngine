@@ -65,7 +65,11 @@ export default class PhysicsObject extends SceneObject {
       onCollision = undefined,
     } = {},
   ) {
-    super(label, vertices, colors, indices, normals, {
+    super(label, {
+      vertices,
+      colors,
+      indices,
+      normals,
       parent,
       position,
       rotation,

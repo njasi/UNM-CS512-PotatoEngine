@@ -58,23 +58,30 @@ export default class RayShaderProgram extends ShaderProgram {
    * and the light mask uniform.
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
-  _init(gl) {
-    super._init(gl);
+  _init(gl, scene = undefined) {
+    super._init(gl, scene);
     this._gl = gl;
 
+    // dont feel like making uTime changes eveywhere
+    // so that stays in camel format
     const defaultLocs = [
-      "u_time",
+      "uTime",
       "u_resolution",
       "u_maxBounces",
       "u_ambientStrength",
       "u_cameraOrbit",
       "u_target",
-      "u_object_count",
+      "u_objectCount",
+      "u_lightCount",
     ];
 
     for (const loc of defaultLocs) {
       this.locs[loc] = gl.getUniformLocation(this.program, loc);
     }
+
+    this.uniforms.u_resolution = [scene.canvas.width, scene.canvas.height];
+    this.uniforms.u_maxBounces = 2;
+    this.uniforms.u_ambientStrength = 0.2;
 
     this._initBuffers(gl);
   }

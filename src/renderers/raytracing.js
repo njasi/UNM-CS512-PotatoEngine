@@ -4,6 +4,7 @@
 
 import { Scene } from "..";
 import { ShaderProgram } from "../shaders";
+import RayShaderProgram from "../shaders/RayShaderProgram";
 import RenderPass from "./RenderPass";
 
 /**
@@ -20,9 +21,6 @@ export function addRayTracingRenderPass(scene) {
     updateUniforms,
     cleanup,
   });
-
-  // dict to track ray pass specific locs
-  rayPass.locs = {};
 
   scene.addRenderPass(rayPass);
 }
@@ -45,16 +43,25 @@ function setup(gl, scene) {
  * @param {Scene} scene
  */
 function updateUniforms(gl, shaderProgram, scene) {
+  if (!(shaderProgram instanceof RayShaderProgram)) {
+    return;
+  }
+
   if (!(shaderProgram.label in this.locs)) {
+    shaderProgram.uniforms.u_target = [
+      scene.camera.x,
+      scene.camera.y,
+      scene.camera.z,
+    ];
 
-    this.locs[shaderProgram.label] = {
-      targetLoc: shaderProgram.addLoc("u_target"),
-      cameraOrbitLoc: shaderProgram.addLoc("u_cameraOrbit"),
-    }
+    shaderProgram.uniforms.u_cameraOrbit = [
+      scene.camera.yaw,
+      scene.camera.pitch,
+    ]
 
-  }else{
-
-  } 
+    
+  } else {
+  }
 }
 
 /**

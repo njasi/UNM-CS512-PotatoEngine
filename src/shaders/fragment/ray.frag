@@ -37,9 +37,9 @@ struct Material {
   // specular map?
 };
 
-layout(std140) uniform materialBlock {
-  Material materials[MAX_MATERIALS]
-}
+// layout(std140) uniform materialBlock {
+//   Material materials[MAX_MATERIALS]
+// }
 
 //////////////////
 // OBJECT SETUP //
@@ -63,18 +63,18 @@ layout(std140) uniform materialBlock {
 //   mat4 transform
 // };
 
-// struct Sphere {
-//   vec3 center;
-//   float radius;
-//   vec3 color;
-// };
+struct Sphere {
+  vec3 center;
+  float radius;
+  vec3 color;
+};
 
-// struct Cube {
-//   vec3 center;
-//   float halfSize;
-//   vec3 color;
-//   float reflectivity;
-// };
+struct Cube {
+  vec3 center;
+  float halfSize;
+  vec3 color;
+  float reflectivity;
+};
 
 const int OBJECT_TYPE_SPHERE = 0;
 const int OBJECT_TYPE_CUBE = 1;
@@ -94,21 +94,21 @@ struct Object {
   mat4 transform;     // overall transformation to apply 
 };
 
-layout(std140) uniform objectBlock {
-  Object objects[MAX_OBJECTS];
-};
+// layout(std140) uniform objectBlock {
+//   Object objects[MAX_OBJECTS];
+// };
 
-uniform u_object_count;
+// uniform u_objectCount;
 
 ///////////////////
 // LIGHT CONFIG  //
 ///////////////////
 
-layout(std140) uniform lightBlock {
-  Object lights[MAX_LIGHTS];
-};
+// layout(std140) uniform lightBlock {
+//   Object lights[MAX_LIGHTS];
+// };
 
-uniform u_object_count;
+// uniform u_objectCount;
 
 
 // i guess lights are objects in this basic representation?

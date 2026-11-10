@@ -41,13 +41,16 @@ export default class ShaderProgram {
     this.uniforms = new Proxy(
       {},
       {
-        set(target, key, value) {
-          if (key in locs) {
+        set: (target, key, value) => {
+          console.log(this);
+          console.log(target, key, value);
+          if (key in this.locs) {
             target[key] = value;
             this._setUniform(key, value);
+            return true;
           }
         },
-        get(target, key) {
+        get: (target, key) => {
           return target[key];
         },
       },
@@ -84,7 +87,7 @@ export default class ShaderProgram {
    *
    * @param {WebGL2RenderingContext} gl the webgl2 context from the scene canvas
    */
-  load(gl = this._gl) {
+  load(gl = this._gl, scene = undefined) {
     this.program = gl.createProgram();
 
     gl.attachShader(this.program, this.vertexShader.shader);
@@ -98,7 +101,7 @@ export default class ShaderProgram {
       );
     }
 
-    this._init(gl);
+    this._init(gl, scene);
   }
 
   /**
@@ -137,9 +140,10 @@ export default class ShaderProgram {
    * @param {string} loc the string name of the uniform
    * @param {number | number[]} value
    */
-  _setUniform(loc, value) {
-    const gl = this.gl;
+  _setUniform(loc, value, gl = this._gl) {
     const location = this.locs[loc];
+
+    console.log("_setUniform ", loc, value);
 
     if (location == null) {
       console.warn("COuld not find location ", loc);

@@ -17,6 +17,14 @@ import SceneObject from "./SceneObject";
  * @alias module:objects/RayObject
  */
 export default class RayObject extends SceneObject {
+
+  static OBJECT_TYPE_SPHERE = 0;
+  static OBJECT_TYPE_CUBE = 1;
+  static OBJECT_TYPE_CONE = 2;
+  static OBJECT_TYPE_TORUS = 3;
+  static OBJECT_TYPE_CYLINDER = 4;
+  static OBJECT_TYPE_PLANE = 5;
+
   /**
    * Make a new RayObject, a scene object meant to run in the
    * hw7 based ray tracing fragment. Note that this object type is unique and does

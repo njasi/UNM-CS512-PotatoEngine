@@ -11,15 +11,18 @@ import RenderPass from "./RenderPass";
  * Add a basic ray tracing render pass
  * which primarily uses RayObjects in its scene.
  * @param {Scene} scene
+ * @param {string} programLabel the label of the ray tracing program
  */
-export function addRayTracingRenderPass(scene) {
-  rayPass = new RenderPass("basic", {
+export function addRayTracingRenderPass(scene, programLabel = "ray") {
+  const rayPass = new RenderPass("ray", {
     clearMask: scene.gl
       ? scene.gl.COLOR_BUFFER_BIT | scene.gl.DEPTH_BUFFER_BIT
       : 0,
     setup,
     updateUniforms,
     cleanup,
+    objIndependent: true,
+    programLabel,
   });
 
   scene.addRenderPass(rayPass);
@@ -47,21 +50,18 @@ function updateUniforms(gl, shaderProgram, scene) {
     return;
   }
 
-  if (!(shaderProgram.label in this.locs)) {
-    shaderProgram.uniforms.u_target = [
-      scene.camera.x,
-      scene.camera.y,
-      scene.camera.z,
-    ];
+  shaderProgram.uniforms.u_target = new Float32Array([
+    -scene.camera.x,
+    -scene.camera.y,
+    -scene.camera.z,
+  ]);
 
-    shaderProgram.uniforms.u_cameraOrbit = [
-      scene.camera.yaw,
-      scene.camera.pitch,
-    ]
+  shaderProgram.uniforms.u_cameraOrbit = new Float32Array([
+    scene.camera.pitch,
+    scene.camera.yaw,
+  ]);
 
-    
-  } else {
-  }
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
 /**

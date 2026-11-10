@@ -577,7 +577,6 @@ export default class Scene {
     if (upload) {
       texture.ready = texture.upload(source);
     } else if (load) {
-      console.log("loading texture", label);
       texture.ready = texture.load(source);
     }
 
@@ -758,6 +757,23 @@ export default class Scene {
   _renderPass(pass, matrices) {
     const objects = pass.getObjects();
     const lights = [...this.lights.values()];
+
+    // override if the shader program sets its own matrices
+    let matOverride = pass.matrices ? pass.matrices : matrices;
+
+    if(pass.objIndependent && pass.programLabel){
+      const shaderProgram = this.getProgram(pass.programLabel);
+      shaderProgram.use(this.gl);
+
+      this._clearActiveMaterial();
+
+      if (!!pass.updateUniforms) {
+        pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
+      }
+
+      return;
+    }
+
     for (const obj of objects) {
       const shaderProgram = this.getProgram(obj.programLabel);
 
@@ -766,9 +782,6 @@ export default class Scene {
         this._clearActiveMaterial();
 
         shaderProgram.use(this.gl);
-
-        // use a shader passes matrices if it has them set
-        let matOverride = pass.matrices ? pass.matrices : matrices;
 
         // TODO: I should really move these functions into the shader class
         //       like the material class with its updateUniforms call

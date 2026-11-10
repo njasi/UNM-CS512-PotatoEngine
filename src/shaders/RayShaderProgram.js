@@ -35,7 +35,7 @@ export default class RayShaderProgram extends ShaderProgram {
     label,
     vertexShader,
     fragmentShader,
-    { hasLight = false, hasMaterial = false } = {},
+    { hasLight = false, hasMaterial = false, objIndependent = false } = {},
   ) {
     super(label, vertexShader, fragmentShader);
 
@@ -62,6 +62,18 @@ export default class RayShaderProgram extends ShaderProgram {
     super._init(gl, scene);
     this._gl = gl;
 
+    gl.bindAttribLocation(this.program, 0, "position");
+
+    gl.bindVertexArray(gl.createVertexArray());
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+      gl.STATIC_DRAW,
+    );
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(0);
+
     // dont feel like making uTime changes eveywhere
     // so that stays in camel format
     const defaultLocs = [
@@ -79,7 +91,9 @@ export default class RayShaderProgram extends ShaderProgram {
       this.locs[loc] = gl.getUniformLocation(this.program, loc);
     }
 
-    this.uniforms.u_resolution = [scene.canvas.width, scene.canvas.height];
+    gl.useProgram(this.program)
+
+    this.uniforms.u_resolution = new Float32Array([scene.canvas.width, scene.canvas.height]);
     this.uniforms.u_maxBounces = 2;
     this.uniforms.u_ambientStrength = 0.2;
 

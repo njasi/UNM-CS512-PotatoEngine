@@ -5,7 +5,6 @@
 import SceneObject from "../objects/SceneObject";
 import Scene from "../Scene";
 
-
 /**
  * Wrapper class to help define render order and different types of objects
  *
@@ -18,7 +17,7 @@ export default class RenderPass {
   /**
    * Create a render pass
    * @param {string} label
-   * @param {*} options 
+   * @param {*} options
    * @param {*} options.framebuffer
    * @param {*} options.viewport
    * @param {*} options.clearMask
@@ -27,6 +26,7 @@ export default class RenderPass {
    * @param {function} options.cleanup callback function for after we've finished the pass
    * @param {function} options.updateUniforms callback function to call
    * @param {function} options.sort function that defines the render order of objects by sorting them
+   * @param {boolean} [options.objIndependent=false] have the renderpass to run even if no objects in it
    */
   constructor(
     label,
@@ -39,6 +39,8 @@ export default class RenderPass {
       cleanup = undefined,
       updateUniforms = undefined,
       sort = undefined,
+      objIndependent = false,
+      programLabel = undefined,
     } = {},
   ) {
     this.label = label;
@@ -51,18 +53,21 @@ export default class RenderPass {
     this.updateUniforms = updateUniforms;
     this.sort = sort;
 
+    this.objIndependent = objIndependent;
+    this.programLabel = programLabel;
+
     // override the default scene view / transform matrices
-    this.matrices = undefined
+    this.matrices = undefined;
 
     this.objects = new Set();
 
-    if(this.setup){
+    if (this.setup) {
       this.setup = this.setup.bind(this);
     }
-    if(this.cleanup){ 
+    if (this.cleanup) {
       this.cleanup = this.cleanup.bind(this);
     }
-    if(this.updateUniforms){
+    if (this.updateUniforms) {
       this.updateUniforms = this.updateUniforms.bind(this);
     }
   }
@@ -130,7 +135,7 @@ export default class RenderPass {
    * - applies the sort function if it is found
    *
    * @param {Scene} scene scene we are rendering in
-   * @returns {SceneObject[]} 
+   * @returns {SceneObject[]}
    */
   getObjects(scene) {
     // Iterate the Set directly unless sorting is requested.

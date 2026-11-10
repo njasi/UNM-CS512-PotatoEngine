@@ -42,8 +42,6 @@ export default class ShaderProgram {
       {},
       {
         set: (target, key, value) => {
-          console.log(this);
-          console.log(target, key, value);
           if (key in this.locs) {
             target[key] = value;
             this._setUniform(key, value);
@@ -142,8 +140,6 @@ export default class ShaderProgram {
    */
   _setUniform(loc, value, gl = this._gl) {
     const location = this.locs[loc];
-
-    console.log("_setUniform ", loc, value);
 
     if (location == null) {
       console.warn("COuld not find location ", loc);

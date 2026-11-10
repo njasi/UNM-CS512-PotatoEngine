@@ -5,7 +5,7 @@ precision highp float;
 #define MAX_OBJECTS 585; // max possible with this layout, not bad tbh
 #define MAX_LIGHTS 585;
 
-uniform float u_time;
+uniform float uTime;
 uniform vec2 u_resolution;
 uniform int u_maxBounces;
 uniform float u_ambientStrength; // Ambient fill light for better visual
@@ -321,7 +321,7 @@ vec3 trace(Ray ray) {
 }
 
 void main() {
-  initScene(u_time);
+  initScene(uTime);
 
   // Orbit camera around the scene center
   float cp = cos(u_cameraOrbit.x), sp = sin(u_cameraOrbit.x);

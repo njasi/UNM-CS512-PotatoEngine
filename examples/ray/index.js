@@ -1,34 +1,41 @@
 import Scene from "../../src/Scene";
 import RayShaderProgram from "../../src/shaders/RayShaderProgram";
 import controls from "../../src/controls";
+import { addRayTracingRenderPass } from "../../src/renderers/raytracing";
+import flight from "../../src/controls/flight";
 
-// try to plug in new scene abstraction
+const SHADER_PROGRAM_RAY = "ray";
+
 const scene = new Scene("glcanvas");
 scene.camera.move(0, -2.5, -25);
 scene.rotationX += Math.PI / 6;
 
 scene.createProgram(
-  "ray",
+  SHADER_PROGRAM_RAY,
   "/src/shaders/vertex/ray.vert",
   "/src/shaders/fragment/ray.frag",
   RayShaderProgram,
 );
 
-
 /**
  * Attach event listeners to the html elements
  */
-function setupInputControls() {
-  
-}
+function setupInputControls() {}
 
 /**
  * Initalize all the objects in the starting scene
  * - the segments of the arm
  */
-function initSceneObjects() {
+function initSceneObjects() {}
 
+flight.setupMouseControls(scene);
+const cameraCB = flight.setupKeyboardControls(scene);
+
+function updateScene(dt) {
+  cameraCB(dt);
 }
+
+scene.setUpdateCB(updateScene);
 
 /**
  * Main init function
@@ -39,13 +46,11 @@ function initSceneObjects() {
  * - start animation loop
  */
 async function main() {
-
   await scene.load();
 
-  initSceneObjects();
+  addRayTracingRenderPass(scene, SHADER_PROGRAM_RAY);
 
-  controls.FlightControls.setupMouseControls(scene);
-  controls.FlightControls.setupKeyboardControls(scene);
+  initSceneObjects();
 
   setInterval(() => {
     scene.render();

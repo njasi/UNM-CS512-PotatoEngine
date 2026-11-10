@@ -134,6 +134,9 @@ export default class RayObject extends SceneObject {
    *     mat4 transform;     // overall transformation to apply
    *   };
    * </pre>
+   * 
+   * TODO can probably cache this to not recomput every time
+   * maybe a dirty attribute on it or smth
    */
   packData() {
     const bytes = new ArrayBuffer(RayObject.OBJECT_BYTE_SIZE);
@@ -149,13 +152,66 @@ export default class RayObject extends SceneObject {
       mat = mat4Identity();
     }
 
-    // ivec4 meta
+    // ivec4 meta (offset 0)
     view.setInt32(0, this.type, true);
     view.setInt32(4, this.materialIndex, true);
     view.setInt32(8, this.faceted ? 1 : 0, true);
     view.setInt32(12, this.faces ?? 0, true);
 
-    
+    // vec4 centerRadius (offset 16)
+    let size = 0;
+    switch (this.type) {
+      case RayObject.OBJECT_TYPE_SPHERE:
+      case RayObject.OBJECT_TYPE_CONE:
+      case RayObject.OBJECT_TYPE_CYLINDER:
+      case RayObject.OBJECT_TYPE_TORUS:
+        size = this.radius;
+        break;
+      case RayObject.OBJECT_TYPE_CUBE:
+        size = this.halfSize;
+        break;
+      case RayObject.OBJECT_TYPE_PLANE:
+        size = this.width;
+        break;
+      default:
+        throw new Error("RayObject: unknown type:", this.type);
+    }
+
+    // NOTE: this.M should already contain the position transform
+    //       but we ignore it for now since its not parsed in 
+    //       the fragment shader
+    view.setFloat32(16, this.position[0], true);
+    view.setFloat32(20, this.position[1], true);
+    view.setFloat32(24, this.position[2], true);
+    view.setFloat32(28, size, true);
+
+    // vec4 options (offset 32)
+    let options = { x: 0, y: 0, z: 0, w: 0 };
+    switch (this.type) {
+      case RayObject.OBJECT_TYPE_CYLINDER:
+        options.y = this.bulge ?? 0;
+      case RayObject.OBJECT_TYPE_CONE:
+        options.x = this.height ?? 1;
+        break;
+      case RayObject.OBJECT_TYPE_TORUS:
+        options.x = this.radiusMinor ?? 0.25;
+        break;
+      case RayObject.OBJECT_TYPE_PLANE:
+        options.x = this.depth ?? 0;
+        break;
+    }
+
+    view.setFloat32(32, options.x, true);
+    view.setFloat32(36, options.y, true);
+    view.setFloat32(40, options.z, true);
+    view.setFloat32(44, options.w, true);
+
+    // mat4 transform (offset 48)
+    for (let i = 0; i < 16; i++) {
+      view.setFloat32(48 + i * 4, mat[i], true);
+    }
+
+    return bytes;
   }
 
   loadBuffers() {

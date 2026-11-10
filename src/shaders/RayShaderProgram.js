@@ -91,6 +91,8 @@ export default class RayShaderProgram extends ShaderProgram {
       this.locs[loc] = gl.getUniformLocation(this.program, loc);
     }
 
+    this.timeLoc = this.locs["uTime"]
+
     gl.useProgram(this.program)
 
     this.uniforms.u_resolution = new Float32Array([scene.canvas.width, scene.canvas.height]);

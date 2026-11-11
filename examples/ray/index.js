@@ -50,7 +50,6 @@ function initSceneObjects() {
   let cube = new RayObject("testCube", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 1,
     position: [0, 0, -5],
-    materialIndex: -2,
   });
   let cube2 = new RayObject("testCube2", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 1,

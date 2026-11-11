@@ -74,8 +74,10 @@ layout(std140) uniform materialBlock {
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
 const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
-const Material _02_reflect = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, 1.f, 0.f));
+const Material _02_reflect = Material(vec4(1.f, 1.f, 1.f, 1.f), vec4(0.8f, 0, 0, 0), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect);
+
+const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0));
 
 // get a material by its id
 Material getMaterial(int matId) {
@@ -232,6 +234,7 @@ struct HitData {
   float reflectivity;
   bool isLight;
   bool isGlass;
+  Material mat;
 };
 
 ///////////
@@ -370,7 +373,7 @@ bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal
 
 // calculate hitdata for a hit on a object
 HitData calculateHit(Object obj, Ray ray) {
-  HitData result = HitData(false, 1e10f, vec3(0.0f), vec3(0.0f), vec3(0.0f), 0.0f, false, false);
+  HitData result = HitData(false, 1e10f, vec3(0.0f), vec3(0.0f), vec3(0.f), 0.0f, false, false, NOTHING_MATERIAL);
 
   // if the material is out of range then we ignore
   // - if less than 0, ensure it is in range of the internal materials
@@ -404,6 +407,7 @@ HitData calculateHit(Object obj, Ray ray) {
   result.reflectivity = reflectivity;
   result.isLight = false;
   result.isGlass = false;
+  result.mat = mat;
 
   return result;
 }
@@ -411,14 +415,6 @@ HitData calculateHit(Object obj, Ray ray) {
 //////////////////////
 // CALCULATION TIME //
 //////////////////////
-
-void initScene(float time) {
-  // float a = time * 2.f;
-  // sphere = Sphere(vec3(cos(a) * 2.5f, sin(a * 1.3f) * 0.8f, -6.0f + sin(a) * 0.5f), 1.0f, vec3(1.0f, 0.3f, 0.3f));
-
-  // float b = time * 2.f;
-  // cube = Cube(vec3(sin(b) * 2.0f, cos(b * 1.5f) + 0.5f, -9.0f + cos(b * 0.7f)), 0.8f, vec3(0.3f, 0.8f, 0.3f), 0.85f);
-}
 
 //eta = n1 / n2
 //vec3 refraction(vec3 I, vec3 N, float eta) {
@@ -437,17 +433,13 @@ HitData traceScene(Ray ray, bool includeLight) {
   float t;
   vec3 n;
 
-  // if(includeLight && intersectSphere(ray, lightSphere, t) && t < hit.t) {
-  //   hit = HitData(true, t, ray.origin + ray.direction * t, vec3(0.0f), lightSphere.color, 0.0f, true, false);
-  // }
-
   if(includeLight) {
     for(int i = 0; i < u_lightCount; ++i) {
       HitData candidate = calculateHit(lights[i], ray);
       candidate.normal = vec3(0.0f);
       candidate.isLight = true;
       // add power in
-      candidate.color *= lights[i].options.w;
+      candidate.color += lights[i].options.w;
       if(candidate.hit && candidate.t < hit.t)
         hit = candidate;
     }
@@ -460,22 +452,6 @@ HitData traceScene(Ray ray, bool includeLight) {
     if(candidate.hit && candidate.t < hit.t)
       hit = candidate;
   }
-
-  // if(intersectPlane(ray, t) && t < hit.t) {
-  //   vec3 p = ray.origin + ray.direction * t;
-  //   vec2 cell = floor(p.xz / CHECKER_SIZE);
-  //   vec3 color = mod(cell.x + cell.y, 2.0f) < 1.0f ? vec3(1.0f) : vec3(0.05f);
-  //   hit = HitData(true, t, p, vec3(0.0f, 1.0f, 0.0f), color, 0.0f, false, false);
-  // }
-
-  // if(intersectCube(ray, t, n) && t < hit.t) {
-  //   hit = HitData(true, t, ray.origin + ray.direction * t, n, cube.color, cube.reflectivity, false, false);
-  // }
-
-  // if(intersectSphere(ray, sphere, t) && t < hit.t) {
-  //   vec3 p = ray.origin + ray.direction * t;
-  //   hit = HitData(true, t, p, (p - sphere.center) / sphere.radius, sphere.color, 0.0f, false, false);
-  // }
 
   return hit;
 }
@@ -494,7 +470,9 @@ vec3 trace(Ray ray) {
       break;
     }
 
-    // added this in the light hit section, except without the attenuation term
+    // added this in the light hit section, since we dont know what light we hit, 
+    // except without the attenuation term, maybe hitdata should be able to have a 
+    // light struct in it to look at the info or pass attenuation down to 
     // if(hit.isLight) {
     //   color += attenuation * lightSphere.color * LIGHT_POWER;
     //   break;
@@ -520,9 +498,6 @@ vec3 trace(Ray ray) {
     //    attenuation *= hit.color;
     //    continue;
     //}
-
-    // TODO: multi light scene instead of hard coded light
-    //       should just be a for loop casting shadow rays
 
     vec3 directLightColor = vec3(0.f);
 
@@ -556,7 +531,8 @@ vec3 trace(Ray ray) {
 
     if(hit.reflectivity == 0.0f)
       break;
-    attenuation *= hit.reflectivity;
+
+    attenuation *= hit.reflectivity * hit.mat.ka.xyz;
     ray = Ray(hit.point + hit.normal * 0.001f, reflect(ray.direction, hit.normal));
   }
 
@@ -564,8 +540,6 @@ vec3 trace(Ray ray) {
 }
 
 void main() {
-  initScene(u_time);
-
   // Orbit camera around the scene center
   float cp = cos(u_cameraOrbit.x), sp = sin(u_cameraOrbit.x);
   float cy = cos(u_cameraOrbit.y), sy = sin(u_cameraOrbit.y);

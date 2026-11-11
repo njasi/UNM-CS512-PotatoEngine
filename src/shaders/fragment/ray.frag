@@ -416,6 +416,38 @@ HitData calculateHit(Object obj, Ray ray) {
   return result;
 }
 
+////////////////
+// RANDOMNESS //
+////////////////
+
+// basic bad random, consts from book of shaders https://thebookofshaders.com/10/
+float randomValue(vec2 seed) {
+  return fract(sin(dot(seed, vec2(12.9898f, 78.233f))) * 43758.5453123f);
+}
+
+// slightly better random, easier to reason about bounce & sample num influence
+float randomValue2(vec2 pixel, int sampleNum, int bounce) {
+  vec4 seed = vec4(pixel.x, pixel.y, float(sampleNum), float(bounce));
+  return fract(sin(dot(seed, vec4(12.9898f, 78.233f, 37.934f, 17.193f))) * 43758.5453123f);
+}
+
+// TODO hash random? might look a little better and less spatially correlated...
+
+// based on the sample count select from a different strata within the same pixel
+vec2 stratifiedSampleVec2(int sampleNum, int sampleCount) {
+  float n = float(sampleCount);
+
+  float x = (float(sampleNum) +
+    randomValue2(gl_FragCoord.xy, sampleNum, sampleCount * 10)) / n;
+
+  float yIndex = mod(float(sampleNum) * 0.61803398875f, 1.0f) * n;
+
+  float y = (yIndex +
+    randomValue2(gl_FragCoord.yx, sampleNum, (sampleCount + 1) * 10)) / n;
+
+  return vec2(x, y);
+}
+
 //////////////////////
 // CALCULATION TIME //
 //////////////////////
@@ -424,11 +456,6 @@ float schlick(float cosine, float n1, float n2) {
   float r0 = (n1 - n2) / (n1 + n2);
   r0 *= r0;
   return r0 + (1.0f - r0) * pow(1.0f - cosine, 5.0f);
-}
-
-// basic bad random, consts from book of shaders https://thebookofshaders.com/10/
-float randomValue(vec2 seed) {
-  return fract(sin(dot(seed, vec2(12.9898f, 78.233f))) * 43758.5453123f);
 }
 
 HitData traceScene(Ray ray, bool includeLight) {
@@ -510,7 +537,13 @@ vec3 trace(Ray ray, int sampleNum) {
 
       // throw a bunch of stuff in to make more "random"
       // when we cast multiple rays will add the ray number into the mix
-      float choice = randomValue(gl_FragCoord.xy + float(sampleNum + 1) * vec2(float(bounce) * 17.f, u_time * 31.f));
+      // float choice = randomValue(gl_FragCoord.xy + float(sampleNum + 1) * vec2(float(bounce) * 17.f, u_time * 31.f));
+      // float choice = randomValue2(gl_FragCoord.xy, sampleNum, bounce);
+
+      // stratify the random by factoring in the full sample count and divide by 
+      // the total samples
+      float choice = (float(sampleNum) +
+        randomValue2(gl_FragCoord.xy, sampleNum, bounce)) / float(u_raySamples);
 
       vec3 direction;
       vec3 point;
@@ -587,12 +620,19 @@ void main() {
   mat3 rotY = mat3(cy, 0.0f, -sy, 0.0f, 1.0f, 0.0f, sy, 0.0f, cy);
   mat3 camera = rotY * rotX;
 
-  vec2 uv = (gl_FragCoord.xy - 0.5f * u_resolution) / u_resolution.y;
-  Ray ray = Ray(u_target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(uv, -1.5f)));
+  // NOTE: single exact pixel ray sample 
+  // vec2 uv = (gl_FragCoord.xy - 0.5f * u_resolution) / u_resolution.y;
+  // Ray ray = Ray(u_target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(uv, -1.5f)));
 
   // trace avg
   vec3 traceColor = vec3(0);
   for(int i = 0; i < u_raySamples; i++) {
+    // random subpixel sampling
+    vec2 samp = stratifiedSampleVec2(i, u_raySamples) - 0.5f;
+    vec2 sampleUV = (gl_FragCoord.xy + samp - 0.5f * u_resolution) / u_resolution.y;
+
+    Ray ray = Ray(u_target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(sampleUV, -1.5f)));
+
     traceColor += trace(ray, i);
   }
 

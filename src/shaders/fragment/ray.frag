@@ -517,27 +517,48 @@ vec3 trace(Ray ray) {
     //    continue;
     //}
 
-
     // TODO: multi light scene instead of hard coded light
     //       should just be a for loop casting shadow rays
 
-    vec3 toLight = lightSphere.center - hit.point;
-    float lightDist = length(toLight);
-    vec3 lightDir = toLight / lightDist;
+    for(int i = 0; i < u_lightCount; i++) {
+      Object light = lights[i];
 
-    HitData blocker = traceScene(Ray(hit.point + hit.normal * 0.001f, lightDir), false);
-    float visible = blocker.hit && blocker.t < lightDist ? 0.0f : 1.0f;
-    float diff = max(dot(hit.normal, lightDir), 0.0f);
-    float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
+      vec3 toLight = light.centerRadius.xyz - hit.point;
+      float lightDist = length(toLight);
+      vec3 lightDir = toLight / lightDist;
+
+      Ray shadow = Ray(hit.point + hit.normal * 0.001f, lightDir);
+      HitData blocker = traceScene(shadow, false);
+
+      float visible = blocker.hit && blocker.t < lightDist ? 0.0f : 1.0f;
+      // float diff = max(dot(hit.normal, lightDir), 0.0f);
+      float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
+
+      vec3 lightColor = vec3(1.f);
+      if(isValidMatId(light.meta.y)) {
+        lightColor = getMaterial(light.meta.y).ka.xyz;
+      }
+
+    }
+
+    // NOTE: original hard coded single light
+    // vec3 toLight = lightSphere.center - hit.point;
+    // float lightDist = length(toLight);
+    // vec3 lightDir = toLight / lightDist;
+
+    // HitData blocker = traceScene(Ray(hit.point + hit.normal * 0.001f, lightDir), false);
+    // float visible = blocker.hit && blocker.t < lightDist ? 0.0f : 1.0f;
+    // float diff = max(dot(hit.normal, lightDir), 0.0f);
+    // float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
     //  (optional) Ambient fill light approximates indirect light we don't trace.
-    vec3 shading = hit.color * (LIGHT_POWER * diff * falloff * visible + u_ambientStrength);
-    color += attenuation * shading * (1.0f - hit.reflectivity);
+    // vec3 shading = hit.color * (LIGHT_POWER * diff * falloff * visible + u_ambientStrength);
+    // color += attenuation * shading * (1.0f - hit.reflectivity);
 
-    if(hit.reflectivity == 0.0f)
-      break;
-    attenuation *= hit.reflectivity;
-    ray = Ray(hit.point + hit.normal * 0.001f, reflect(ray.direction, hit.normal));
+    // if(hit.reflectivity == 0.0f)
+    //   break;
+    // attenuation *= hit.reflectivity;
+    // ray = Ray(hit.point + hit.normal * 0.001f, reflect(ray.direction, hit.normal));
   }
 
   return color;

@@ -560,7 +560,15 @@ vec3 trace(Ray ray, int sampleNum) {
         attenuation *= hit.color;
         continue;
       } else if(u_glassMode == GLASS_MODE_CONTRIBUTION) {
+        // TODO: this one requires recusion emulation
+        // probably make a stack of rays to evaluate
 
+        // essentially the following:
+        // vec3 reflectionColor = trace(Ray(hit.point + N * 0.001f, reflectGlass(I, N)), sampleNum);
+        // vec3 refractionColor = trace(Ray(hit.point - N * 0.001f, refractGlass(I, N, eta, cosThetaI, etaSin2I)), sampleNum);
+        // color += attenuation * (F * reflectionColor + (1.0f - F) * refractionColor);
+        // break;
+        
       } else if(u_glassMode == GLASS_MODE_SAMPLE) {
         // throw a bunch of stuff in to make more "random"
         // when we cast multiple rays will sdadd the ray number into the mix

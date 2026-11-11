@@ -113,7 +113,11 @@ export default class PrimitiveObject {
     const { vertices, normals, colors, indices, tangents, texCoords } =
       this.toTypedArray();
 
-    return new sceneObjectType(label, vertices, colors, indices, normals, {
+    return new sceneObjectType(label, {
+      vertices,
+      colors,
+      indices,
+      normals,
       tangents,
       texCoords,
       ...options,

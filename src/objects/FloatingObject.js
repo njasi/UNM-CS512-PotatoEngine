@@ -10,22 +10,22 @@ import PhysicsObject from "./PhysicsObject";
  * Might just combine being "floaty" on the normal physics object later
  *
  * Floating calculations are very lazy but good enough for now.
- * 
+ *
  * These objects will slow down their velocity and rotational velocity while in water.
- * and accelerate upwards while under water. Eventually if speed is low enough they snap to the 
+ * and accelerate upwards while under water. Eventually if speed is low enough they snap to the
  * water surface.
- * 
+ *
  * @class
  * @alias module:objects/FloatingObject
  */
 export default class FloatingObject extends PhysicsObject {
   /**
    * Create a floating physics object@param {string} label
-   * @param {Float32Array} vertices
-   * @param {Float32Array} colors
-   * @param {Int16Array} indices
-   * @param {Float32Array} normals
    * @param {*} options
+   * @param {Float32Array} options.vertices
+   * @param {Float32Array} options.colors
+   * @param {Int16Array} options.indices
+   * @param {Float32Array} options.normals
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
    * @param {number[]} options.position             initial position of the object
    * @param {number[]} options.rotation             initial rotation of the object
@@ -45,12 +45,12 @@ export default class FloatingObject extends PhysicsObject {
    */
   constructor(
     label,
-    vertices,
-    colors,
-    indices,
-    normals,
     {
       // basic scene object options
+      vertices = undefined,
+      colors = undefined,
+      indices = undefined,
+      normals = undefined,
       parent = undefined,
       position = [0, 0, 0],
       rotation = [0, 0, 0],
@@ -58,6 +58,8 @@ export default class FloatingObject extends PhysicsObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      tangents = undefined,
+      texCoords = undefined,
       // physics object options
       velocity = [0, 0, 0, 0],
       rotVelocity = [0, 0, 0, 0],
@@ -71,7 +73,11 @@ export default class FloatingObject extends PhysicsObject {
       waterFunction = undefined,
     },
   ) {
-    super(label, vertices, colors, indices, normals, {
+    super(label, {
+      vertices,
+      colors,
+      indices,
+      normals,
       parent,
       position,
       rotation,
@@ -79,6 +85,8 @@ export default class FloatingObject extends PhysicsObject {
       shouldDraw,
       programLabel,
       materialLabel,
+      tangents,
+      texCoords,
       velocity,
       rotVelocity,
       gravity,
@@ -102,13 +110,13 @@ export default class FloatingObject extends PhysicsObject {
    * additionally apply the PhysicsObject based updates
    * - gravity, pos & rot velocity
    * - detect collisions in the scene
-   * 
+   *
    * finally apply FloatingObject updates:
    * - check water level
-   * - float up 
+   * - float up
    * - decelerate in water
    * - snap to water if speed low & close to surface
-   * 
+   *
    * @param {number} dt change since last update in ms
    * @param {Scene} scene the scene updating the object
    */

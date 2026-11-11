@@ -12,7 +12,7 @@ import SceneObject from "./SceneObject";
  * - movement velocity
  * - rotational velocity
  * - basic collisions (spheres atm)
- * 
+ *
  * @class
  * @alias module:objects/PhysicsObject
  */
@@ -20,11 +20,11 @@ export default class PhysicsObject extends SceneObject {
   /**
    * Make a new PhysicsObject, a scene object with simple physics builtin
    * @param {string} label
-   * @param {Float32Array} vertices
-   * @param {Float32Array} colors
-   * @param {Int16Array} indices
-   * @param {Float32Array} normals
    * @param {*} options
+   * @param {Float32Array} options.vertices
+   * @param {Float32Array} options.colors
+   * @param {Int16Array} options.indices
+   * @param {Float32Array} options.normals
    * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
    * @param {number[]} options.position             initial three tuple [x,y,z] position of the object
    * @param {number[]} options.rotation             initial three tuple [x,y,z] rotation of the object
@@ -41,12 +41,12 @@ export default class PhysicsObject extends SceneObject {
    */
   constructor(
     label,
-    vertices,
-    colors,
-    indices,
-    normals,
     {
       // basic scene object options
+      vertices = undefined,
+      colors = undefined,
+      indices = undefined,
+      normals = undefined,
       parent = undefined,
       position = [0, 0, 0],
       rotation = [0, 0, 0],
@@ -54,6 +54,8 @@ export default class PhysicsObject extends SceneObject {
       shouldDraw = true,
       programLabel = undefined,
       materialLabel = undefined,
+      tangents = undefined,
+      texCoords = undefined,
       // physics object options
       velocity = [0, 0, 0, 0],
       rotVelocity = [0, 0, 0, 0],
@@ -63,7 +65,11 @@ export default class PhysicsObject extends SceneObject {
       onCollision = undefined,
     } = {},
   ) {
-    super(label, vertices, colors, indices, normals, parent, {
+    super(label, {
+      vertices,
+      colors,
+      indices,
+      normals,
       parent,
       position,
       rotation,
@@ -71,6 +77,8 @@ export default class PhysicsObject extends SceneObject {
       shouldDraw,
       programLabel,
       materialLabel,
+      tangents,
+      texCoords,
     });
 
     this.velocity = velocity;
@@ -97,8 +105,6 @@ export default class PhysicsObject extends SceneObject {
    * @param {Scene} scene the scene prompting the update
    */
   update(dt, scene) {
-    super.update(dt, scene);
-
     // update the position & rotation & apply gravity
     this.position = sumVec4(this.position, scaleVec4(this.velocity, dt));
     this.rotation = sumVec4(this.rotation, scaleVec4(this.rotVelocity, dt));
@@ -128,5 +134,8 @@ export default class PhysicsObject extends SceneObject {
         }
       }
     }
+
+    //update at end so parent matricies are correct
+    super.update(dt, scene);
   }
 }

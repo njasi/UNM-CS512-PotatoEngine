@@ -367,15 +367,23 @@ export function generateCone(
  * @param {*} options.x_c x coord of the center of the cylinder
  * @param {*} options.y_c y coord of the center of the cylinder
  * @param {*} options.z_c z coord of the center of the cylinder
+ * @param {*} options.bulge amount of "bulge" the cylinder should have
+ * @param {*} options.segments_h default 2 how many divisions there are along the z axis
  * @returns {PrimitiveObject}
  */
-export function generateNGonPrism(n, r, h, { x_c = 0, y_c = 0, z_c = 0 } = {}) {
+export function generateNGonPrism(
+  n,
+  r,
+  h,
+  { x_c = 0, y_c = 0, z_c = 0, bulge = 0, segments_h = 2 } = {},
+) {
   return generateCylinder(n, r, h, {
     x_c,
     y_c,
     z_c,
-    segments_h: 2,
+    segments_h: segments_h,
     prism: true,
+    bulge,
   });
 }
 
@@ -572,12 +580,6 @@ export function generateCylinder(
     generateCap(z_c - h / 2, -1, true);
     generateCap(z_c + h / 2, 1, false);
   }
-
-  // console.log("vert len:", vertices.length / 4);
-  // console.log(
-  //   "max indc:",
-  //   indices.reduce((prev, curr) => Math.max(prev, curr), 0),
-  // );
 
   // package it for the buffers
   return new PrimitiveObject(vertices, {

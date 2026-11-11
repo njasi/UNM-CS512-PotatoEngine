@@ -1,0 +1,255 @@
+/**
+ * @module objects/RayObject
+ */
+
+import { Scene } from "..";
+import { mat4Identity } from "../util/transformations";
+import { vec4distance, scaleVec4, sumVec4 } from "../util/vec4";
+import SceneObject from "./SceneObject";
+
+/**
+ * Raytracing Scene object class
+ *
+ * @class
+ * @alias module:objects/RayObject
+ */
+export default class RayObject extends SceneObject {
+  static OBJECT_TYPE_SPHERE = 0;
+  static OBJECT_TYPE_CUBE = 1;
+  static OBJECT_TYPE_CONE = 2;
+  static OBJECT_TYPE_TORUS = 3;
+  static OBJECT_TYPE_CYLINDER = 4;
+  static OBJECT_TYPE_PLANE = 5;
+
+  static OBJECT_BYTE_SIZE = 112; // 16 + 16 + 16 + 64
+
+  /**
+   * Make a new RayObject, a scene object meant to run in the
+   * hw7 based ray tracing fragment. Note that this object type is unique and does
+   * not rely on a mesh like all of our previous setup, it relies on the shader
+   * to construct the information at runtime. This also means that
+   * things like texture uvs, tangents etc will also have to be constructed at
+   * runtime.
+   *
+   * NOTE: Although a mesh should be usable in a ray tracer like this, consider checking the
+   * reflection for a triangle and just representing the reflection of a mesh as a triangle
+   * lookup then triangle reflection.
+   *
+   * NOTE: it could be reasonable to have all interaction with this type of object within
+   * the shader itself, but I like the structure of using shader as renderer and js as
+   * the logical control in webgl so I'll maintain that for now
+   *
+   * NOTE: js doesn't have multi class inheritance baked in so will be annoying to transfer the
+   * tiny changes in the physics object class for example. Can do something messy to accomplish it
+   * though..
+   *
+   * @param {string} label
+   * @param {number} type                           the type of object to render in the ray traced scene
+   * @param {*} options
+   * @param {SceneObject} options.parent            the parent of this object (can be set through addChild instead)
+   * @param {number[]} options.position             initial three tuple [x,y,z] position of the object
+   * @param {number[]} options.rotation             initial three tuple [x,y,z] rotation of the object
+   * @param {number[]} options.scale                initial three tuple [x,y,z] scale of the object
+   * @param {boolean} options.shouldDraw            if this object should be drawn
+   * @param {string} options.programLabel           the program to draw this object with
+   * @param {string} options.materialLabel          the material to use with this object
+   * @param {string} options.child                  if the object is a child
+   * @param {string} options.passes                 the renderpasses to render this object with
+   * @param {string} options.lightingCenter         the center of the object to calculate light culling with
+   * @param {string} options.lightingRadius         the radius of the object to use when calculate light culling
+   * @param {number} [options.materialIndex=-1]
+   * @param {number} [options.radius=undefined]     the radius used for sphere, cylinder, torus(R), and cone
+   * @param {number} [options.halfSize=undefined]   the size used for cubes
+   * @param {number} [options.height=undefined]     the height used for cylinders, cones
+   * @param {number} [options.width=undefined]      the width of a plane (-val is inf)
+   * @param {number} [options.depth=undefined]      the depth of a plane (-val is inf)
+   * @param {number} [options.radiusMinor=undefined]  the radius of the tube of a torus
+   * @param {number} [options.bulge=undefined]      the bulge ratio of a cylinder
+   * @param {number} [options.faceted=undefined]    if the object is faceted
+   * @param {number} [options.faces=undefined]      how many faces the faceted object has...
+   * @param {boolean} [options.light=false]         if the object is a light or not
+   * @param {number} [options.lightPower=0.5]      the power of the light
+   */
+  constructor(
+    label,
+    type,
+    {
+      // basic scene object options
+      parent = undefined,
+      position = [0, 0, 0],
+      rotation = [0, 0, 0],
+      scale = [1, 1, 1],
+      shouldDraw = true,
+      programLabel = undefined,
+      materialLabel = undefined,
+      child = false,
+      passes = undefined,
+      lightingCenter = [0, 0, 0],
+      lightingRadius = 1,
+
+      // ray object metadata
+      light = false,
+      lightPower = 0.5,
+      materialIndex = -1,
+
+      // ray object geometry
+      radius = undefined,
+      halfSize = undefined,
+      height = undefined,
+      width = undefined,
+      depth = undefined,
+      radiusMinor = undefined,
+      bulge = undefined,
+      faceted = undefined,
+      faces = undefined,
+    } = {},
+  ) {
+    super(label, {
+      parent,
+      position,
+      rotation,
+      scale,
+      shouldDraw,
+      programLabel,
+      materialLabel,
+      lightingCenter,
+      lightingRadius,
+      child,
+      passes,
+    });
+
+    // TODO update this based on the label if it exists
+    this.materialIndex = materialIndex;
+    this.light = light;
+    this.lightPower = lightPower
+
+    this.radius = radius;
+    this.halfSize = halfSize;
+    this.height = height;
+    this.width = width;
+    this.depth = depth;
+    this.radiusMinor = radiusMinor;
+    this.bulge = bulge;
+    this.faceted = faceted;
+    this.faces = faces;
+
+    this.type = type;
+  }
+
+  /**
+   * Pack the data into a predefined structure i can pass down to the
+   * shader to render
+   *
+   * <pre>
+   *  struct Object {
+   *     ivec4 meta;         // x    => type;    y => material?; z=> ____ ; w => ____ ;
+   *     vec4 centerRadius;  // xyz  => center;  w => cone, sphere, cyl: r, cube: half-size, torus: R, plane: width
+   *     vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge
+   *     mat4 transform;     // overall transformation to apply
+   *   };
+   * </pre>
+   *
+   * TODO can probably cache this to not recomput every time
+   * maybe a dirty attribute on it or smth
+   *
+   * @param {DataView} view the view we want to pack the object into
+   * @param {int} offset offset bytes this object starts at
+   */
+  packData(view, offset) {
+    const center = this.position;
+    let mat = this.M;
+
+    if (!this.M || mat.length != 16) {
+      console.warn(
+        `RayObject ${this.label}: this.M must be defined as a 16 element array; defaulting to identity`,
+      );
+      mat = mat4Identity();
+    }
+
+    // ivec4 meta (offset 0)
+    view.setInt32(0 + offset, this.type, true);
+    view.setInt32(4 + offset, this.materialIndex, true);
+    view.setInt32(8 + offset, this.faceted ? 1 : 0, true);
+    view.setInt32(12 + offset, this.faces ?? 0, true);
+
+    // vec4 centerRadius (offset 16)
+    let size = 0;
+    switch (this.type) {
+      case RayObject.OBJECT_TYPE_SPHERE:
+      case RayObject.OBJECT_TYPE_CONE:
+      case RayObject.OBJECT_TYPE_CYLINDER:
+      case RayObject.OBJECT_TYPE_TORUS:
+        size = this.radius;
+        break;
+      case RayObject.OBJECT_TYPE_CUBE:
+        size = this.halfSize;
+        break;
+      case RayObject.OBJECT_TYPE_PLANE:
+        size = this.width;
+        break;
+      default:
+        throw new Error("RayObject: unknown type:", this.type);
+    }
+
+    // NOTE: this.M should already contain the position transform
+    //       but we ignore it for now since its not parsed in
+    //       the fragment shader
+    view.setFloat32(16 + offset, center[0], true);
+    view.setFloat32(20 + offset, center[1], true);
+    view.setFloat32(24 + offset, center[2], true);
+    view.setFloat32(28 + offset, size, true);
+
+    // vec4 options (offset 32)
+    let options = { x: 0, y: 0, z: 0, w: 0 };
+    switch (this.type) {
+      case RayObject.OBJECT_TYPE_CYLINDER:
+        options.y = this.bulge ?? 0;
+      case RayObject.OBJECT_TYPE_CONE:
+        options.x = this.height ?? 1;
+        break;
+      case RayObject.OBJECT_TYPE_TORUS:
+        options.x = this.radiusMinor ?? 0.25;
+        break;
+      case RayObject.OBJECT_TYPE_PLANE:
+        options.x = this.depth ?? 0;
+        break;
+    }
+
+    if(this.light){
+      options.w = this.lightPower;
+    }
+
+    view.setFloat32(32 + offset, options.x, true);
+    view.setFloat32(36 + offset, options.y, true);
+    view.setFloat32(40 + offset, options.z, true);
+    view.setFloat32(44 + offset, options.w, true);
+
+    // mat4 transform (offset 48 -> 48 + 64 = 112)
+    for (let i = 0; i < 16; i++) {
+      view.setFloat32(48 + i * 4 + offset, mat[i], true);
+    }
+  }
+
+  loadBuffers() {
+    // no buffers here
+  }
+
+  bindBuffers() {
+    // no buffers here
+  }
+
+  cleanBuffers() {
+    // no buffers here
+  }
+
+  setUniforms() {
+    // no per object uniforms
+  }
+
+  draw() {
+    // drawing op directly happens in the shader
+  }
+
+  // NOTE: otherwise we use setUpdateCB, updateWorldMatrix, update
+  // the same as normal objects
+}

@@ -38,8 +38,17 @@ export default class TexturedMaterial extends Material {
 
   /**
    * Default texture type name for color ramp texture (TextureColorRamp)
+   *
+   * Applies to TEXTURE_TYPE_ALBEDO
    */
   static TEXTURE_TYPE_COLOR_RAMP = "colorRamp";
+
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   *
+   * Applies to TEXTURE_TYPE_ALBEDO2
+   */
+  static TEXTURE_TYPE_COLOR_RAMP2 = "colorRampSecondary";
 
   /**
    * Applies to TEXTURE_TYPE_BUMP
@@ -92,15 +101,15 @@ export default class TexturedMaterial extends Material {
 
   /**
    * Applies to TEXTURE_TYPE_ALBEDO2 and TEXTURE_TYPE_ALBEDO
-   * 
+   *
    * Select the blend mode between the two albedo maps
    */
-  static U_BLEND_MODE = "uAlbedoBlendMode"
+  static U_BLEND_MODE = "uAlbedoBlendMode";
 
   /**
    * Make a new texturedmaterial
-   * @param {*} label 
-   * @param {*} textures 
+   * @param {*} label
+   * @param {*} textures
    */
   constructor(label, textures = {}) {
     super(label);

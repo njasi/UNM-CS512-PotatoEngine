@@ -83,9 +83,14 @@ export default class Scene {
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
 
-    // baisc render passes
+    // still cant get the shadows working ugh
+    // renderers.addShadowAndMainPasses(this);
+    // this.defaultPasses = ["shadow", "main"];
+
+    // basic render passes
     renderers.addBasicRenderPass(this);
     renderers.addTransparentRenderPass(this);
+    this.defaultPasses = ["basic"];
   }
 
   ///////////////////////
@@ -112,7 +117,7 @@ export default class Scene {
     materialLabel = obj.materialLabel,
     {
       child = obj.child,
-      passes = obj.passes || ["basic"],
+      passes = obj.passes || this.defaultPasses,
       addChildren = false,
     } = {},
   ) {
@@ -269,6 +274,7 @@ export default class Scene {
    * @param {string} vertexShaderLabel the label of the vertex shader to use while creating the program
    * @param {string} fragmentShaderLabel the label of the fragment shader to use while creating the program
    * @param {ShaderProgram} [wrapperClass=ShaderProgram] The shader program class to use while creating it.
+   * @returns {ShaderProgram}
    */
   addProgram(
     label,
@@ -282,6 +288,7 @@ export default class Scene {
     const shaderProgram = new wrapperClass(label, vertexShader, fragmentShader);
 
     this.programs.set(label, shaderProgram);
+    return shaderProgram;
   }
 
   /**
@@ -301,7 +308,7 @@ export default class Scene {
 
   loadPrograms() {
     this.programs.forEach((program) => {
-      program.load(this.gl);
+      program.load(this.gl, this);
     });
   }
 
@@ -318,6 +325,7 @@ export default class Scene {
    * @param {Object} [options={}]
    * @param {string | undefined} [options.vertLabel=vertShaderUrl.split("/").pop()] set to override vertex shader label
    * @param {string | undefined} [options.fragLabel=fragShaderUrl.split("/").pop()] set to override fragment shader label
+   * @returns {ShaderProgram}
    */
   createProgram(
     label,
@@ -353,7 +361,7 @@ export default class Scene {
       );
     }
 
-    this.addProgram(label, vertLabel, fragLabel, wrapperClass);
+    return this.addProgram(label, vertLabel, fragLabel, wrapperClass);
   }
 
   /////////////////////////
@@ -497,6 +505,7 @@ export default class Scene {
    * @param {boolean} [options.animated=false] if the TexImageSource is animated (ie video, gif etc)
    * @param {boolean} [options.flipY=true]
    * @param {boolean} [options.mipmaps=true]
+   * @param {number} [options.blackMipmaps=0]
    * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
    * @param {*} [options.magFilter=gl.LINEAR]
    * @param {*} [options.wrapS=gl.REPEAT]
@@ -512,6 +521,7 @@ export default class Scene {
       animated = false,
       flipY = true,
       mipmaps = true,
+      blackMipmaps = 0,
       minFilter = this.gl.LINEAR_MIPMAP_LINEAR,
       magFilter = this.gl.LINEAR,
       wrapS = this.gl.REPEAT,
@@ -528,6 +538,7 @@ export default class Scene {
       animated,
       flipY,
       mipmaps,
+      blackMipmaps,
       minFilter,
       magFilter,
       wrapS,
@@ -569,7 +580,6 @@ export default class Scene {
     if (upload) {
       texture.ready = texture.upload(source);
     } else if (load) {
-      console.log("loading texture", label);
       texture.ready = texture.load(source);
     }
 
@@ -750,6 +760,29 @@ export default class Scene {
   _renderPass(pass, matrices) {
     const objects = pass.getObjects();
     const lights = [...this.lights.values()];
+
+    // override if the shader program sets its own matrices
+    let matOverride = pass.matrices ? pass.matrices : matrices;
+    if (pass.objIndependent && pass.programLabel) {
+      const shaderProgram = this.getProgram(pass.programLabel);
+      shaderProgram.use(this.gl);
+
+      this._updateShaderGeneralLocs(
+        shaderProgram,
+        matOverride.projectionTransform,
+        matOverride.viewTransform,
+        matOverride.sceneTransform,
+      );
+
+      this._clearActiveMaterial();
+
+      if (!!pass.updateUniforms) {
+        pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
+      }
+
+      return;
+    }
+
     for (const obj of objects) {
       const shaderProgram = this.getProgram(obj.programLabel);
 
@@ -763,19 +796,23 @@ export default class Scene {
         //       like the material class with its updateUniforms call
         this._updateShaderGeneralLocs(
           shaderProgram,
-          matrices.projectionTransform,
-          matrices.viewTransform,
-          matrices.sceneTransform,
+          matOverride.projectionTransform,
+          matOverride.viewTransform,
+          matOverride.sceneTransform,
         );
 
         // transformation needed to correct light positions to correct space
         // this will probably conflict if I ever want to attach a light to an object
         // TODO these probably get moved into the shader passes?
         const lightTransformation = multiplyMat4(
-          matrices.viewTransform,
-          matrices.sceneTransform,
+          matOverride.viewTransform,
+          matOverride.sceneTransform,
         );
         this._updateShaderLights(shaderProgram, lightTransformation);
+
+        if (!!pass.updateUniforms) {
+          pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
+        }
 
         //
         this.activeProgram = obj.programLabel;

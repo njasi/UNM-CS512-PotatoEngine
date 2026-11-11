@@ -13,6 +13,7 @@ export default class Texture2D {
    * @param {Object} [options={}]
    * @param {boolean} [options.flipY=true]
    * @param {boolean} [options.mipmaps=true]
+   * @param {number} [options.blackMipmaps=0]
    * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
    * @param {*} [options.magFilter=gl.LINEAR]
    * @param {*} [options.wrapS=gl.REPEAT]
@@ -25,6 +26,7 @@ export default class Texture2D {
     {
       flipY = true,
       mipmaps = true,
+      blackMipmaps = 0,
       minFilter = gl.LINEAR_MIPMAP_LINEAR,
       magFilter = gl.LINEAR,
       wrapS = gl.REPEAT,
@@ -36,6 +38,7 @@ export default class Texture2D {
     this._gl = gl;
     this.flipY = flipY;
     this.mipmaps = mipmaps;
+    this.blackMipmaps = blackMipmaps;
     this.minFilter = minFilter;
     this.magFilter = magFilter;
     this.wrapS = wrapS;
@@ -129,6 +132,44 @@ export default class Texture2D {
 
     if (this.mipmaps) {
       gl.generateMipmap(gl.TEXTURE_2D);
+
+      if (this.blackMipmaps > 0) {
+        const width = source.width ?? source.videoWidth ?? source.naturalWidth;
+        const height =
+          source.height ?? source.videoHeight ?? source.naturalHeight;
+
+        if (!width || !height) {
+          throw new Error(
+            "Cannot determine texture dimensions for black mipmaps",
+          );
+        }
+
+        const maxLevel = Math.floor(Math.log2(Math.max(width, height)));
+        const firstBlackLevel = Math.max(1, maxLevel - this.blackMipmaps + 1);
+
+        for (let level = firstBlackLevel; level <= maxLevel; level++) {
+          const levelWidth = Math.max(1, Math.floor(width / 2 ** level));
+          const levelHeight = Math.max(1, Math.floor(height / 2 ** level));
+          const blackPixels = new Uint8Array(levelWidth * levelHeight * 4);
+
+          for (let i = 3; i < blackPixels.length; i += 4) {
+            blackPixels[i] = 255;
+          }
+
+          gl.texSubImage2D(
+            gl.TEXTURE_2D,
+            level,
+            0,
+            0,
+            levelWidth,
+            levelHeight,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            blackPixels,
+          );
+        }
+      }
+
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.minFilter);
     } else {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.minFilter);
@@ -149,7 +190,6 @@ export default class Texture2D {
    * @param {number} [unit=0] the unit
    */
   bind(unit = 0) {
-    // console.log("binding texture",this.label, this.animated)
     if (this.animated) {
       this._refresh();
     }

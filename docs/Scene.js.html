@@ -111,9 +111,14 @@ export default class Scene {
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
 
-    // baisc render passes
+    // still cant get the shadows working ugh
+    // renderers.addShadowAndMainPasses(this);
+    // this.defaultPasses = ["shadow", "main"];
+
+    // basic render passes
     renderers.addBasicRenderPass(this);
     renderers.addTransparentRenderPass(this);
+    this.defaultPasses = ["basic"];
   }
 
   ///////////////////////
@@ -140,7 +145,7 @@ export default class Scene {
     materialLabel = obj.materialLabel,
     {
       child = obj.child,
-      passes = obj.passes || ["basic"],
+      passes = obj.passes || this.defaultPasses,
       addChildren = false,
     } = {},
   ) {
@@ -381,8 +386,6 @@ export default class Scene {
       );
     }
 
-    console.log(vertLabel, fragLabel);
-
     this.addProgram(label, vertLabel, fragLabel, wrapperClass);
   }
 
@@ -527,6 +530,7 @@ export default class Scene {
    * @param {boolean} [options.animated=false] if the TexImageSource is animated (ie video, gif etc)
    * @param {boolean} [options.flipY=true]
    * @param {boolean} [options.mipmaps=true]
+   * @param {number} [options.blackMipmaps=0]
    * @param {*} [options.minFilter=gl.LINEAR_MIPMAP_LINEAR]
    * @param {*} [options.magFilter=gl.LINEAR]
    * @param {*} [options.wrapS=gl.REPEAT]
@@ -542,6 +546,7 @@ export default class Scene {
       animated = false,
       flipY = true,
       mipmaps = true,
+      blackMipmaps = 0,
       minFilter = this.gl.LINEAR_MIPMAP_LINEAR,
       magFilter = this.gl.LINEAR,
       wrapS = this.gl.REPEAT,
@@ -558,6 +563,7 @@ export default class Scene {
       animated,
       flipY,
       mipmaps,
+      blackMipmaps,
       minFilter,
       magFilter,
       wrapS,
@@ -576,6 +582,34 @@ export default class Scene {
 
     this.textures.set(label, texture);
     return texture;
+  }
+
+  /**
+   * Add a new texture to the scene &amp; start loading it
+   * @param {string} label
+   * @param {Texture2D} texture
+   * @param {Object} options
+   * @param {boolean} options.upload if we are uploading a TexImageSource instead of image url
+   * @param {boolean} options.load if we want to start load function on the texture
+   * @param {string | TexImageSource} options.source if you want to use a source
+   */
+  addTexture(
+    label,
+    texture,
+    { upload = false, load = true, source = undefined } = {},
+  ) {
+    if (this.textures.has(label)) {
+      throw new Error(`Texture "${label}" already exists`);
+    }
+
+    if (upload) {
+      texture.ready = texture.upload(source);
+    } else if (load) {
+      console.log("loading texture", label);
+      texture.ready = texture.load(source);
+    }
+
+    this.textures.set(label, texture);
   }
 
   /**
@@ -761,23 +795,30 @@ export default class Scene {
 
         shaderProgram.use(this.gl);
 
+        // use a shader passes matrices if it has them set
+        let matOverride = pass.matrices ? pass.matrices : matrices;
+
         // TODO: I should really move these functions into the shader class
         //       like the material class with its updateUniforms call
         this._updateShaderGeneralLocs(
           shaderProgram,
-          matrices.projectionTransform,
-          matrices.viewTransform,
-          matrices.sceneTransform,
+          matOverride.projectionTransform,
+          matOverride.viewTransform,
+          matOverride.sceneTransform,
         );
 
         // transformation needed to correct light positions to correct space
         // this will probably conflict if I ever want to attach a light to an object
         // TODO these probably get moved into the shader passes?
         const lightTransformation = multiplyMat4(
-          matrices.viewTransform,
-          matrices.sceneTransform,
+          matOverride.viewTransform,
+          matOverride.sceneTransform,
         );
         this._updateShaderLights(shaderProgram, lightTransformation);
+
+        if (!!pass.updateUniforms) {
+          pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
+        }
 
         //
         this.activeProgram = obj.programLabel;
@@ -800,7 +841,13 @@ export default class Scene {
         shaderProgram.updateLightMask(this.gl, obj, lights);
       }
 
+      let secondaryMat = undefined;
+      if (shaderProgram.hasMaterial &amp;&amp; !!obj.materialLabelSecondary) {
+        secondaryMat = this.getMaterial(obj.materialLabelSecondary);
+        secondaryMat.updateUniforms(this.gl, this);
+      }
       obj.draw(this.gl, this);
+      secondaryMat?.cleanup();
     }
   }
 
@@ -904,13 +951,13 @@ export default class Scene {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Nov 03 2026 15:46:23 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Nov 07 2026 22:19:43 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

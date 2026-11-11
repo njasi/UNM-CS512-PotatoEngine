@@ -14,7 +14,6 @@ const int LIGHT_POINT = 0;
 const int LIGHT_SPOT = 1;
 const int LIGHT_DIRECTIONAL = 2;
 
-
 struct Material {
     vec3 ka;
     vec3 kd;
@@ -41,6 +40,10 @@ uniform Material mat;
 uniform sampler2D uColorRampMap;
 uniform bool uUseColorRampMap;
 uniform vec2 uTileColorRamp;
+
+uniform sampler2D uColorRampSecondaryMap;
+uniform bool uUseColorRampSecondaryMap;
+uniform vec2 uTileColorRampSecondary;
 
 uniform sampler2D uAlbedoMap;
 uniform bool uUseAlbedoMap;
@@ -217,22 +220,32 @@ void main() {
 
     vec2 uv = getDisplacedUV();
 
-    vec4 texel = vec4(1.0);
-    if (uUseAlbedoMap) {
+    vec4 texel = vec4(1.0f);
+
+    if(uUseAlbedoMap) {
         texel = texture(uAlbedoMap, uv * uTileAlbedo);
 
-        if (uUseColorRampMap) {
+        if(uUseColorRampMap) {
+
             // NOTE: get luminance => assuming we gonna color ramp only grayscale
-            float lum = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
-            texel.rgb = texture(uColorRampMap, vec2(lum, 0.5)).rgb;
+            float lum = dot(texel.rgb, vec3(0.299f, 0.587f, 0.114f));
+            texel.rgb = vec3(1.0f);
+            texel.rgb = texture(uColorRampMap, vec2(lum, 0.5f)).rgb;
+        }
+    }
+
+    // apply secondary albedo
+    if(uUseAlbedo2Map) {
+        vec3 albedo2 = texture(uAlbedo2Map, uv * uTileAlbedo2).rgb;
+
+        if(uUseColorRampSecondaryMap) {
+            // NOTE: get luminance => assuming we gonna color ramp only grayscale
+            float lum = dot(albedo2, vec3(0.299f, 0.587f, 0.114f));
+            albedo2 = texture(uColorRampSecondaryMap, vec2(lum, 0.5f)).rgb;
         }
 
-        // apply secondary albedo
-        if (uUseAlbedo2Map){
-            // later switch on uAlbedoBlendMode but for now i just need lighten
-            vec3 albedo2 = texture(uAlbedo2Map, uv * uTileAlbedo2).rgb;
-            texel.rgb = max(texel.rgb, albedo2);
-        }
+        // later switch on uAlbedoBlendMode but for now i just need lighten
+        texel.rgb = max(texel.rgb, albedo2);
     }
 
     // maybe blending mode options between vColor & texel?

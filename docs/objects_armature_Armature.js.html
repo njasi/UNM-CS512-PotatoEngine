@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: objects/armature/Armature.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: objects/armature/Armature.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module objects/armature
+ */
+
+import ArmatureBone from "./ArmatureBone";
+import ArmatureJoint from "./ArmatureJoint";
+
+
+/**
+ * Representation of internal armature of a model
+ * 
+ * - bones, joints
+ * - important to allow for joint cycles unlike the bvh tree,
+ *   as something like a chest loop is common (consider mediapipe model)
+ * - we can update the position of joints based on external update functions
+ *   for example, after the bvh model has updated (which we already have)
+ *   we can then use it to update the positions of all joints in the armature
+ *   here. This shouldnt be notably expensive, and vaguely extensible
+ *   to a different update function 
+ * - should make a helper to turn bvh structure directly into an armature
+ *   represenation and then map update function onto it...
+ * 
+ * @class
+ */
+export class Armature {
+  /**
+   * make a new armature structue
+   * 
+   * @param {string} label
+   */
+  constructor(label) {
+    this.label = label;
+    this.joints = [];
+    this.bones = [];
+
+    // tracking by id will be less of a headache than the lavels, 
+    // but id still like to force labels since debugging is really 
+    // easy with them lol
+    this.jointsById = new Map();
+    this.bonesById = new Map();
+    this.nextJointId = 0;
+    this.nextBoneId = 0;
+  }
+
+  /**
+   * Add a new joint to the armature
+   * @param {string} label
+   * @param {Object} options
+   * @param {number} [options.id=this.nextJointId++]
+   * @param {number[]} options.restPosition
+   */
+  addJoint(label, { id = this.nextJointId++, restPosition }) {
+    if (this.jointsById.has(id)) {
+      throw new Error(`Joint ID ${id} already exists.`);
+    }
+
+    const joint = new ArmatureJoint(label, { id, restPosition });
+    this.joints.push(joint);
+    this.jointsById.set(id, joint);
+    return joint;
+  }
+
+  /**
+   * add a new bone to the armature
+   * @param {string} label
+   * @param {Object} options
+   * @param {number} [options.id=this.nextBoneId++]
+   * @param {number} options.headJointId
+   * @param {number} options.tailJointId
+   */
+  addBone(label, { id = this.nextBoneId++, headJointId, tailJointId }) {
+    if (this.bonesById.has(id)) {
+      throw new Error(`Bone ${id} already exists`);
+    }
+
+    const head = this.getJoint(headJointId);
+    const tail = this.getJoint(tailJointId);
+
+    if (!head || !tail) {
+      throw new Error(`Could not find the (head||tail) joint for ${label}`);
+    }
+
+    const bone = new ArmatureBone(label, {
+      id,
+      headJointId,
+      tailJointId,
+    });
+
+    this.bones.push(bone);
+    this.bonesById.set(id, bone);
+
+    head.connectedBoneIds.add(id);
+    tail.connectedBoneIds.add(id);
+
+    return bone;
+  }
+
+  /**
+   * get a joint by its id
+   * @param {number} id
+   * @returns {ArmatureJoint}
+   */
+  getJoint(id) {
+    return this.jointsById.get(id);
+  }
+
+  /**
+   * get a bone by its id
+   * @param {number} id
+   * @returns {ArmatureBone}
+   */
+  getBone(id) {
+    return this.bonesById.get(id);
+  }
+
+  /**
+   * validate the structure of the armature
+   * - ie check that all bones have a joint that exists...
+   * @returns {boolean}
+   */
+  validate() {
+    for (const bone of this.bones) {
+      if (
+        !this.getJoint(bone.headJointId) ||
+        !this.getJoint(bone.tailJointId)
+      ) {
+        throw new Error(`Bone "${bone.label}" has an invalid endpoint`);
+      }
+    }
+
+    return true;
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Nov 07 2026 22:19:43 GMT-0700 (Mountain Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

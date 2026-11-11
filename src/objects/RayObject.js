@@ -67,6 +67,7 @@ export default class RayObject extends SceneObject {
    * @param {number} [options.bulge=undefined]      the bulge ratio of a cylinder
    * @param {number} [options.faceted=undefined]    if the object is faceted
    * @param {number} [options.faces=undefined]      how many faces the faceted object has...
+   * @param {boolean} [options.light=false]            if the object is a light or not
    */
   constructor(
     label,
@@ -85,8 +86,11 @@ export default class RayObject extends SceneObject {
       lightingCenter = [0, 0, 0],
       lightingRadius = 1,
 
-      // ray object geometry
+      // ray object metadata
+      light = false,
       materialIndex = -1,
+
+      // ray object geometry
       radius = undefined,
       halfSize = undefined,
       height = undefined,
@@ -114,6 +118,7 @@ export default class RayObject extends SceneObject {
 
     // TODO update this based on the label if it exists
     this.materialIndex = materialIndex;
+    this.light = light;
 
     this.radius = radius;
     this.halfSize = halfSize;

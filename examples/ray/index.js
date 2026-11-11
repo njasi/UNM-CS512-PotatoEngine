@@ -1,7 +1,10 @@
 import Scene from "../../src/Scene";
 import RayShaderProgram from "../../src/shaders/RayShaderProgram";
 import controls from "../../src/controls";
-import { addRayTracingRenderPass } from "../../src/renderers/raytracing";
+import {
+  addRayTracingRenderPass,
+  RENDER_PASS_RAY,
+} from "../../src/renderers/raytracing";
 import flight from "../../src/controls/flight";
 import { RayObject } from "../../src/objects";
 
@@ -36,14 +39,28 @@ function initSceneObjects() {
     halfSize: 1,
     position: [0, 0, -5],
   });
-  let plane = new RayObject("testPlant", RayObject.OBJECT_TYPE_PLANE, {
+  let plane = new RayObject("testPlane", RayObject.OBJECT_TYPE_PLANE, {
     position: [0, -5, 0],
     width: 10,
     depth: 10,
   });
-  scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
-  scene.addObject(cube, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
-  scene.addObject(plane, SHADER_PROGRAM_RAY, undefined, { passes: ["ray"] });
+
+  const lightSphere = new RayObject("testLightSphere", RayObject.OBJECT_TYPE_SPHERE, {
+    radius: 0.5,
+    light: true,
+  });
+  scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
+  scene.addObject(cube, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
+  scene.addObject(plane, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
+  scene.addObject(lightSphere, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
 }
 
 flight.setupMouseControls(scene);

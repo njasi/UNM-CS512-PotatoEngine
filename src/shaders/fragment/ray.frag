@@ -73,8 +73,22 @@ layout(std140) uniform materialBlock {
 // should allow me some flexibility, can probably do something similar with the objects
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
-const Material _01_default = Material(vec4(0.6f, 0,0,0), vec4(0.8f,0,0,0), vec4(0.2f), vec4(0.f));
+const Material _01_default = Material(vec4(0.6f, 0, 0, 0), vec4(0.8f, 0, 0, 0), vec4(0.2f), vec4(0.f));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default);
+
+// get a material by its id
+Material getMaterial(int matId) {
+  if(matId < 0) {
+    return shaderMaterials[-1 * (matId + 1)];
+  } else {
+    return materials[matId];
+  }
+}
+
+// check if a material id is valid
+bool isValidMatId(int matId) {
+  return (matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= MAX_MATERIALS;
+}
 
 //////////////////
 // OBJECT SETUP //
@@ -223,7 +237,7 @@ struct HitData {
 // SETUP //
 ///////////
 
-const Sphere lightSphere = Sphere(-1, vec3(0.), 0.3f, mat4(0));
+const Sphere lightSphere = Sphere(-1, vec3(0.f), 0.3f, mat4(0));
 Sphere sphere;
 Sphere glassSphere;
 Cube cube;
@@ -360,7 +374,7 @@ HitData calculateHit(Object obj, Ray ray) {
   // if the material is out of range then we ignore
   // - if less than 0, ensure it is in range of the internal materials
   // - check if above max material count
-  if((obj.meta.y < 0 && obj.meta.y < -INTERNAL_MATERIALS) || obj.meta.y >= MAX_MATERIALS) {
+  if(isValidMatId(obj.meta.y)) {
     return result;
   }
 
@@ -386,7 +400,7 @@ HitData calculateHit(Object obj, Ray ray) {
   result.point = ray.origin + ray.direction * t;
   result.normal = normal;
   result.color = mat.kd.rgb;
-  result.reflectivity - reflectivity;
+  result.reflectivity = reflectivity;
   result.isLight = false;
   result.isGlass = false;
 
@@ -425,6 +439,16 @@ HitData traceScene(Ray ray, bool includeLight) {
   // if(includeLight && intersectSphere(ray, lightSphere, t) && t < hit.t) {
   //   hit = HitData(true, t, ray.origin + ray.direction * t, vec3(0.0f), lightSphere.color, 0.0f, true, false);
   // }
+
+  if(includeLight) {
+    for(int i = 0; i < u_lightCount; ++i) {
+      HitData candidate = calculateHit(lights[i], ray);
+      candidate.normal = vec3(0.0f);
+      candidate.isLight = true;
+      if(candidate.hit && candidate.t < hit.t)
+        hit = candidate;
+    }
+  }
 
   // keep the closest hit in the scene 
   // wonder if we can depth sort objects to make faster?
@@ -492,6 +516,10 @@ vec3 trace(Ray ray) {
     //    attenuation *= hit.color;
     //    continue;
     //}
+
+
+    // TODO: multi light scene instead of hard coded light
+    //       should just be a for loop casting shadow rays
 
     vec3 toLight = lightSphere.center - hit.point;
     float lightDist = length(toLight);

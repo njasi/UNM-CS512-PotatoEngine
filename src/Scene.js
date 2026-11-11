@@ -274,6 +274,7 @@ export default class Scene {
    * @param {string} vertexShaderLabel the label of the vertex shader to use while creating the program
    * @param {string} fragmentShaderLabel the label of the fragment shader to use while creating the program
    * @param {ShaderProgram} [wrapperClass=ShaderProgram] The shader program class to use while creating it.
+   * @returns {ShaderProgram}
    */
   addProgram(
     label,
@@ -287,6 +288,7 @@ export default class Scene {
     const shaderProgram = new wrapperClass(label, vertexShader, fragmentShader);
 
     this.programs.set(label, shaderProgram);
+    return shaderProgram;
   }
 
   /**
@@ -323,6 +325,7 @@ export default class Scene {
    * @param {Object} [options={}]
    * @param {string | undefined} [options.vertLabel=vertShaderUrl.split("/").pop()] set to override vertex shader label
    * @param {string | undefined} [options.fragLabel=fragShaderUrl.split("/").pop()] set to override fragment shader label
+   * @returns {ShaderProgram}
    */
   createProgram(
     label,
@@ -358,7 +361,7 @@ export default class Scene {
       );
     }
 
-    this.addProgram(label, vertLabel, fragLabel, wrapperClass);
+    return this.addProgram(label, vertLabel, fragLabel, wrapperClass);
   }
 
   /////////////////////////

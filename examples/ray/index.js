@@ -14,7 +14,7 @@ const scene = new Scene("glcanvas");
 // scene.camera.move(0, 0, -25);
 scene.rotationX += Math.PI / 6;
 
-scene.createProgram(
+const rayProgram = scene.createProgram(
   SHADER_PROGRAM_RAY,
   "/src/shaders/vertex/ray.vert",
   "/src/shaders/fragment/ray.frag",
@@ -24,7 +24,17 @@ scene.createProgram(
 /**
  * Attach event listeners to the html elements
  */
-function setupInputControls() {}
+function setupInputControls() {
+  function handleUniformSlider(event) {
+    let val = Number(event.target.value);
+    document.getElementById(event.target.name + "-value").innerHTML = val;
+    rayProgram.uniforms[event.target.name] = val;
+  }
+
+  [...document.getElementsByClassName("uniform-slider")].forEach((slider) =>
+    slider.addEventListener("input", handleUniformSlider),
+  );
+}
 
 let sphere;
 let lightSphere2;
@@ -35,13 +45,20 @@ let lightSphere2;
 function initSceneObjects() {
   sphere = new RayObject("testSphere", RayObject.OBJECT_TYPE_SPHERE, {
     radius: 2,
+    materialIndex: -2,
   });
   let cube = new RayObject("testCube", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 1,
     position: [0, 0, -5],
+    materialIndex: -2,
+  });
+  let cube2 = new RayObject("testCube2", RayObject.OBJECT_TYPE_CUBE, {
+    halfSize: 1,
+    position: [10, 0, -5],
+    materialIndex: -2,
   });
   let plane = new RayObject("testPlane", RayObject.OBJECT_TYPE_PLANE, {
-    position: [0, -5, 0],
+    position: [0, -10, 0],
     width: 100,
     depth: 100,
   });
@@ -52,7 +69,7 @@ function initSceneObjects() {
     {
       radius: 0.5,
       light: true,
-      lightPower: 1,
+      lightPower: 3,
     },
   );
 
@@ -79,6 +96,9 @@ function initSceneObjects() {
     passes: [RENDER_PASS_RAY],
   });
   scene.addObject(lightSphere2, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
+  scene.addObject(cube2, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
 }
@@ -115,6 +135,7 @@ async function main() {
   addRayTracingRenderPass(scene, SHADER_PROGRAM_RAY);
 
   initSceneObjects();
+  setupInputControls();
 
   setInterval(() => {
     scene.render();

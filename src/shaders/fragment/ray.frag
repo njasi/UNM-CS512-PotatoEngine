@@ -20,7 +20,7 @@ precision highp float;
 #define MAX_MATERIALS 256
 // materials not provided by js, but rather defined in this shader
 // see materials section below
-#define INTERNAL_MATERIALS 1
+#define INTERNAL_MATERIALS 2
 
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -74,7 +74,8 @@ layout(std140) uniform materialBlock {
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
 const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
-const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default);
+const Material _02_reflect = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, 1.f, 0.f));
+const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect);
 
 // get a material by its id
 Material getMaterial(int matId) {
@@ -87,7 +88,7 @@ Material getMaterial(int matId) {
 
 // check if a material id is valid
 bool isValidMatId(int matId) {
-  return (matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= MAX_MATERIALS;
+  return !((matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= MAX_MATERIALS);
 }
 
 //////////////////
@@ -374,7 +375,7 @@ HitData calculateHit(Object obj, Ray ray) {
   // if the material is out of range then we ignore
   // - if less than 0, ensure it is in range of the internal materials
   // - check if above max material count
-  if(isValidMatId(obj.meta.y)) {
+  if(!isValidMatId(obj.meta.y)) {
     return result;
   }
 
@@ -445,6 +446,8 @@ HitData traceScene(Ray ray, bool includeLight) {
       HitData candidate = calculateHit(lights[i], ray);
       candidate.normal = vec3(0.0f);
       candidate.isLight = true;
+      // add power in
+      candidate.color *= lights[i].options.w;
       if(candidate.hit && candidate.t < hit.t)
         hit = candidate;
     }
@@ -491,6 +494,7 @@ vec3 trace(Ray ray) {
       break;
     }
 
+    // added this in the light hit section, except without the attenuation term
     // if(hit.isLight) {
     //   color += attenuation * lightSphere.color * LIGHT_POWER;
     //   break;
@@ -536,7 +540,7 @@ vec3 trace(Ray ray) {
       float diff = max(dot(hit.normal, lightDir), 0.0f);
       float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
-      vec3 lightColor = vec3(1.f, 0.f, 0.f);
+      vec3 lightColor = vec3(1.f);
       if(isValidMatId(light.meta.y)) {
         // for now let us say ka is the color of light,
         // later we probably change this
@@ -546,27 +550,14 @@ vec3 trace(Ray ray) {
       directLightColor += lightColor * (light.options.w * diff * falloff * visible);
     }
 
-    // NOTE: original hard coded single light
-    // vec3 toLight = lightSphere.center - hit.point;
-    // float lightDist = length(toLight);
-    // vec3 lightDir = toLight / lightDist;
-
-    // HitData blocker = traceScene(Ray(hit.point + hit.normal * 0.001f, lightDir), false);
-    // float visible = blocker.hit && blocker.t < lightDist ? 0.0f : 1.0f;
-    // float diff = max(dot(hit.normal, lightDir), 0.0f);
-    // float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
-
-    // vec3 shading = hit.color * (LIGHT_POWER * diff * falloff * visible + u_ambientStrength);
-    // color += attenuation * shading * (1.0f - hit.reflectivity);
-
     //  (optional) Ambient fill light approximates indirect light we don't trace.
     vec3 shading = hit.color * (directLightColor + u_ambientStrength);
     color += attenuation * shading * (1.0f - hit.reflectivity);
 
-    // if(hit.reflectivity == 0.0f)
-    //   break;
-    // attenuation *= hit.reflectivity;
-    // ray = Ray(hit.point + hit.normal * 0.001f, reflect(ray.direction, hit.normal));
+    if(hit.reflectivity == 0.0f)
+      break;
+    attenuation *= hit.reflectivity;
+    ray = Ray(hit.point + hit.normal * 0.001f, reflect(ray.direction, hit.normal));
   }
 
   return color;
@@ -585,5 +576,6 @@ void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5f * u_resolution) / u_resolution.y;
   Ray ray = Ray(u_target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(uv, -1.5f)));
 
-  fragColor = vec4(pow(trace(ray), vec3(1.0f / 2.2f)), 1.0f);  // gamma correction
+  // gamma correction
+  fragColor = vec4(pow(trace(ray), vec3(1.0f / 2.2f)), 1.0f);
 }

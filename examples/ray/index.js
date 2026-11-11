@@ -21,22 +21,8 @@ const rayProgram = scene.createProgram(
   RayShaderProgram,
 );
 
-/**
- * Attach event listeners to the html elements
- */
-function setupInputControls() {
-  function handleUniformSlider(event) {
-    let val = Number(event.target.value);
-    document.getElementById(event.target.name + "-value").innerHTML = val;
-    rayProgram.uniforms[event.target.name] = val;
-  }
-
-  [...document.getElementsByClassName("uniform-slider")].forEach((slider) =>
-    slider.addEventListener("input", handleUniformSlider),
-  );
-}
-
 let sphere;
+let lightSphere;
 let lightSphere2;
 /**
  * Initalize all the objects in the starting scene
@@ -48,8 +34,13 @@ function initSceneObjects() {
     materialIndex: -2,
   });
   let cube = new RayObject("testCube", RayObject.OBJECT_TYPE_CUBE, {
-    halfSize: 1,
+    halfSize: 2,
     position: [0, 0, -5],
+    materialIndex: -3,
+  });
+  let cube3 = new RayObject("testCube3", RayObject.OBJECT_TYPE_CUBE, {
+    halfSize: 2,
+    position: [0, 0, -10],
   });
   let cube2 = new RayObject("testCube2", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 1,
@@ -62,15 +53,11 @@ function initSceneObjects() {
     depth: 100,
   });
 
-  const lightSphere = new RayObject(
-    "testLightSphere",
-    RayObject.OBJECT_TYPE_SPHERE,
-    {
-      radius: 0.5,
-      light: true,
-      lightPower: 3,
-    },
-  );
+  lightSphere = new RayObject("testLightSphere", RayObject.OBJECT_TYPE_SPHERE, {
+    radius: 0.5,
+    light: true,
+    lightPower: 3,
+  });
 
   lightSphere2 = new RayObject(
     "testLightSphere2",
@@ -100,6 +87,9 @@ function initSceneObjects() {
   scene.addObject(cube2, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
+  scene.addObject(cube3, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
 }
 
 flight.setupMouseControls(scene);
@@ -116,6 +106,27 @@ function updateScene(dt) {
     -scene.camera.y - 1,
     -scene.camera.z,
   ];
+}
+
+/**
+ * Attach event listeners to the html elements
+ */
+function setupInputControls() {
+  function handleUniformSlider(event) {
+    let val = Number(event.target.value);
+    document.getElementById(event.target.name + "-value").innerHTML = val;
+    rayProgram.uniforms[event.target.name] = val;
+  }
+
+  [...document.getElementsByClassName("uniform-slider")].forEach((slider) =>
+    slider.addEventListener("input", handleUniformSlider),
+  );
+
+  document.getElementById("lightPower").addEventListener("input", (e) => {
+    lightSphere.lightPower = e.target.value;
+    document.getElementById(e.target.name + "-value").innerText =
+      e.target.value;
+  });
 }
 
 scene.setUpdateCB(updateScene);

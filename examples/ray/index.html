@@ -57,7 +57,7 @@
       <div class="controls">
         <label>
           Max Bounces
-          <input class="uniform-slider" name="u_maxBounces" value="2" type="range" max="8" min="0" step="1"></input>
+          <input class="uniform-slider" name="u_maxBounces" value="2" type="range" max="16" min="0" step="1"></input>
           <code id="u_maxBounces-value">2</code>
         </label>
         <label>
@@ -66,7 +66,11 @@
             step="0.05"></input>
           <code id="u_ambientStrength-value">0.1</code>
         </label>
-
+        <label>
+          Main Light Power
+          <input id="lightPower" name="lightPower" value="3" type="range" max="20" min="0" step="1"></input>
+          <code id="lightPower-value">3</code>
+        </label>
       </div>
     </div>
 

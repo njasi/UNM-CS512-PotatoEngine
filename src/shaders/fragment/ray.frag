@@ -20,7 +20,7 @@ precision highp float;
 #define MAX_MATERIALS 256
 // materials not provided by js, but rather defined in this shader
 // see materials section below
-#define INTERNAL_MATERIALS 2
+#define INTERNAL_MATERIALS 3
 
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -74,8 +74,9 @@ layout(std140) uniform materialBlock {
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
 const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
-const Material _02_reflect = Material(vec4(1.f, 1.f, 1.f, 1.f), vec4(0.8f, 0, 0, 0), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
-const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect);
+const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
+const Material _03_glass_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 1.1f, 0.f, 0.f));
+const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect, _03_glass_green);
 
 const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0));
 
@@ -232,6 +233,7 @@ struct HitData {
   vec3 normal;
   vec3 color;
   float reflectivity;
+  float ior;
   bool isLight;
   bool isGlass;
   Material mat;
@@ -373,7 +375,7 @@ bool intersectObject(Object obj, Ray worldRay, out float t, out vec3 worldNormal
 
 // calculate hitdata for a hit on a object
 HitData calculateHit(Object obj, Ray ray) {
-  HitData result = HitData(false, 1e10f, vec3(0.0f), vec3(0.0f), vec3(0.f), 0.0f, false, false, NOTHING_MATERIAL);
+  HitData result = HitData(false, 1e10f, vec3(0.0f), vec3(0.0f), vec3(0.f), 0.0f, 0.0f, false, false, NOTHING_MATERIAL);
 
   // if the material is out of range then we ignore
   // - if less than 0, ensure it is in range of the internal materials
@@ -405,8 +407,9 @@ HitData calculateHit(Object obj, Ray ray) {
   result.normal = normal;
   result.color = mat.kd.rgb;
   result.reflectivity = reflectivity;
+  result.ior = mat.optics.y;
   result.isLight = false;
-  result.isGlass = false;
+  result.isGlass = mat.optics.y > 1.001f;
   result.mat = mat;
 
   return result;
@@ -416,15 +419,16 @@ HitData calculateHit(Object obj, Ray ray) {
 // CALCULATION TIME //
 //////////////////////
 
-//eta = n1 / n2
-//vec3 refraction(vec3 I, vec3 N, float eta) {
-//    <!-- insert your code here -->
-//}
+float schlick(float cosine, float n1, float n2) {
+  float r0 = (n1 - n2) / (n1 + n2);
+  r0 *= r0;
+  return r0 + (1.0f - r0) * pow(1.0f - cosine, 5.0f);
+}
 
-// Schlick approximation
-//float schlick(float cosine, float ref_idx) {
-//    <!-- insert your code here -->
-//}
+// basic bad random, consts from book of shaders https://thebookofshaders.com/10/
+float randomValue(vec2 seed) {
+  return fract(sin(dot(seed, vec2(12.9898f, 78.233f))) * 43758.5453123f);
+}
 
 HitData traceScene(Ray ray, bool includeLight) {
   HitData hit;
@@ -478,27 +482,61 @@ vec3 trace(Ray ray) {
     //   break;
     // }
 
-    // Refraction: (option 1)either reflects or refracts the ray, whichever Schlick says is stronger
-    // (option 2): finalColor = hit.color * (F * reflectionColor + (1.0 - F) * refractionColor)
-    // (option 3): Monte Carlo Sampling (multiple rays per pixel), reflect with probability F (random() < schlick_value), else refract, and average many samples per pixel
-    //<!-- if (hit.isGlass) {
-    //    <!-- insert your code here -->
+    // Monte Carlo Sampling (TODO: multiple rays per pixel), reflect with probability 
+    // F (random() < schlick_value), else refract, and average many samples per pixel
+    if(hit.isGlass) {
+      vec3 I = normalize(ray.direction);
+      vec3 N = normalize(hit.normal);
 
-    //    vec3 direction;
-    //    if (total_internal_reflection || schlick_value > 0.5) {
-            //direction = reflection ray
-    //        <!-- insert your code here -->
-    //    } else {
-            //direction = refraction ray
-    //        <!-- insert your code here -->
-    //    }
+      // entering or exiting the glass?
+      float n1 = 1.0f;
+      float n2 = hit.ior;
+      float cosThetaI = dot(-I, N);
+      if(cosThetaI < 0.0f) {
+        N = -N;
+        cosThetaI = dot(-I, N);
+        n1 = hit.ior;
+        n2 = 1.0f;
+      }
 
-    //    ray = Ray(hit.point + direction * 0.001, direction);
-    ////Use Schlick approximation to determine contributions from reflection and refraction
-    //    attenuation *= hit.color;
-    //    continue;
-    //}
+      // eta = n1 / n2
+      float eta = n1 / n2;
+      float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
+      bool TIR = etaSin2I >= 1.0f;
 
+      // value schlick to check against
+      float F = TIR ? 1.0f : schlick(cosThetaI, n1, n2);
+
+      // throw a bunch of stuff in to make more "random"
+      // when we cast multiple rays will add the ray number into the mix
+      float choice = randomValue(gl_FragCoord.xy + vec2(float(bounce), u_time ));
+
+      vec3 direction;
+      vec3 point;
+      if(TIR || choice < F) {
+        // reflection
+        direction = normalize(reflect(I, N));
+        point = hit.point + N * 0.001f;
+      } else {
+        // refraction
+        direction = normalize(eta * I + (eta * cosThetaI - sqrt(1.0f - etaSin2I)) * N);
+        point = hit.point - N * 0.001f;
+      }
+      ray = Ray(point, direction);
+
+      // tint from passing through or reflecting off
+      // maybe reflect and refract should have diff color influence?
+      // we have mat.kd and mat.ks to work with, reflect could make sense as ks...
+      attenuation *= hit.color;
+
+      // glass "shadow" rays?
+      continue;
+    }
+
+    // TODO cast colored shadow ray if we're encountering glassy material?
+    // right now we either block or not with out shadow rays, will have to make it check
+    // isglass and then the color of the hit... will also need to deal with refraction 
+    // direction... may get combined into above somehow?
     vec3 directLightColor = vec3(0.f);
 
     for(int i = 0; i < u_lightCount; i++) {
@@ -529,8 +567,9 @@ vec3 trace(Ray ray) {
     vec3 shading = hit.color * (directLightColor + u_ambientStrength);
     color += attenuation * shading * (1.0f - hit.reflectivity);
 
-    if(hit.reflectivity == 0.0f)
+    if(hit.reflectivity == 0.0f) {
       break;
+    }
 
     attenuation *= hit.reflectivity * hit.mat.ka.xyz;
     ray = Ray(hit.point + hit.normal * 0.001f, reflect(ray.direction, hit.normal));

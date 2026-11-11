@@ -29,6 +29,7 @@ uniform float u_ambientStrength; // Ambient fill light for better visual
 uniform vec2 u_cameraOrbit;
 uniform vec3 u_target; // essentially camera position
 uniform int u_raySamples;
+uniform int u_glassMode;
 
 // track the sizes of buffers, since you cant 
 // really check the buffer itself for this info
@@ -45,6 +46,11 @@ const float LIGHT_POWER = 3.0f;
 const float FLOOR_Y = -2.0f;
 const float CHECKER_SIZE = 3.0f;
 const float GLASS_IOR = 1.5f;  // refractive index of the glass sphere
+
+const int GLASS_MODE_DOMINANT = 0;
+const int GLASS_MODE_CONTRIBUTION = 1;
+const int GLASS_MODE_SAMPLE = 2;
+const int GLASS_MODE_NONE = 3;
 
 /////////////////////
 // MATERIAL CONFIG //
@@ -488,6 +494,14 @@ HitData traceScene(Ray ray, bool includeLight) {
   return hit;
 }
 
+vec3 reflectGlass(vec3 I, vec3 N) {
+  return normalize(reflect(I, N));
+}
+
+vec3 refractGlass(vec3 I, vec3 N, float eta, float cosThetaI, float etaSin2I) {
+  return normalize(eta * I + (eta * cosThetaI - sqrt(1.0f - etaSin2I)) * N);
+}
+
 vec3 trace(Ray ray, int sampleNum) {
   vec3 color = vec3(0.0f);
   vec3 attenuation = vec3(1.0f);
@@ -530,41 +544,55 @@ vec3 trace(Ray ray, int sampleNum) {
       // eta = n1 / n2
       float eta = n1 / n2;
       float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
+
       bool TIR = etaSin2I >= 1.0f;
 
       // value schlick to check against
       float F = TIR ? 1.0f : schlick(cosThetaI, n1, n2);
 
-      // throw a bunch of stuff in to make more "random"
-      // when we cast multiple rays will add the ray number into the mix
-      // float choice = randomValue(gl_FragCoord.xy + float(sampleNum + 1) * vec2(float(bounce) * 17.f, u_time * 31.f));
-      // float choice = randomValue2(gl_FragCoord.xy, sampleNum, bounce);
+      if(u_glassMode == GLASS_MODE_DOMINANT) {
+        if(TIR || F > 0.5f) {
+          ray = Ray(hit.point + N * 0.001f, reflectGlass(I, N));
+        } else {
+          ray = Ray(hit.point - N * 0.001f, refractGlass(I, N, eta, cosThetaI, etaSin2I));
+        }
 
-      // stratify the random by factoring in the full sample count and divide by 
-      // the total samples
-      float choice = (float(sampleNum) +
-        randomValue2(gl_FragCoord.xy, sampleNum, bounce)) / float(u_raySamples);
+        attenuation *= hit.color;
+        continue;
+      } else if(u_glassMode == GLASS_MODE_CONTRIBUTION) {
 
-      vec3 direction;
-      vec3 point;
-      if(TIR || choice < F) {
+      } else if(u_glassMode == GLASS_MODE_SAMPLE) {
+        // throw a bunch of stuff in to make more "random"
+        // when we cast multiple rays will sdadd the ray number into the mix
+        // float choice = randomValue(gl_FragCoord.xy + float(sampleNum + 1) * vec2(float(bounce) * 17.f, u_time * 31.f));
+        // float choice = randomValue2(gl_FragCoord.xy, sampleNum, bounce);
+
+        // stratify the random by factoring in the full sample count and divide by 
+        // the total samples
+        float choice = (float(sampleNum) +
+          randomValue2(gl_FragCoord.xy, sampleNum, bounce)) / float(u_raySamples);
+
+        vec3 direction;
+        vec3 point;
+        if(TIR || choice < F) {
         // reflection
-        direction = normalize(reflect(I, N));
-        point = hit.point + N * 0.001f;
-      } else {
+          direction = reflectGlass(I, N);
+          point = hit.point + N * 0.001f;
+        } else {
         // refraction
-        direction = normalize(eta * I + (eta * cosThetaI - sqrt(1.0f - etaSin2I)) * N);
-        point = hit.point - N * 0.001f;
-      }
-      ray = Ray(point, direction);
+          direction = refractGlass(I, N, eta, cosThetaI, etaSin2I);
+          point = hit.point - N * 0.001f;
+        }
+        ray = Ray(point, direction);
 
       // tint from passing through or reflecting off
       // maybe reflect and refract should have diff color influence?
       // we have mat.kd and mat.ks to work with, reflect could make sense as ks...
-      attenuation *= hit.color;
+        attenuation *= hit.color;
 
       // glass "shadow" rays?
-      continue;
+        continue;
+      }
     }
 
     // TODO cast colored shadow ray if we're encountering glassy material?

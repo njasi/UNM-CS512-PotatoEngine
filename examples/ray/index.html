@@ -68,14 +68,23 @@
         </label>
         <label>
           Ray Samples
-          <input class="uniform-slider" name="u_raySamples" value="2" type="range" max="8" min="0"
-            step="1"></input>
+          <input class="uniform-slider" name="u_raySamples" value="2" type="range" max="8" min="0" step="1"></input>
           <code id="u_raySamples-value">2</code>
         </label>
         <label>
           Main Light Power
           <input id="lightPower" name="lightPower" value="3" type="range" max="20" min="0" step="1"></input>
           <code id="lightPower-value">3</code>
+        </label>
+
+        <label>
+          Glass Mode
+          <select class="uniform-slider" name="u_glassMode">
+            <option value="0">Dominant Branch</option>
+            <option value="1">Contribution</option>
+            <option value="2">Monte Carlo</option>
+            <option value="3">Glass = Diffuse</option>
+          </select>
         </label>
       </div>
     </div>

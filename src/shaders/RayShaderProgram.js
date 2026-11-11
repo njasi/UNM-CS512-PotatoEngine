@@ -86,6 +86,7 @@ export default class RayShaderProgram extends ShaderProgram {
       "u_lightCount",
       "u_materialCount",
       "u_raySamples",
+      "u_glassMode",
     ];
 
     for (const loc of defaultLocs) {

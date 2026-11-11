@@ -122,7 +122,11 @@ function updateScene(dt) {
 function setupInputControls() {
   function handleUniformSlider(event) {
     let val = Number(event.target.value);
-    document.getElementById(event.target.name + "-value").innerHTML = val;
+    const valEle = document.getElementById(event.target.name + "-value");
+    if (valEle) {
+      valEle.innerHTML = val;
+    }
+
     rayProgram.uniforms[event.target.name] = val;
   }
 

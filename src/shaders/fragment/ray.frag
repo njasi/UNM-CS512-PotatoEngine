@@ -568,7 +568,10 @@ vec3 trace(Ray ray, int sampleNum) {
         // vec3 refractionColor = trace(Ray(hit.point - N * 0.001f, refractGlass(I, N, eta, cosThetaI, etaSin2I)), sampleNum);
         // color += attenuation * (F * reflectionColor + (1.0f - F) * refractionColor);
         // break;
-        
+
+        // Hmmm now that I think about it option2 is extremely expensive... if my computer struggles
+        // on option 3 i should probably not even consider this one lol...
+
       } else if(u_glassMode == GLASS_MODE_SAMPLE) {
         // throw a bunch of stuff in to make more "random"
         // when we cast multiple rays will sdadd the ray number into the mix

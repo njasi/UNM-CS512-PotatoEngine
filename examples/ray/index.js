@@ -33,6 +33,11 @@ function initSceneObjects() {
     radius: 2,
     materialIndex: -2,
   });
+  let sphere2 = new RayObject("testSphere2", RayObject.OBJECT_TYPE_SPHERE, {
+    radius: 2,
+    materialIndex: -3,
+    position: [10, 0, 0],
+  });
   let cube = new RayObject("testCube", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 2,
     position: [0, 0, -5],
@@ -70,6 +75,9 @@ function initSceneObjects() {
   );
 
   scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
+  scene.addObject(sphere2, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
   scene.addObject(cube, SHADER_PROGRAM_RAY, undefined, {

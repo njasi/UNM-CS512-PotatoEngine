@@ -28,6 +28,7 @@ uniform int u_maxBounces;
 uniform float u_ambientStrength; // Ambient fill light for better visual
 uniform vec2 u_cameraOrbit;
 uniform vec3 u_target; // essentially camera position
+uniform int u_raySamples;
 
 // track the sizes of buffers, since you cant 
 // really check the buffer itself for this info
@@ -75,7 +76,7 @@ layout(std140) uniform materialBlock {
 // internal default mat, just a solid grey (id = -1)
 const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
 const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
-const Material _03_glass_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 1.1f, 0.f, 0.f));
+const Material _03_glass_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect, _03_glass_green);
 
 const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0));
@@ -460,7 +461,7 @@ HitData traceScene(Ray ray, bool includeLight) {
   return hit;
 }
 
-vec3 trace(Ray ray) {
+vec3 trace(Ray ray, int sampleNum) {
   vec3 color = vec3(0.0f);
   vec3 attenuation = vec3(1.0f);
 
@@ -509,7 +510,7 @@ vec3 trace(Ray ray) {
 
       // throw a bunch of stuff in to make more "random"
       // when we cast multiple rays will add the ray number into the mix
-      float choice = randomValue(gl_FragCoord.xy + vec2(float(bounce), u_time ));
+      float choice = randomValue(gl_FragCoord.xy + float(sampleNum + 1) * vec2(float(bounce) * 17.f, u_time * 31.f));
 
       vec3 direction;
       vec3 point;
@@ -589,6 +590,14 @@ void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5f * u_resolution) / u_resolution.y;
   Ray ray = Ray(u_target + camera * vec3(0.0f, 0.0f, 7.0f), camera * normalize(vec3(uv, -1.5f)));
 
+  // trace avg
+  vec3 traceColor = vec3(0);
+  for(int i = 0; i < u_raySamples; i++) {
+    traceColor += trace(ray, i);
+  }
+
+  traceColor *= 1.f / float(u_raySamples);
+
   // gamma correction
-  fragColor = vec4(pow(trace(ray), vec3(1.0f / 2.2f)), 1.0f);
+  fragColor = vec4(pow(traceColor, vec3(1.0f / 2.2f)), 1.0f);
 }

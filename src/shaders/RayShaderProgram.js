@@ -85,6 +85,7 @@ export default class RayShaderProgram extends ShaderProgram {
       "u_objectCount",
       "u_lightCount",
       "u_materialCount",
+      "u_raySamples",
     ];
 
     for (const loc of defaultLocs) {
@@ -101,6 +102,7 @@ export default class RayShaderProgram extends ShaderProgram {
     ]);
     this.uniforms.u_maxBounces = 2;
     this.uniforms.u_ambientStrength = 0.2;
+    this.uniforms.u_raySamples = 1;
 
     this._initBuffers(gl);
   }

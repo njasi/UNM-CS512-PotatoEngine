@@ -67,7 +67,8 @@ export default class RayObject extends SceneObject {
    * @param {number} [options.bulge=undefined]      the bulge ratio of a cylinder
    * @param {number} [options.faceted=undefined]    if the object is faceted
    * @param {number} [options.faces=undefined]      how many faces the faceted object has...
-   * @param {boolean} [options.light=false]            if the object is a light or not
+   * @param {boolean} [options.light=false]         if the object is a light or not
+   * @param {number} [options.lightPower=0.5]      the power of the light
    */
   constructor(
     label,
@@ -88,6 +89,7 @@ export default class RayObject extends SceneObject {
 
       // ray object metadata
       light = false,
+      lightPower = 0.5,
       materialIndex = -1,
 
       // ray object geometry
@@ -119,6 +121,7 @@ export default class RayObject extends SceneObject {
     // TODO update this based on the label if it exists
     this.materialIndex = materialIndex;
     this.light = light;
+    this.lightPower = lightPower
 
     this.radius = radius;
     this.halfSize = halfSize;
@@ -210,6 +213,10 @@ export default class RayObject extends SceneObject {
       case RayObject.OBJECT_TYPE_PLANE:
         options.x = this.depth ?? 0;
         break;
+    }
+
+    if(this.light){
+      options.w = this.lightPower;
     }
 
     view.setFloat32(32 + offset, options.x, true);

@@ -27,6 +27,7 @@ scene.createProgram(
 function setupInputControls() {}
 
 let sphere;
+let lightSphere2;
 /**
  * Initalize all the objects in the starting scene
  * - the segments of the arm
@@ -41,14 +42,30 @@ function initSceneObjects() {
   });
   let plane = new RayObject("testPlane", RayObject.OBJECT_TYPE_PLANE, {
     position: [0, -5, 0],
-    width: 10,
-    depth: 10,
+    width: 100,
+    depth: 100,
   });
 
-  const lightSphere = new RayObject("testLightSphere", RayObject.OBJECT_TYPE_SPHERE, {
-    radius: 0.5,
-    light: true,
-  });
+  const lightSphere = new RayObject(
+    "testLightSphere",
+    RayObject.OBJECT_TYPE_SPHERE,
+    {
+      radius: 0.5,
+      light: true,
+      lightPower: 1,
+    },
+  );
+
+  lightSphere2 = new RayObject(
+    "testLightSphere2",
+    RayObject.OBJECT_TYPE_SPHERE,
+    {
+      radius: 0.1,
+      light: true,
+      position: [0, 2, -10],
+    },
+  );
+
   scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
@@ -61,6 +78,9 @@ function initSceneObjects() {
   scene.addObject(lightSphere, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
+  scene.addObject(lightSphere2, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
 }
 
 flight.setupMouseControls(scene);
@@ -71,6 +91,12 @@ function updateScene(dt) {
 
   sphere.position[0] = 5 * Math.sin(scene.time / 500);
   sphere.position[1] = 5 * -Math.cos(scene.time / 500);
+
+  lightSphere2.position = [
+    -scene.camera.x,
+    -scene.camera.y - 1,
+    -scene.camera.z,
+  ];
 }
 
 scene.setUpdateCB(updateScene);

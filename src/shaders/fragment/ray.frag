@@ -73,7 +73,7 @@ layout(std140) uniform materialBlock {
 // should allow me some flexibility, can probably do something similar with the objects
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
-const Material _01_default = Material(vec4(0.6f, 0, 0, 0), vec4(0.8f, 0, 0, 0), vec4(0.2f), vec4(0.f));
+const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default);
 
 // get a material by its id
@@ -165,7 +165,7 @@ const int OBJECT_TYPE_PLANE = 5;
 struct Object {
   ivec4 meta;         // x    => type;    y => material?; z=> cyl: faceted (could actually be for all) ; w => cyl: faces (prism) ; 
   vec4 centerRadius;  // xyz  => center;  w => cone, sphere, cyl: r, cube: half-size, torus: R, plane: width
-  vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge 
+  vec4 options;       // x    => cyl, cone: height, torus:r, plane:depth;     y=> cyl: bulge,   w => light: power;
   mat4 transform;     // overall transformation to apply 
 };
 
@@ -520,6 +520,8 @@ vec3 trace(Ray ray) {
     // TODO: multi light scene instead of hard coded light
     //       should just be a for loop casting shadow rays
 
+    vec3 directLightColor = vec3(0.f);
+
     for(int i = 0; i < u_lightCount; i++) {
       Object light = lights[i];
 
@@ -531,14 +533,17 @@ vec3 trace(Ray ray) {
       HitData blocker = traceScene(shadow, false);
 
       float visible = blocker.hit && blocker.t < lightDist ? 0.0f : 1.0f;
-      // float diff = max(dot(hit.normal, lightDir), 0.0f);
+      float diff = max(dot(hit.normal, lightDir), 0.0f);
       float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
-      vec3 lightColor = vec3(1.f);
+      vec3 lightColor = vec3(1.f, 0.f, 0.f);
       if(isValidMatId(light.meta.y)) {
+        // for now let us say ka is the color of light,
+        // later we probably change this
         lightColor = getMaterial(light.meta.y).ka.xyz;
       }
 
+      directLightColor += lightColor * (light.options.w * diff * falloff * visible);
     }
 
     // NOTE: original hard coded single light
@@ -551,9 +556,12 @@ vec3 trace(Ray ray) {
     // float diff = max(dot(hit.normal, lightDir), 0.0f);
     // float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
-    //  (optional) Ambient fill light approximates indirect light we don't trace.
     // vec3 shading = hit.color * (LIGHT_POWER * diff * falloff * visible + u_ambientStrength);
     // color += attenuation * shading * (1.0f - hit.reflectivity);
+
+    //  (optional) Ambient fill light approximates indirect light we don't trace.
+    vec3 shading = hit.color * (directLightColor + u_ambientStrength);
+    color += attenuation * shading * (1.0f - hit.reflectivity);
 
     // if(hit.reflectivity == 0.0f)
     //   break;

@@ -16,8 +16,8 @@ scene.rotationX += Math.PI / 6;
 
 const rayProgram = scene.createProgram(
   SHADER_PROGRAM_RAY,
-  "/src/shaders/vertex/ray.vert",
-  "/src/shaders/fragment/ray.frag",
+  "../../src/shaders/vertex/ray.vert",
+  "../../src/shaders/fragment/ray.frag",
   RayShaderProgram,
 );
 

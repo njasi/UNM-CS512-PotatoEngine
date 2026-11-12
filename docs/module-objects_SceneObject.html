@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>module:objects/SceneObject<span class="signature">(label, vertices, colors, indices, normals, options)</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>module:objects/SceneObject<span class="signature">(options, label)</span><span class="type-signature"></span></h2>
         
             <div class="class-description">Wrapper class of a basic object to make animation and such simple.
 
@@ -67,7 +67,7 @@ make a hiearchical model easily.</div>
     
 
     
-    <h4 class="name" id="module:objects/SceneObject"><span class="type-signature"></span>new module:objects/SceneObject<span class="signature">(label, vertices, colors, indices, normals, options)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="module:objects/SceneObject"><span class="type-signature"></span>new module:objects/SceneObject<span class="signature">(options, label)</span><span class="type-signature"></span></h4>
     
 
     
@@ -111,6 +111,29 @@ make a hiearchical model easily.</div>
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
                 <td class="name"><code>label</code></td>
             
 
@@ -134,7 +157,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>vertices</code></td>
+                <td class="name"><code>options.vertices</code></td>
             
 
             <td class="type">
@@ -157,7 +180,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>colors</code></td>
+                <td class="name"><code>options.colors</code></td>
             
 
             <td class="type">
@@ -180,7 +203,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>indices</code></td>
+                <td class="name"><code>options.indices</code></td>
             
 
             <td class="type">
@@ -203,7 +226,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>normals</code></td>
+                <td class="name"><code>options.normals</code></td>
             
 
             <td class="type">
@@ -226,49 +249,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>parent</code></td>
+                <td class="name"><code>options.parent</code></td>
             
 
             <td class="type">
@@ -291,7 +272,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>position</code></td>
+                <td class="name"><code>options.position</code></td>
             
 
             <td class="type">
@@ -314,7 +295,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>rotation</code></td>
+                <td class="name"><code>options.rotation</code></td>
             
 
             <td class="type">
@@ -337,7 +318,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>scale</code></td>
+                <td class="name"><code>options.scale</code></td>
             
 
             <td class="type">
@@ -360,7 +341,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>shouldDraw</code></td>
+                <td class="name"><code>options.shouldDraw</code></td>
             
 
             <td class="type">
@@ -383,7 +364,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>programLabel</code></td>
+                <td class="name"><code>options.programLabel</code></td>
             
 
             <td class="type">
@@ -406,7 +387,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>materialLabel</code></td>
+                <td class="name"><code>options.materialLabel</code></td>
             
 
             <td class="type">
@@ -429,7 +410,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>lightingCenter</code></td>
+                <td class="name"><code>options.lightingCenter</code></td>
             
 
             <td class="type">
@@ -452,7 +433,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>lightingRadius</code></td>
+                <td class="name"><code>options.lightingRadius</code></td>
             
 
             <td class="type">
@@ -475,7 +456,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>child</code></td>
+                <td class="name"><code>options.child</code></td>
             
 
             <td class="type">
@@ -498,7 +479,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>passes</code></td>
+                <td class="name"><code>options.passes</code></td>
             
 
             <td class="type">
@@ -521,7 +502,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>tangents</code></td>
+                <td class="name"><code>options.tangents</code></td>
             
 
             <td class="type">
@@ -544,7 +525,7 @@ make a hiearchical model easily.</div>
 
         <tr>
             
-                <td class="name"><code>texCoords</code></td>
+                <td class="name"><code>options.texCoords</code></td>
             
 
             <td class="type">
@@ -561,13 +542,6 @@ make a hiearchical model easily.</div>
             
 
             <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
         </tr>
 
     
@@ -765,7 +739,7 @@ make a hiearchical model easily.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line318">line 318</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line316">line 316</a>
     </li></ul></dd>
     
 
@@ -902,7 +876,7 @@ make a hiearchical model easily.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line235">line 235</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line233">line 233</a>
     </li></ul></dd>
     
 
@@ -1039,7 +1013,7 @@ make a hiearchical model easily.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line268">line 268</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line266">line 266</a>
     </li></ul></dd>
     
 
@@ -1219,7 +1193,7 @@ make a hiearchical model easily.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line341">line 341</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line339">line 339</a>
     </li></ul></dd>
     
 
@@ -1356,7 +1330,7 @@ make a hiearchical model easily.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line188">line 188</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line186">line 186</a>
     </li></ul></dd>
     
 
@@ -1496,7 +1470,7 @@ hmm the children should proabbly be a map too
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line331">line 331</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line329">line 329</a>
     </li></ul></dd>
     
 
@@ -1643,7 +1617,7 @@ Attributes:
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line296">line 296</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line294">line 294</a>
     </li></ul></dd>
     
 
@@ -1804,7 +1778,7 @@ the updateCB function if set
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line399">line 399</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line397">line 397</a>
     </li></ul></dd>
     
 
@@ -1893,7 +1867,7 @@ components
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line379">line 379</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line377">line 377</a>
     </li></ul></dd>
     
 
@@ -2263,7 +2237,7 @@ components
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line151">line 151</a>
+        <a href="objects_SceneObject.js.html">objects/SceneObject.js</a>, <a href="objects_SceneObject.js.html#line149">line 149</a>
     </li></ul></dd>
     
 
@@ -2309,13 +2283,13 @@ components
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sat Nov 07 2026 22:19:43 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Nov 12 2026 14:41:35 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

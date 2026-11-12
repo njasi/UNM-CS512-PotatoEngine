@@ -178,7 +178,7 @@ export default class Texture2DArray {
    * Size helper since the attributes vary based on type
    * notably: images, video, html element
    * @param {TexImageSource} source 
-   * @returns 
+   * @returns {{width:number, height:number}}
    */
   _sourceSize(source) {
     return {

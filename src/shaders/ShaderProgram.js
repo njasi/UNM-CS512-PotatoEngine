@@ -93,10 +93,10 @@ export default class ShaderProgram {
     gl.linkProgram(this.program);
 
     if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
-      gl.deleteProgram(this.program);
       throw new Error(
         `Failed to link shader program: ${gl.getProgramInfoLog(this.program)}`,
       );
+      gl.deleteProgram(this.program);
     }
 
     this._init(gl, scene);

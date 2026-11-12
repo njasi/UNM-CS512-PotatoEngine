@@ -14,8 +14,9 @@ precision highp float;
 //   - so max objects = 
 //     - 65536 / 112 = 585.14...
 //     - 16384 / 112 = 146.29... 
-#define MAX_OBJECTS 585 
-#define MAX_LIGHTS 585
+// TODO make this size dynamic to get the most out of it
+#define MAX_OBJECTS 146 
+#define MAX_LIGHTS 146
 // mat struct bytes = 64, 16384 / 64 = 256
 #define MAX_MATERIALS 256
 // materials not provided by js, but rather defined in this shader
@@ -562,7 +563,9 @@ vec3 traceShadow(HitData hit, Object light) {
         // really weird effects on sphere probably best to avoid by default
         lightDir = reflectGlass(I, N);
         position = blocker.point + N * 0.001f;
-        // continue;
+        // technically you should continue here but it looks much better if you 
+        // dont continue
+        continue;
       } else {
         return vec3(0.f);
       }

@@ -47,8 +47,8 @@ export default class RayShaderProgram extends ShaderProgram {
     this.objectBuffer = undefined;
     this.materialBuffer = undefined;
 
-    this.maxLights = 585;
-    this.maxObjects = 585;
+    this.maxLights = 146;
+    this.maxObjects = 146;
     this.maxMaterials = 256;
   }
 
@@ -88,7 +88,7 @@ export default class RayShaderProgram extends ShaderProgram {
       "u_raySamples",
       "u_glassMode",
       "u_maxShadowLayers",
-      "u_tirShadow"
+      "u_tirShadow",
     ];
 
     for (const loc of defaultLocs) {
@@ -108,6 +108,13 @@ export default class RayShaderProgram extends ShaderProgram {
     this.uniforms.u_raySamples = 1;
     this.uniforms.u_glassMode = 2;
     this.uniforms.u_maxShadowLayers = 8;
+
+    const maxBlockBytes = gl.getParameter(gl.MAX_UNIFORM_BLOCK_SIZE);
+    this.maxObjects = Math.floor(maxBlockBytes / RayObject.OBJECT_BYTE_SIZE);
+    this.maxLights = this.maxObjects;
+    this.maxMaterials = Math.floor(
+      maxBlockBytes / RayMaterial.MATERIAL_BYTE_SIZE,
+    );
 
     this._initBuffers(gl);
   }

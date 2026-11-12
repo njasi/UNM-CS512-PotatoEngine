@@ -555,9 +555,9 @@ vec3 trace(Ray ray, int sampleNum) {
           ray = Ray(hit.point + N * 0.001f, reflectGlass(I, N));
         } else {
           ray = Ray(hit.point - N * 0.001f, refractGlass(I, N, eta, cosThetaI, etaSin2I));
+          attenuation *= hit.color;
         }
 
-        attenuation *= hit.color;
         continue;
       } else if(u_glassMode == GLASS_MODE_CONTRIBUTION) {
         // TODO: this one requires recusion emulation
@@ -586,20 +586,20 @@ vec3 trace(Ray ray, int sampleNum) {
         vec3 direction;
         vec3 point;
         if(TIR || choice < F) {
-        // reflection
+          // reflection
           direction = reflectGlass(I, N);
           point = hit.point + N * 0.001f;
         } else {
-        // refraction
+          // refraction
           direction = refractGlass(I, N, eta, cosThetaI, etaSin2I);
           point = hit.point - N * 0.001f;
+          // NOTE: tint from passing through or reflecting off
+          // maybe reflect and refract should have diff color influence?
+          // we have mat.kd and mat.ks to work with, reflect could make sense as ks...
+          attenuation *= hit.color;
         }
         ray = Ray(point, direction);
 
-      // tint from passing through or reflecting off
-      // maybe reflect and refract should have diff color influence?
-      // we have mat.kd and mat.ks to work with, reflect could make sense as ks...
-        attenuation *= hit.color;
 
       // glass "shadow" rays?
         continue;

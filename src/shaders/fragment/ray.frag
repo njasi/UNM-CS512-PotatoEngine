@@ -615,7 +615,7 @@ vec3 trace(Ray ray, int sampleNum) {
     //   break;
     // }
 
-    // Monte Carlo Sampling (TODO: multiple rays per pixel), reflect with probability 
+    // Monte Carlo Sampling (& multiple rays per pixel), reflect with probability 
     // F (random() < schlick_value), else refract, and average many samples per pixel
     if(hit.isGlass) {
       vec3 I = normalize(ray.direction);

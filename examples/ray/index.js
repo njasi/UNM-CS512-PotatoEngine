@@ -7,6 +7,7 @@ import {
 } from "../../src/renderers/raytracing";
 import flight from "../../src/controls/flight";
 import { RayObject } from "../../src/objects";
+import { RayMaterial } from "../../src/materials";
 
 const SHADER_PROGRAM_RAY = "ray";
 
@@ -20,6 +21,22 @@ const rayProgram = scene.createProgram(
   "../../src/shaders/fragment/ray.frag",
   RayShaderProgram,
 );
+
+const MAT_BLUE_GLASS = "blueGlass";
+let glass;
+/**
+ * Add materials to the scene
+ */
+function addMaterials() {
+  glass = new RayMaterial(MAT_BLUE_GLASS, {
+    ka: [0, 0, 0],
+    kd: [0, 0, 1],
+    ks: [0, 0, 0],
+    refractiveIndex: 2.42,
+  });
+
+  scene.addMaterial(glass, SHADER_PROGRAM_RAY);
+}
 
 let sphere;
 let lightSphere;
@@ -35,13 +52,13 @@ function initSceneObjects() {
   });
   let sphere2 = new RayObject("testSphere2", RayObject.OBJECT_TYPE_SPHERE, {
     radius: 2,
-    materialIndex: -3,
+    materialLabel: MAT_BLUE_GLASS,
     position: [10, 0, 0],
   });
   let cube = new RayObject("testCube", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 2,
     position: [0, 0, -5],
-    materialIndex: -3,
+    materialLabel: MAT_BLUE_GLASS,
   });
   // let cube3 = new RayObject("testCube3", RayObject.OBJECT_TYPE_CUBE, {
   //   halfSize: 2,
@@ -126,7 +143,6 @@ function setupInputControls() {
     if (valEle) {
       valEle.innerHTML = val;
     }
-    // console.log(event.target.type);
     rayProgram.uniforms[event.target.name] =
       event.target.type == "checkbox" ? (event.target.checked ? 1 : 0) : val;
   }
@@ -137,6 +153,12 @@ function setupInputControls() {
 
   document.getElementById("lightPower").addEventListener("input", (e) => {
     lightSphere.lightPower = e.target.value;
+    document.getElementById(e.target.name + "-value").innerText =
+      e.target.value;
+  });
+
+  document.getElementById("blueGlassIOR").addEventListener("input", (e) => {
+    glass.refractiveIndex = e.target.value;
     document.getElementById(e.target.name + "-value").innerText =
       e.target.value;
   });
@@ -153,9 +175,11 @@ scene.setUpdateCB(updateScene);
  * - start animation loop
  */
 async function main() {
+  addRayTracingRenderPass(scene, SHADER_PROGRAM_RAY);
+  addMaterials()
   await scene.load();
 
-  addRayTracingRenderPass(scene, SHADER_PROGRAM_RAY);
+
 
   initSceneObjects();
   setupInputControls();

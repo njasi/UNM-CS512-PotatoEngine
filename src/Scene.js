@@ -15,6 +15,7 @@ import {
 import RenderPass from "./renderers/RenderPass";
 import { renderers } from ".";
 import { Texture2D, Material } from "./materials";
+import { RENDER_PASS_RAY } from "./renderers";
 
 /**
  * Overall state management for a scene
@@ -378,6 +379,10 @@ export default class Scene {
   addMaterial(material, program) {
     material.programLabel = program;
     this.materials.set(material.label, material);
+    if (program == RENDER_PASS_RAY) {
+      // TODO check if have the ray renderpass at all lol
+      this.getRenderPass(RENDER_PASS_RAY).addMaterial(material);
+    }
   }
 
   /**

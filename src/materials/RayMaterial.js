@@ -15,11 +15,16 @@ export default class RayMaterial extends Material {
 
   /**
    * Create a (ray tracing shader) material interface object.
-   * @param {rgb()} ka
-   * @param {rgb()} kd
-   * @param {rgb()} ks
-   * @param {float} specularExp
-   * @param {number} [alpha=1]
+   * @param {*} label
+   * @param {Object} [object={}] 
+   * @param {number[]} [object.ka=[0.1, 0.1, 0.1]] 
+   * @param {number[]} [object.kd=[0.1, 0.1, 0.1]] 
+   * @param {number[]} [object.ks=[0.1, 0.1, 0.1]] 
+   * @param {number} [object.specularExp=1] 
+   * @param {number} [object.alpha=1] 
+   * @param {number} [object.refractiveIndex=1] 
+   * @param {number} [object.reflectivity=0] 
+   * @param {number} [object.materialIndex=-1]  
    */
   constructor(
     label,
@@ -43,12 +48,6 @@ export default class RayMaterial extends Material {
     this.refractiveIndex = refractiveIndex;
     this.reflectivity = reflectivity;
     this.materialIndex = materialIndex;
-
-    this.kaLoc = undefined;
-    this.kdLoc = undefined;
-    this.ksLoc = undefined;
-    this.specularExpLoc = undefined;
-    this.alphaLoc = undefined;
   }
 
   /**
@@ -66,36 +65,34 @@ export default class RayMaterial extends Material {
    *
    * TODO can probably cache this to not recompute every time
    * maybe a dirty attribute on it or smth
+   * 
+   * @param {DataView} view the dataview of the material block
+   * @param {number} offset byte offset to the start of this material
    */
-  packData() {
-    const bytes = new ArrayBuffer(RayMaterial.MATERIAL_BYTE_SIZE);
-    const view = new DataView(bytes);
-
+  packData(view, offset) {
     // vec4 ka (offset 0)
-    view.setInt32(0, this.ka[0], true);
-    view.setInt32(4, this.ka[1], true);
-    view.setInt32(8, this.ka[2], true);
-    view.setInt32(12, 0, true);
+    view.setInt32(0 + offset, this.ka[0], true);
+    view.setInt32(4 + offset, this.ka[1], true);
+    view.setInt32(8 + offset, this.ka[2], true);
+    view.setInt32(12 + offset, 0, true);
 
     // vec4 kd (offset 16)
-    view.setFloat32(16, this.kd[0], true);
-    view.setFloat32(20, this.kd[1], true);
-    view.setFloat32(24, this.kd[2], true);
-    view.setFloat32(28, 0, true);
+    view.setFloat32(16 + offset, this.kd[0], true);
+    view.setFloat32(20 + offset, this.kd[1], true);
+    view.setFloat32(24 + offset, this.kd[2], true);
+    view.setFloat32(28 + offset, 0, true);
 
     // vec4 ks (offset 32)
-    view.setFloat32(32, this.ks[0], true);
-    view.setFloat32(36, this.ks[1], true);
-    view.setFloat32(40, this.ks[2], true);
-    view.setFloat32(44, 0, true);
+    view.setFloat32(32 + offset, this.ks[0], true);
+    view.setFloat32(36 + offset, this.ks[1], true);
+    view.setFloat32(40 + offset, this.ks[2], true);
+    view.setFloat32(44 + offset, 0, true);
 
     // vec4 optics (offset 48)
-    view.setFloat32(48, this.specularExp, true);
-    view.setFloat32(52, this.refractiveIndex, true);
-    view.setFloat32(56, this.reflectivity, true);
-    view.setFloat32(60, 0, true);
-
-    return bytes;
+    view.setFloat32(48 + offset, this.specularExp, true);
+    view.setFloat32(52 + offset, this.refractiveIndex, true);
+    view.setFloat32(56 + offset, this.reflectivity, true);
+    view.setFloat32(60 + offset, 0, true);
   }
 
   /**

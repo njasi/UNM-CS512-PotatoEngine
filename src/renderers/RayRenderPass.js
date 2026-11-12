@@ -2,6 +2,7 @@
  * @module renderers/RayRenderPass
  */
 
+import { RayMaterial } from "../materials";
 import RayObject from "../objects/RayObject";
 import RenderPass from "./RenderPass";
 
@@ -61,6 +62,15 @@ export default class RayRenderPass extends RenderPass {
 
     // add lights set
     this.lights = new Set();
+    // track pass materials set so we dont have to look up the scene info every frame
+    this.materials = [];
+    // map material label to material index
+    this.materialMap = new Map();
+    // track textures for the same reason
+    // maybe work with a 2dtexture array since theres a limited number of bind points
+    // 16? of them i think. Less of a problem in the others since objects are tendered
+    // one at a time, but with this its an issue...
+    this.textures = new Set();
   }
 
   /**
@@ -68,6 +78,8 @@ export default class RayRenderPass extends RenderPass {
    * @param {RayObject} obj Object to add
    */
   addObject(obj) {
+    obj.materialIndex =
+      this.materialMap.get(obj.materialLabel) ?? obj.materialIndex;
     if (obj.light) {
       this.lights.add(obj);
     } else {
@@ -83,5 +95,50 @@ export default class RayRenderPass extends RenderPass {
     // just try removing from both for simplicity
     super.removeObject(obj);
     this.objects.delete(obj);
+  }
+
+  /**
+   * Add a material to the renderpass
+   * @param {RayMaterial} material
+   */
+  addMaterial(material) {
+    material.materialIndex = this.materials.length;
+    this.materialMap.set(material.label, material.materialIndex);
+    this.materials.push(material);
+  }
+
+  /**
+   * Remove a material from the renderpass
+   *
+   * make sure material indexes stay in sync...
+   * @param {RayMaterial} material
+   */
+  removeMaterial(material) {
+    this.materials.filter((m) => m.label != material.label);
+    m = new Map();
+    this.materials.forEach((mat, index) => {
+      m.set(mat.label, index);
+    });
+    this.materialMap = m;
+    this.objects.forEach((obj) => {
+      obj.materialIndex =
+        this.materialMap.get(obj.materialLabel) ?? obj.materialIndex;
+    });
+  }
+
+  /**
+   * Add a texture to the renderpass
+   * @param {} texture
+   */
+  addTexture(texture) {
+    this.textures.add(texture);
+  }
+
+  /**
+   * Remove a texture from the renderpass
+   * @param {} texture
+   */
+  removeTexture(texture) {
+    this.textures.delete(texture);
   }
 }

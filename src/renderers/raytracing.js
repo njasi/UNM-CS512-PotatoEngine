@@ -71,7 +71,7 @@ function updateUniforms(gl, shaderProgram, scene) {
 
   packObjects(gl, [...this.objects], shaderProgram);
   packLights(gl, [...this.lights], shaderProgram);
-  // packMaterials()
+  packMaterials(gl, [...this.materials], shaderProgram);
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
@@ -136,7 +136,7 @@ function packMaterials(gl, materials, shaderProgram) {
   }
 
   // throw the data into the buffer
-  gl.bindBuffer(gl.UNIFORM_BUFFER, shaderProgram.objectBuffer);
+  gl.bindBuffer(gl.UNIFORM_BUFFER, shaderProgram.materialBuffer);
   gl.bufferSubData(gl.UNIFORM_BUFFER, 0, new Uint8Array(bytes));
   gl.bindBuffer(gl.UNIFORM_BUFFER, null);
 

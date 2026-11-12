@@ -220,6 +220,7 @@ export default class Texture2DArray {
 
   /**
    * Clean up the allocated things
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
    */
   dispose(gl = this._gl) {
     if (this.texture) {

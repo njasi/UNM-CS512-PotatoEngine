@@ -57,8 +57,8 @@
       <div class="controls">
         <label>
           Max Bounces
-          <input class="uniform-slider" name="u_maxBounces" value="2" type="range" max="32" min="0" step="1"></input>
-          <code id="u_maxBounces-value">2</code>
+          <input class="uniform-slider" name="u_maxBounces" value="3" type="range" max="32" min="0" step="1"></input>
+          <code id="u_maxBounces-value">3</code>
         </label>
         <label>
           Ambient Strength
@@ -70,6 +70,15 @@
           Ray Samples
           <input class="uniform-slider" name="u_raySamples" value="2" type="range" max="16" min="0" step="1"></input>
           <code id="u_raySamples-value">2</code>
+        </label>
+        <label>
+          Shadow Layers
+          <input class="uniform-slider" name="u_maxShadowLayers" value="8" type="range" max="16" min="0" step="1"></input>
+          <code id="u_maxShadowLayers-value">8</code>
+        </label>
+        <label>
+          Shadow TIR
+          <input class="uniform-slider" name="u_tirShadow" type="checkbox"></input>
         </label>
         <label>
           Main Light Power

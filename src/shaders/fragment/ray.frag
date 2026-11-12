@@ -30,6 +30,8 @@ uniform vec2 u_cameraOrbit;
 uniform vec3 u_target; // essentially camera position
 uniform int u_raySamples;
 uniform int u_glassMode;
+uniform int u_maxShadowLayers;
+uniform bool u_tirShadow;
 
 // track the sizes of buffers, since you cant 
 // really check the buffer itself for this info
@@ -82,8 +84,8 @@ layout(std140) uniform materialBlock {
 // internal default mat, just a solid grey (id = -1)
 const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
 const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
-const Material _03_glass_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f));
-const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect, _03_glass_green);
+const Material _03_diamond_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f));
+const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect, _03_diamond_green);
 
 const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0));
 
@@ -502,6 +504,95 @@ vec3 refractGlass(vec3 I, vec3 N, float eta, float cosThetaI, float etaSin2I) {
   return normalize(eta * I + (eta * cosThetaI - sqrt(1.0f - etaSin2I)) * N);
 }
 
+// trace the shadow path and account for glassy objects
+// ie transmittance
+vec3 traceShadow(HitData hit, Object light) {
+  vec3 position = hit.point + hit.normal * 0.001f;
+  vec3 toLight = light.centerRadius.xyz - position;
+  float lightDist = length(toLight);
+  vec3 lightDir = toLight / lightDist;
+
+  vec3 transmittance = vec3(1.f);
+
+  if(u_maxShadowLayers == 0) {
+    return vec3(0.f);
+  }
+
+  // we could possibly pass through many layers of glass
+  for(int layer = 0; layer < u_maxShadowLayers; layer++) {
+    Ray shadow = Ray(position, lightDir);
+    HitData blocker = traceScene(shadow, false);
+
+    if(!blocker.hit || blocker.t > lightDist) {
+      break;
+    }
+
+    if(!blocker.isGlass) {
+      return vec3(0.f);
+    }
+
+    // NOTE: this is all pretty much copied from 
+    //       the below refraction code, should it be made into a function?
+    //       so i can avoid duplication?
+    vec3 N = normalize(blocker.normal);
+    vec3 I = lightDir;
+
+    float n1 = 1.0f;
+    float n2 = blocker.ior;
+    float cosThetaI = dot(-I, N);
+    bool exit = cosThetaI < 0.0f;
+    if(exit) {
+      N = -N;
+      cosThetaI = dot(-I, N);
+      n1 = blocker.ior;
+      n2 = 1.0f;
+    }
+
+    float eta = n1 / n2;
+    float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
+
+    bool TIR = etaSin2I >= 1.0f;
+
+    // TIR => no light make it through => no color shadow
+    // technically it could refract/reflect multiple times and eventually make it out
+    // but im not going to think about that here...
+    if(TIR) {
+      if(u_tirShadow) {
+        // These look ok but idk if correct...
+        // really weird effects on sphere probably best to avoid by default
+        lightDir = reflectGlass(I, N);
+        position = blocker.point + N * 0.001f;
+        // continue;
+      } else {
+        return vec3(0.f);
+      }
+    }
+
+    float F = schlick(cosThetaI, n1, n2);
+    transmittance *= (1.f - F);
+
+    // NOTE: only apply the color on entry into the material
+    // only on exit doesnt look right, unsure what the difference is
+    // will have to look inito later
+    if(!exit) {
+      transmittance *= blocker.color;
+    }
+
+    // if getting dim just give up
+    if(max(transmittance.r, max(transmittance.g, transmittance.b)) < 0.01f) {
+      return vec3(1.0f, 0, 0);
+    }
+
+    lightDist -= blocker.t + 0.001f;
+    position = blocker.point + lightDir * 0.001f;
+  }
+
+  float diff = max(dot(hit.normal, lightDir), 0.0f);
+  float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
+
+  return transmittance * (diff * falloff);
+}
+
 vec3 trace(Ray ray, int sampleNum) {
   vec3 color = vec3(0.0f);
   vec3 attenuation = vec3(1.0f);
@@ -600,8 +691,6 @@ vec3 trace(Ray ray, int sampleNum) {
         }
         ray = Ray(point, direction);
 
-
-      // glass "shadow" rays?
         continue;
       }
     }
@@ -615,25 +704,16 @@ vec3 trace(Ray ray, int sampleNum) {
     for(int i = 0; i < u_lightCount; i++) {
       Object light = lights[i];
 
-      vec3 toLight = light.centerRadius.xyz - hit.point;
-      float lightDist = length(toLight);
-      vec3 lightDir = toLight / lightDist;
-
-      Ray shadow = Ray(hit.point + hit.normal * 0.001f, lightDir);
-      HitData blocker = traceScene(shadow, false);
-
-      float visible = blocker.hit && blocker.t < lightDist ? 0.0f : 1.0f;
-      float diff = max(dot(hit.normal, lightDir), 0.0f);
-      float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
+      vec3 shadowColor = traceShadow(hit, light);
 
       vec3 lightColor = vec3(1.f);
       if(isValidMatId(light.meta.y)) {
-        // for now let us say ka is the color of light,
-        // later we probably change this
+            // for now let us say ka is the color of light,
+            // later we probably change this
         lightColor = getMaterial(light.meta.y).ka.xyz;
       }
 
-      directLightColor += lightColor * (light.options.w * diff * falloff * visible);
+      directLightColor += shadowColor * lightColor * light.options.w;
     }
 
     //  (optional) Ambient fill light approximates indirect light we don't trace.

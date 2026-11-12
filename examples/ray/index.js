@@ -43,10 +43,10 @@ function initSceneObjects() {
     position: [0, 0, -5],
     materialIndex: -3,
   });
-  let cube3 = new RayObject("testCube3", RayObject.OBJECT_TYPE_CUBE, {
-    halfSize: 2,
-    position: [0, 0, -10],
-  });
+  // let cube3 = new RayObject("testCube3", RayObject.OBJECT_TYPE_CUBE, {
+  //   halfSize: 2,
+  //   position: [0, 0, -10],
+  // });
   let cube2 = new RayObject("testCube2", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 1,
     position: [10, 0, -5],
@@ -54,8 +54,8 @@ function initSceneObjects() {
   });
   let plane = new RayObject("testPlane", RayObject.OBJECT_TYPE_PLANE, {
     position: [0, -10, 0],
-    width: 100,
-    depth: 100,
+    width: -1,
+    depth: -1,
   });
 
   lightSphere = new RayObject("testLightSphere", RayObject.OBJECT_TYPE_SPHERE, {
@@ -95,9 +95,9 @@ function initSceneObjects() {
   scene.addObject(cube2, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
-  scene.addObject(cube3, SHADER_PROGRAM_RAY, undefined, {
-    passes: [RENDER_PASS_RAY],
-  });
+  // scene.addObject(cube3, SHADER_PROGRAM_RAY, undefined, {
+  //   passes: [RENDER_PASS_RAY],
+  // });
 }
 
 flight.setupMouseControls(scene);
@@ -126,8 +126,9 @@ function setupInputControls() {
     if (valEle) {
       valEle.innerHTML = val;
     }
-
-    rayProgram.uniforms[event.target.name] = val;
+    // console.log(event.target.type);
+    rayProgram.uniforms[event.target.name] =
+      event.target.type == "checkbox" ? (event.target.checked ? 1 : 0) : val;
   }
 
   [...document.getElementsByClassName("uniform-slider")].forEach((slider) =>

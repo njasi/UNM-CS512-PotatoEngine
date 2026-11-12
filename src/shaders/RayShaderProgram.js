@@ -87,6 +87,8 @@ export default class RayShaderProgram extends ShaderProgram {
       "u_materialCount",
       "u_raySamples",
       "u_glassMode",
+      "u_maxShadowLayers",
+      "u_tirShadow"
     ];
 
     for (const loc of defaultLocs) {
@@ -101,9 +103,11 @@ export default class RayShaderProgram extends ShaderProgram {
       scene.canvas.width,
       scene.canvas.height,
     ]);
-    this.uniforms.u_maxBounces = 2;
+    this.uniforms.u_maxBounces = 3;
     this.uniforms.u_ambientStrength = 0.2;
     this.uniforms.u_raySamples = 1;
+    this.uniforms.u_glassMode = 2;
+    this.uniforms.u_maxShadowLayers = 8;
 
     this._initBuffers(gl);
   }

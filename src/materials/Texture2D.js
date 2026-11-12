@@ -1,7 +1,7 @@
 /** @module materials/Texture2D */
 
 /**
- * Convience representation of a 2D texture
+ * Convenience representation of a 2D texture
  * @class
  * @alias module:materials/Texture2D
  *
@@ -50,7 +50,9 @@ export default class Texture2D {
       throw new Error("Failed to create WebGL texture");
     }
 
-    // A 1×1 placeholder lets the texture be bound while an image loads.
+    // filler 1x1 placeholder lets the texture be bound while an image loads.
+    // note that 3d textures (2d texture array know the size from the start and)
+    // dont need to do this, might be faster that way tbh, no reallocating size...
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
     gl.texImage2D(
       gl.TEXTURE_2D,
@@ -74,6 +76,7 @@ export default class Texture2D {
 
   /**
    * Load the image at the url into this texture
+   * @param {string} url 
    */
   load(url) {
     return new Promise((resolve, reject) => {
@@ -98,15 +101,14 @@ export default class Texture2D {
    * parse some valid source to the texture
    *
    * @param {TexImageSource} source
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
    */
-  upload(source) {
+  upload(source, gl = this._gl) {
     if (!!source) {
       this._source = source;
     } else {
       source = this._source;
     }
-
-    const gl = this._gl;
 
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
@@ -188,21 +190,24 @@ export default class Texture2D {
   /**
    * bind this texture to a texture unit
    * @param {number} [unit=0] the unit
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
    */
-  bind(unit = 0) {
+  bind(unit = 0, gl = this._gl) {
+    // TODO can probably replace the refresh method
+    //      with just directly uploading like in texarray.
     if (this.animated) {
       this._refresh();
     }
-    const gl = this._gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
   }
 
   /**
    * Clean up the allocated things
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
    */
-  dispose() {
-    this._gl.deleteTexture(this.texture);
+  dispose(gl = this._gl) {
+    gl.deleteTexture(this.texture);
     this.texture = null;
   }
 }

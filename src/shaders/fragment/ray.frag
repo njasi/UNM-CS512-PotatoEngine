@@ -41,6 +41,10 @@ uniform int u_objectCount;
 uniform int u_lightCount;
 uniform int u_materialCount;
 
+// 2D sampler usage once I implement it in here
+// uniform sampler2DArray u_textures;
+// vec4 color = texture(u_textures, vec3(uv, float(layerIndex)));
+
 out vec4 fragColor;
 
 // holdouts to replace from the provided code

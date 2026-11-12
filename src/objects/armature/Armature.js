@@ -2,13 +2,15 @@
  * @module objects/armature
  */
 
+import { vec3 } from "../../util";
+import { generateCylinder, generateSphere } from "../primitives";
+import SceneObject from "../SceneObject";
 import ArmatureBone from "./ArmatureBone";
 import ArmatureJoint from "./ArmatureJoint";
 
-
 /**
  * Representation of internal armature of a model
- * 
+ *
  * - bones, joints
  * - important to allow for joint cycles unlike the bvh tree,
  *   as something like a chest loop is common (consider mediapipe model)
@@ -16,16 +18,16 @@ import ArmatureJoint from "./ArmatureJoint";
  *   for example, after the bvh model has updated (which we already have)
  *   we can then use it to update the positions of all joints in the armature
  *   here. This shouldnt be notably expensive, and vaguely extensible
- *   to a different update function 
+ *   to a different update function
  * - should make a helper to turn bvh structure directly into an armature
  *   represenation and then map update function onto it...
- * 
+ *
  * @class
  */
 export class Armature {
   /**
    * make a new armature structue
-   * 
+   *
    * @param {string} label
    */
   constructor(label) {
@@ -33,8 +35,8 @@ export class Armature {
     this.joints = [];
     this.bones = [];
 
-    // tracking by id will be less of a headache than the lavels, 
-    // but id still like to force labels since debugging is really 
+    // tracking by id will be less of a headache than the lavels,
+    // but id still like to force labels since debugging is really
     // easy with them lol
     this.jointsById = new Map();
     this.bonesById = new Map();
@@ -129,5 +131,189 @@ export class Armature {
     }
 
     return true;
+  }
+
+  /**
+   * Helper for setting the position & rotation of a joint
+   * @param {number} jointId
+   * @param {number[]} position
+   * @param {number[]} rotation
+   */
+  setJointTransform(jointId, position, rotation) {
+    const joint = this.getJoint(jointId);
+    joint.position = position;
+    joint.rotation = rotation;
+  }
+
+  /**
+   * Generate a SceneObject representation of the armature so we can render that
+   *
+   * @param {Object} [options={}]
+   * @param {boolean} [options.rayObject=false] If it should use ray objects which are inherently different than the other types
+   * @param {number} [options.radius=0.1]
+   * @param {number} [options.segments=16]
+   * @param {number[]} [options.color=hsl(0, 0%, 0%)]
+   * @param {number[]} [options.colorJoint=rgb(255, 255, 255)]
+   * @param {string} [options.prefix=""]
+   * @param {number} [options.rootJointId=this.headJointId]
+   * @returns
+   */
+  generateArmatureObject({
+    rayObject = false,
+    radius = 0.1,
+    segments = 16,
+    color = rgb(0, 0, 0),
+    colorJoint = rgb(255, 255, 255),
+    prefix = "",
+    rootJointId = this.headJointId,
+  } = {}) {
+    this.validate();
+
+    // the parent of all other objects
+    const rootObject = this._makeJoint(prefix + "ROOT" + this.label, 2, 0.001, color, rayObject);
+    const rootJoint = this.getJoint(rootJointId);
+
+    if (!rootJoint) {
+      throw new Error(`Root joint ${rootJointId} does not exist`);
+    }
+
+    const jointObjects = new Map();
+    const boneObjects = new Map();
+
+    const visitedJoints = new Set();
+    const visitedBones = new Set();
+
+    function _buildJoint(parent, joint) {
+      if (visitedJoints.has(joint.id)) {
+        return;
+      }
+
+      visitedJoints.add(joint.id);
+
+      const jointObj = this._makeJoint(
+        prefix + joint.label,
+        segments,
+        radius,
+        colorJoint,
+        rayObject,
+      );
+
+      jointObj.position = [...joint.restPosition];
+      jointObject.rotation = [...joint.restAngle];
+
+      parent.addChild(jointObj);
+      jointObjects.set(joint.id, jointObjects);
+
+      // visit the bones
+      for (const boneId of joint.connectedBoneIds) {
+        if (visitedBones.has(boneId)) {
+          continue;
+        }
+        visitedBones.add(boneId);
+        const bone = this.getBone(boneId);
+
+        if (!bone) {
+          throw new Error(
+            `Joint ${joint.id} references missing bone ${boneId} :(`,
+          );
+        }
+
+        // find the other end of the bone
+        const endJointId =
+          bone.headJointId == joint.id ? bone.tailJointId : bone.headJointId;
+
+        const endJoint = this.getJoint(endJointId);
+
+        if (!endJoint) {
+          throw new Error(`Bone ${boneId} has a missing endpoint :(`);
+        }
+
+        const boneObj = this._makeBone(
+          prefix + bone.label,
+          endJoint.restPosition,
+          segments,
+          radius,
+          color,
+          rayObject,
+        );
+
+        if(boneObj){
+          jointObj.addChild(boneObj);
+          boneObjects.set(bone.id, boneObj);
+        }
+
+        // only if we havent seen it should we traverse to the next
+        // joint at the end of the bone
+        // this could end up wonky looking in a cycle im not sure
+        if(!visitedJoints.has(endJoint.id)){
+          _buildJoint(jointObj, endJoint)
+        }
+
+        return jointObj
+      }
+      
+      _buildJoint(rootObject, rootJoint)
+
+      // attach these to the root to use them
+      // in animation, ie attach update function to 
+      // rootObject that can look up joints needed and set
+      // their information
+      rootObject.joints = jointObjects
+      rootObject.boned = boneObjects
+
+      return rootObject;
+    }
+  }
+
+  /**
+   * make a joint scene object
+   *
+   * @param {string} label
+   * @param {number} segments
+   * @param {number} radius
+   * @param {*} color
+   * @param {boolean} [rayObject=false]
+   * @returns {SceneObject}
+   */
+  _makeJoint(label, segments, radius, color, rayObject = false) {
+    const sphere = generateSphere(segments, radius);
+    sphere.generateColors(color);
+    return sphere.toSceneObject(label);
+  }
+
+  /**
+   * make a bone scene object
+   *
+   * @param {string} label
+   * @param {number[]} offset
+   * @param {number} segments
+   * @param {number} radius
+   * @param {number[]} color
+   * @param {boolean} [rayObject=false]
+   */
+  _makeBone(label, offset, segments, radius, color, rayObject = false) {
+    const [x, y, z] = offset;
+    const len = Math.hypot(x, y, z);
+
+    if (len == 0) {
+      // oops all joint
+      return undefined;
+    }
+
+    const bonePrim = generateCylinder(segments, radius, length, {
+      z_c: length / 2,
+      bulge: 0.75,
+      segments_h: 8,
+    });
+    bonePrim.generateColors(color);
+    const bone = bonePrim.toSceneObject(label);
+
+    // this should be just like the bvh loader rotation
+    // but im not sure
+    const rotationX = -Math.atan2(y, Math.hypot(x, z));
+    const rotationY = Math.atan2(x, z);
+    bone.rotation = [rotationX, rotationY, 0];
+
+    return bone;
   }
 }

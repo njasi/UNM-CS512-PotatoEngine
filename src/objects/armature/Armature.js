@@ -170,7 +170,13 @@ export class Armature {
     this.validate();
 
     // the parent of all other objects
-    const rootObject = this._makeJoint(prefix + "ROOT" + this.label, 2, 0.001, color, rayObject);
+    const rootObject = this._makeJoint(
+      prefix + "ROOT" + this.label,
+      2,
+      0.001,
+      color,
+      rayObject,
+    );
     const rootJoint = this.getJoint(rootJointId);
 
     if (!rootJoint) {
@@ -237,7 +243,7 @@ export class Armature {
           rayObject,
         );
 
-        if(boneObj){
+        if (boneObj) {
           jointObj.addChild(boneObj);
           boneObjects.set(bone.id, boneObj);
         }
@@ -245,24 +251,22 @@ export class Armature {
         // only if we havent seen it should we traverse to the next
         // joint at the end of the bone
         // this could end up wonky looking in a cycle im not sure
-        if(!visitedJoints.has(endJoint.id)){
-          _buildJoint(jointObj, endJoint)
+        if (!visitedJoints.has(endJoint.id)) {
+          _buildJoint(jointObj, endJoint);
         }
-
-        return jointObj
       }
-      
-      _buildJoint(rootObject, rootJoint)
-
-      // attach these to the root to use them
-      // in animation, ie attach update function to 
-      // rootObject that can look up joints needed and set
-      // their information
-      rootObject.joints = jointObjects
-      rootObject.boned = boneObjects
-
-      return rootObject;
+      return jointObj;
     }
+    _buildJoint(rootObject, rootJoint);
+
+    // attach these to the root to use them
+    // in animation, ie attach update function to
+    // rootObject that can look up joints needed and set
+    // their information
+    rootObject.joints = jointObjects;
+    rootObject.boned = boneObjects;
+
+    return rootObject;
   }
 
   /**

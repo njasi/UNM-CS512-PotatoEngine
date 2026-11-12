@@ -100,7 +100,7 @@ Material getMaterial(int matId) {
 
 // check if a material id is valid
 bool isValidMatId(int matId) {
-  return !((matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= MAX_MATERIALS);
+  return !((matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= u_materialCount);
 }
 
 //////////////////
@@ -578,9 +578,9 @@ vec3 traceShadow(HitData hit, Object light) {
       transmittance *= blocker.color;
     }
 
-    // if getting dim just give up
+    // if getting dim just give up and return the transmittince early
     if(max(transmittance.r, max(transmittance.g, transmittance.b)) < 0.01f) {
-      return vec3(1.0f, 0, 0);
+      break;
     }
 
     lightDist -= blocker.t + 0.001f;

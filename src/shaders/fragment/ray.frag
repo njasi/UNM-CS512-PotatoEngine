@@ -68,14 +68,35 @@ const int GLASS_MODE_NONE = 3;
 struct Material {
   vec4 ka; // w unused
   vec4 kd; // w unused
-  vec4 ks; // w unused
+  vec4 ks; // w unused 
   vec4 optics; // specular, refractiveIndex, reflectivity
-  // textures? => maybe shove texuture ids into the unused ws?
-  // albedo (with transparency), 
-  // => this could be an emission map if the object is in the light block
-  // normals or bump map?, 
-  // specular map?
+  uvec4 textures; // be smart using bytes here...
+  // can probably shove texture type, texture number into a small region of unsigned int
+  // probably use it byte by byte, allows 256 textures + 256 types per 16 bits.
+  // this adds up to 8 textures + types per mat. should be sufficient for normal usage
+  // tbh dont need to use a uvec4 here, I just want to keep it standard with the 
+  // other layouts
+  // perhaps 2 4 bit types of textures and then 4 bit types of functions ie function that
+  // highly reduces the space available though
+
+  // maybe a: 1 bit, b: 3: bits, c: 4 bits, d: 8 bits 
+  //  a: is function / texture
+  //  b: blend mode (3 bit => 8 options)  additive, max, multiply etc
+  //  c: texture / function type (4 bit => 16 options)  albedo, normal, bump, displacement, specular, optical maps...
+  //  d: texture / function num (8 bit => 256 options)
+  // it would be a little annoying to unpack these but with some proper bitshifts can probaly work out fine
+  // bitshifting is very fast but wonder if there is a way to keep these shited values cached so it doesnt
+  // have to be redone every time....
+  // all this is fun to think abt but i can probably just double the size of the struct tbh lol.
+  // 128 materials is still a lot and thats only the external ones...
+
+  // tbh also could combine ka / kd by transforming them using the same packing technique.
+  // ie 2 16 bit floats in one 32 bit float. would still be a good range (espically for colors)
+  // not particularly worth it but still a notable optimization option here.
+  // same could be done for objects to shove a bunch of objects into a block, but its 
+  // probably besy to use 
 };
+
 
 // should allow materials calculated in the shader as well
 // perhaps use negative value in obj.meta.y to signal to the shader? 
@@ -106,6 +127,28 @@ Material getMaterial(int matId) {
 // check if a material id is valid
 bool isValidMatId(int matId) {
   return !((matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= u_materialCount);
+}
+
+// calculate a material function or evaluate a textured material at a given uv
+Material calculateMaterial(int matId, vec2 uv){
+  // return ;
+
+  Material selected;
+  if(!isValidMatId(matId)){
+    // get default internal material as a fallback
+    // TODO: make the default internal material
+    selected = getMaterial(-1);
+  } else{
+    selected = getMaterial(matId);
+  }
+
+
+  // TODO apply texture information or function based on the type indicated...
+  //      hmm probably make this return the start of a hitdata or take in a hitdata
+  //      rather than returning a mat....
+
+
+  return selected;
 }
 
 //////////////////

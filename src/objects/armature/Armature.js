@@ -264,7 +264,8 @@ export class Armature {
     // rootObject that can look up joints needed and set
     // their information
     rootObject.joints = jointObjects;
-    rootObject.boned = boneObjects;
+    rootObject.bones = boneObjects;
+    rootObject.setUpdateCB(this._updateSceneObjectTransforms(this));
 
     return rootObject;
   }
@@ -319,5 +320,22 @@ export class Armature {
     bone.rotation = [rotationX, rotationY, 0];
 
     return bone;
+  }
+
+  /**
+   * Function to attach to the root scene object
+   * in the scene object representation which updates the
+   * positions of all joints to match the data in this armature rep
+   *
+   * Ie you update the armature rep then you update the sceneObject....
+   *
+   * @param {Armature} armature the armature to refer to in updates since we rebind this when attaching to the scene object
+   */
+  _updateSceneObjectTransforms(armature) {
+    for (const [jointId, jointObject] of this.joints) {
+      const joint = armature.getJoint(jointId);
+      jointObject.rotation = [...joint.rotation];
+      jointObject.position = [...joint.position];
+    }
   }
 }

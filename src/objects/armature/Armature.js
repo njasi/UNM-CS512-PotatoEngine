@@ -290,6 +290,10 @@ export default class Armature {
           continue;
         }
 
+        // TODO: bones should stretch or shrink based on the changes
+        //       in joint positions, should mean scale on the z axis
+        //       with a corresponding translation 
+
         jointObj.position = [...joint.position];
         jointObj.rotation = [...joint.rotation];
       }

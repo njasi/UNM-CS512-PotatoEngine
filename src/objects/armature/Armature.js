@@ -170,7 +170,6 @@ export default class Armature {
     rootJointId = this.rootJointId,
   } = {}) {
     this.validate();
-    console.log("rootLabel", prefix + "ROOT" + this.label);
     // the parent of all other objects
     const rootObject = _makeJoint(
       prefix + "ROOT" + this.label,
@@ -203,8 +202,6 @@ export default class Armature {
 
       visitedJoints.add(joint.id);
 
-      console.log("label joint ", joint.id, prefix + joint.label);
-
       const jointObj = _makeJoint(
         prefix + joint.label,
         segments,
@@ -217,7 +214,7 @@ export default class Armature {
       jointObj.rotation = [...joint.restRotation];
 
       parent.addChild(jointObj);
-      jointObjects.set(joint.id, jointObjects);
+      jointObjects.set(joint.id, jointObj);
 
       // visit the bones
       for (const boneId of joint.connectedBoneIds) {
@@ -273,25 +270,27 @@ export default class Armature {
     // rootObject that can look up joints needed and set
     // their information
     rootObject.joints = jointObjects;
-    rootObject.boned = boneObjects;
+    rootObject.bones = boneObjects;
     rootObject.setUpdateCB(this._rootObjectUpdater(this, jointObjects));
 
     return rootObject;
   }
 
-  _rootObjectUpdater(armature, jointObjects) {
+  /**
+   * Update function that the rootObject calls 
+   * @param {Armature} armature the armature structure that the scene object representation references (since context gets rebound to the scene object)
+   * @returns 
+   */
+  _rootObjectUpdater(armature) {
     return function (dt) {
-      // console.log(this)
-      for (const [jointId, jointObj] of jointObjects) {
+      for (const [jointId, jointObj] of this.joints) {
         const joint = armature.getJoint(jointId);
 
         if (jointId !== 1) {
           continue;
         }
 
-        // console.log("JOINT:", jointId, joint.rotation);
         jointObj.position = [...joint.position];
-        // console.log(jointObj.label, jointObj.rotation);
         jointObj.rotation = [...joint.rotation];
       }
     };

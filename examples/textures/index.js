@@ -309,7 +309,6 @@ function attachListeners() {
   mat2Selector.addEventListener("input", (event) => {
     selected_secondary_mat = event.target.value;
     texturedObject.materialLabelSecondary = event.target.value;
-    console.log(texturedObject);
   });
 }
 

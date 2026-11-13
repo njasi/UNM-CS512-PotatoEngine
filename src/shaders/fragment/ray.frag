@@ -32,7 +32,7 @@ uniform vec3 u_target; // essentially camera position
 uniform int u_raySamples;
 uniform int u_glassMode;
 uniform int u_maxShadowLayers;
-uniform bool u_tirShadow;
+uniform int u_shadowMode;
 
 // track the sizes of buffers, since you cant 
 // really check the buffer itself for this info
@@ -58,6 +58,11 @@ const int GLASS_MODE_DOMINANT = 0;
 const int GLASS_MODE_CONTRIBUTION = 1;
 const int GLASS_MODE_SAMPLE = 2;
 const int GLASS_MODE_NONE = 3;
+
+const int SHADOW_MODE_FAST = 0;
+const int SHADOW_MODE_FAST_GLASS = 1;
+const int SHADOW_MODE_SIMPLE_GLASS = 2;
+const int SHADOW_MODE_TIR_GLASS = 3;
 
 /////////////////////
 // MATERIAL CONFIG //
@@ -551,11 +556,15 @@ vec3 refractGlass(vec3 I, vec3 N, float eta, float cosThetaI, float etaSin2I) {
 
 // trace the shadow path and account for glassy objects
 // ie transmittance
-vec3 traceShadow(HitData hit, Object light) {
-  vec3 position = hit.point + hit.normal * 0.001f;
-  vec3 toLight = light.centerRadius.xyz - position;
+vec3 traceShadow(HitData hit, Object light, int sampleNum, int lightNum) {
+  vec3 toLight = light.centerRadius.xyz - hit.point;
   float lightDist = length(toLight);
   vec3 lightDir = toLight / lightDist;
+
+  float normalDotLight = dot(hit.normal, lightDir);
+
+  vec3 position = hit.point +
+    hit.normal * (normalDotLight >= 0.0f ? 0.001f : -0.001f);
 
   vec3 transmittance = vec3(1.f);
 
@@ -572,14 +581,14 @@ vec3 traceShadow(HitData hit, Object light) {
       break;
     }
 
-    if(!blocker.isGlass) {
+    if(u_shadowMode == SHADOW_MODE_FAST || !blocker.isGlass) {
       return vec3(0.f);
     }
 
     // NOTE: this is all pretty much copied from 
     //       the below refraction code, should it be made into a function?
     //       so i can avoid duplication?
-    vec3 N = normalize(blocker.normal);;
+    vec3 N = normalize(blocker.normal);
     vec3 I = lightDir;
 
     float n1 = 1.0f;
@@ -592,52 +601,67 @@ vec3 traceShadow(HitData hit, Object light) {
       n1 = blocker.ior;
       n2 = 1.0f;
     }
+    // add shadow mode to select fast, simple, TIR
+    if(u_shadowMode == SHADOW_MODE_FAST_GLASS) {
+      // fast mode, simply update the color when pass through glass
+      // dont bother accounting for reflection
+      // or refraction, this produces reasonable looking, but not correct
+      // color transmission
+      if(!exit) {
+        transmittance *= mix(transmittance, blocker.color, 0.5f);
+        transmittance = normalize(transmittance);
+      }
+    } else {
 
-    float eta = n1 / n2;
-    float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
+      float eta = n1 / n2;
+      float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
 
-    bool TIR = etaSin2I >= 1.0f;
+      bool TIR = etaSin2I >= 1.0f;
 
-    // TIR => no light make it through => no color shadow
-    // technically it could refract/reflect multiple times and eventually make it out
-    // but im not going to think about that here...
-    if(TIR) {
-      if(u_tirShadow) {
-        // These look ok but idk if correct...
-        // really weird effects on sphere probably best to avoid by default
-        lightDir = reflectGlass(I, N);
-        position = blocker.point + N * 0.001f;
-        // technically you should continue here but it looks much better if you 
-        // dont continue
-        continue;
-      } else {
-        return vec3(0.f);
+      // TIR => no light make it through => no color shadow
+      // technically it could refract/reflect multiple times and eventually make it out
+      // but im not going to think about that here...
+      if(TIR) {
+        if(u_shadowMode == SHADOW_MODE_TIR_GLASS) {
+          // These look ok but idk if correct...
+          // really weird effects on sphere probably best to avoid by default
+          lightDir = reflectGlass(I, N);
+          position = blocker.point + N * 0.001f;
+          // technically you should continue here but it looks much better if you 
+          // dont continue
+          continue;
+        } else {
+          return vec3(0.f);
+        }
+      }
+
+      float F = schlick(cosThetaI, n1, n2);
+      transmittance *= (1.f - F);
+
+      // NOTE: only apply the color on entry into the material
+      // only on exit doesnt look right, unsure what the difference is
+      // will have to look inito later
+      if(!exit) {
+        transmittance *= mix(vec3(1.f), blocker.color, 0.5f);
+      }
+
+      // if getting dim just give up and return the transmittince early
+      if(max(transmittance.r, max(transmittance.g, transmittance.b)) * light.options.w < 0.0001f) {
+        // this branch seems to be hit way too soon, rays are unable to pass through two glass objects with a ior 1.01
+        // except when the shadow layers are low (which is just only passing through the first object)
+        break;
       }
     }
 
-    float F = schlick(cosThetaI, n1, n2);
-    transmittance *= (1.f - F);
-
-    // NOTE: only apply the color on entry into the material
-    // only on exit doesnt look right, unsure what the difference is
-    // will have to look inito later
-    if(!exit) {
-      transmittance *= blocker.color;
-    }
-
-    // if getting dim just give up and return the transmittince early
-    if(max(transmittance.r, max(transmittance.g, transmittance.b)) * light.options.w < 0.0001f) {
-      // this branch seems to be hit way too soon, rays are unable to pass through two glass objects with a ior 1.01
-      // except when the shadow layers are low (which is just only passing through the first object)
-      break;
-    }
-
     position = blocker.point + lightDir * 0.001f;
+    // oh this wouldnt work properly since we dont always head towards the light after refraction
+    // or reflection? idk too tired to reason abt it rn
+    // am i missing the thing that stops when we reach the light did that get deleted? my head hurts
     lightDist = length(light.centerRadius.xyz - position);
   }
 
   float diff = max(dot(hit.normal, lightDir), 0.0f);
-  // light dist is changed in the loop, recalc it 
+  // light dist is changed in the loop, recalculate it 
   lightDist = length(toLight);
   float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
@@ -755,7 +779,7 @@ vec3 trace(Ray ray, int sampleNum) {
     for(int i = 0; i < u_lightCount; i++) {
       Object light = lights[i];
 
-      vec3 shadowColor = traceShadow(hit, light);
+      vec3 shadowColor = traceShadow(hit, light, sampleNum, i);
 
       vec3 lightColor = vec3(1.f);
       if(isValidMatId(light.meta.y)) {

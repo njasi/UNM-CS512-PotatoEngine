@@ -17,8 +17,8 @@ precision highp float;
 // TODO make this size dynamic to get the most out of it
 #define MAX_OBJECTS 146 
 #define MAX_LIGHTS 146
-// mat struct bytes = 64, 16384 / 64 = 256
-#define MAX_MATERIALS 256
+// mat struct bytes = 80, 16384 / 80 = 204
+#define MAX_MATERIALS 204
 // materials not provided by js, but rather defined in this shader
 // see materials section below
 #define INTERNAL_MATERIALS 3
@@ -97,7 +97,6 @@ struct Material {
   // probably besy to use 
 };
 
-
 // should allow materials calculated in the shader as well
 // perhaps use negative value in obj.meta.y to signal to the shader? 
 layout(std140) uniform materialBlock {
@@ -108,12 +107,12 @@ layout(std140) uniform materialBlock {
 // should allow me some flexibility, can probably do something similar with the objects
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
-const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
-const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
-const Material _03_diamond_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f));
+const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f), uvec4(0));
+const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f), uvec4(0));
+const Material _03_diamond_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f), uvec4(0));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect, _03_diamond_green);
 
-const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0));
+const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0), uvec4(0));
 
 // get a material by its id
 Material getMaterial(int matId) {
@@ -130,23 +129,21 @@ bool isValidMatId(int matId) {
 }
 
 // calculate a material function or evaluate a textured material at a given uv
-Material calculateMaterial(int matId, vec2 uv){
+Material calculateMaterial(int matId, vec2 uv) {
   // return ;
 
   Material selected;
-  if(!isValidMatId(matId)){
+  if(!isValidMatId(matId)) {
     // get default internal material as a fallback
     // TODO: make the default internal material
     selected = getMaterial(-1);
-  } else{
+  } else {
     selected = getMaterial(matId);
   }
-
 
   // TODO apply texture information or function based on the type indicated...
   //      hmm probably make this return the start of a hitdata or take in a hitdata
   //      rather than returning a mat....
-
 
   return selected;
 }

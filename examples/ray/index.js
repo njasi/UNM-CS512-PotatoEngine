@@ -117,7 +117,10 @@ function initSceneObjects() {
   // });
 }
 
-flight.setupMouseControls(scene);
+flight.setupMouseControls(scene, {
+  scalePitch: 1,
+  scaleYaw: -1,
+});
 const cameraCB = flight.setupKeyboardControls(scene);
 
 function updateScene(dt) {
@@ -176,10 +179,8 @@ scene.setUpdateCB(updateScene);
  */
 async function main() {
   addRayTracingRenderPass(scene, SHADER_PROGRAM_RAY);
-  addMaterials()
+  addMaterials();
   await scene.load();
-
-
 
   initSceneObjects();
   setupInputControls();

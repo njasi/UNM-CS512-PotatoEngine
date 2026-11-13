@@ -49,7 +49,7 @@ export default class RayShaderProgram extends ShaderProgram {
 
     this.maxLights = 146;
     this.maxObjects = 146;
-    this.maxMaterials = 256;
+    this.maxMaterials = 204;
   }
 
   /**

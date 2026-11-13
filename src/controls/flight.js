@@ -14,8 +14,13 @@ import { Scene } from "..";
  * @param {Scene} scene The scene to attach the controls to
  * @param {Object} [options={}]
  * @param {number} [options.sensitivity=0.005]
+ * @param {number} [options.scaleYaw=1]
+ * @param {number} [options.scalePitch=1]
  */
-export function setupMouseControls(scene, { sensitivity = 0.005 } = {}) {
+export function setupMouseControls(
+  scene,
+  { sensitivity = 0.005, scaleYaw = 1, scalePitch = 1 } = {},
+) {
   const canvas = scene.canvas;
   // Mouse and keyboard interactions
   let mouseDown = false,
@@ -54,7 +59,10 @@ export function setupMouseControls(scene, { sensitivity = 0.005 } = {}) {
     // TODO: yaw and pitch arent perfect since pitch doesnt always make you look
     //       downwards, as it depends on your yaw alignment. i dont really want to
     //       do that math rn but it should actually be a simple correction
-    scene.camera.rotate(dx * sensitivity, dy * sensitivity);
+    scene.camera.rotate(
+      dx * sensitivity * scaleYaw,
+      dy * sensitivity * scalePitch,
+    );
 
     lastX = e.clientX;
     lastY = e.clientY;

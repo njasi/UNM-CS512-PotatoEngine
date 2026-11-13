@@ -579,7 +579,7 @@ vec3 traceShadow(HitData hit, Object light) {
     // NOTE: this is all pretty much copied from 
     //       the below refraction code, should it be made into a function?
     //       so i can avoid duplication?
-    vec3 N = normalize(blocker.normal);
+    vec3 N = normalize(blocker.normal);;
     vec3 I = lightDir;
 
     float n1 = 1.0f;
@@ -626,15 +626,19 @@ vec3 traceShadow(HitData hit, Object light) {
     }
 
     // if getting dim just give up and return the transmittince early
-    if(max(transmittance.r, max(transmittance.g, transmittance.b)) < 0.01f) {
+    if(max(transmittance.r, max(transmittance.g, transmittance.b)) * light.options.w < 0.0001f) {
+      // this branch seems to be hit way too soon, rays are unable to pass through two glass objects with a ior 1.01
+      // except when the shadow layers are low (which is just only passing through the first object)
       break;
     }
 
-    lightDist -= blocker.t + 0.001f;
     position = blocker.point + lightDir * 0.001f;
+    lightDist = length(light.centerRadius.xyz - position);
   }
 
   float diff = max(dot(hit.normal, lightDir), 0.0f);
+  // light dist is changed in the loop, recalc it 
+  lightDist = length(toLight);
   float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
   return transmittance * (diff * falloff);

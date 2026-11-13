@@ -1,1 +1,0 @@
-wget https://cs512.njasi.com/media/hw4-preview.mp4

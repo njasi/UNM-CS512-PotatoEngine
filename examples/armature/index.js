@@ -119,9 +119,9 @@ const cameraCB = flight.setupKeyboardControls(scene);
 function updateScene(dt) {
   cameraCB(dt);
 
-  armature.getJoint(1).rotation[0] = scene.time / 3000
-  armature.getJoint(1).rotation[1] = scene.time / 3000
-  armature.getJoint(1).rotation[2] = scene.time / 3000
+  armature.getJoint(1).rotation[0] = scene.time / 3000;
+  armature.getJoint(1).rotation[1] = scene.time / 3000;
+  armature.getJoint(1).rotation[2] = scene.time / 3000;
 }
 
 /**

@@ -166,11 +166,11 @@ export default class Armature {
     segments = 16,
     color = rgb(0, 0, 0),
     colorJoint = rgb(255, 255, 255),
-    prefix = "",
+    prefix = "armature",
     rootJointId = this.rootJointId,
   } = {}) {
     this.validate();
-
+    console.log("rootLabel", prefix + "ROOT" + this.label);
     // the parent of all other objects
     const rootObject = _makeJoint(
       prefix + "ROOT" + this.label,
@@ -193,15 +193,17 @@ export default class Armature {
 
     /**
      * build the sceneobject joint structure
-     * @param {SceneObject} parent 
-     * @param {ArmatureJoint} joint 
+     * @param {SceneObject} parent
+     * @param {ArmatureJoint} joint
      */
-    const _buildJoint = (parent, joint) =>  {
+    const _buildJoint = (parent, joint) => {
       if (visitedJoints.has(joint.id)) {
         return;
       }
 
       visitedJoints.add(joint.id);
+
+      console.log("label joint ", joint.id, prefix + joint.label);
 
       const jointObj = _makeJoint(
         prefix + joint.label,
@@ -263,7 +265,7 @@ export default class Armature {
         }
       }
       return jointObj;
-    }
+    };
     _buildJoint(rootObject, rootJoint);
 
     // attach these to the root to use them
@@ -272,8 +274,27 @@ export default class Armature {
     // their information
     rootObject.joints = jointObjects;
     rootObject.boned = boneObjects;
+    rootObject.setUpdateCB(this._rootObjectUpdater(this, jointObjects));
 
     return rootObject;
+  }
+
+  _rootObjectUpdater(armature, jointObjects) {
+    return function (dt) {
+      // console.log(this)
+      for (const [jointId, jointObj] of jointObjects) {
+        const joint = armature.getJoint(jointId);
+
+        if (jointId !== 1) {
+          continue;
+        }
+
+        // console.log("JOINT:", jointId, joint.rotation);
+        jointObj.position = [...joint.position];
+        // console.log(jointObj.label, jointObj.rotation);
+        jointObj.rotation = [...joint.rotation];
+      }
+    };
   }
 }
 
@@ -312,8 +333,8 @@ function _makeBone(label, offset, segments, radius, color, rayObject = false) {
     return undefined;
   }
 
-  const bonePrim = generateCylinder(segments, radius, length, {
-    z_c: length / 2,
+  const bonePrim = generateCylinder(segments, radius, len, {
+    z_c: len / 2,
     bulge: 0.75,
     segments_h: 8,
   });

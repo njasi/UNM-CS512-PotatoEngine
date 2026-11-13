@@ -123,7 +123,9 @@ function updateScene(dt) {
   armature.getJoint(1).rotation[1] = scene.time / 5000
   armature.getJoint(1).rotation[2] = scene.time / 5000
 
-  console.log(armature.getJoint(1).rotation)
+  // console.log(arma)
+
+  // console.log(armature.getJoint(1).rotation)
 }
 
 /**

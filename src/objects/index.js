@@ -1,9 +1,10 @@
-export * from "./helpers.js"
-export * from "./primitives.js"
-export * from "./compositions.js"
-export * as loaders from "./loaders"
+export * from "./helpers.js";
+export * from "./primitives.js";
+export * from "./compositions.js";
+export * as loaders from "./loaders";
+export * as armature from "./armature";
 
-export {default as SceneObject} from "./SceneObject.js"
-export {default as PhysicsObject} from "./PhysicsObject.js"
-export {default as FloatingObject} from "./FloatingObject.js"
-export {default as RayObject} from "./RayObject.js"
+export { default as SceneObject } from "./SceneObject.js";
+export { default as PhysicsObject } from "./PhysicsObject.js";
+export { default as FloatingObject } from "./FloatingObject.js";
+export { default as RayObject } from "./RayObject.js";

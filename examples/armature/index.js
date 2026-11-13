@@ -4,10 +4,10 @@ import { common } from "../../src/materials";
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 import flight from "../../src/controls/flight";
+import { Armature } from "../../src/objects/armature";
 
 const scene = new Scene("glcanvas");
 scene.camera.move(0, 0, 0);
-scene.rotationX += Math.PI / 6;
 
 /**
  * Add lights to the scene
@@ -78,20 +78,34 @@ function addMaterials() {
   scene.addMaterial(common.metallic("gold", colors.gold), "phong");
 }
 
+let armature;
+/**
+ * Setup the basic armature
+ */
+function initArmatureStructure() {
+  armature = new Armature("testArmature");
+  const j0 = armature.addJoint("rootJoint", { restPosition: [0, 0, 0] });
+  const j1 = armature.addJoint("secondJoint", { restPosition: [0, 1, 0] });
+  const j2 = armature.addJoint("thirdJoint", { restPosition: [0, 1, 0] });
+
+  armature.addBone("root-second", { headJointId: j0.id, tailJointId: j1.id });
+  armature.addBone("second-third", { headJointId: j1.id, tailJointId: j2.id });
+}
+initArmatureStructure();
+
 let armatureObject;
 /**
  * Setup the scene
- * @param {string} object which object type to use, cube|sphere
  * @param {string} shader which shader to use
  */
-function initSceneObjects(object = "cube", shader = "phong") {
+function initSceneObjects(shader = "phong") {
   scene.removeObject("armatureObject", { removeChildren: true });
 
   // TODO setup armature structure
+  armatureObject = armature.generateArmatureObject();
 
-  armatureObject = armatureObject.materialLabel = "bricks_albedo_only";
-  armatureObject.materialLabelSecondary = selected_secondary_mat;
-  scene.addObject(armatureObject, shader);
+  armatureObject.materialLabel = "flat";
+  scene.addObject(armatureObject, shader, "flat", { addChildren: true });
   armatureObject.position = [0, 0, 0];
   armatureObject.lightingRadius = 10;
 }
@@ -104,6 +118,12 @@ const cameraCB = flight.setupKeyboardControls(scene);
  */
 function updateScene(dt) {
   cameraCB(dt);
+
+  armature.getJoint(1).rotation[0] = scene.time / 5000
+  armature.getJoint(1).rotation[1] = scene.time / 5000
+  armature.getJoint(1).rotation[2] = scene.time / 5000
+
+  console.log(armature.getJoint(1).rotation)
 }
 
 /**

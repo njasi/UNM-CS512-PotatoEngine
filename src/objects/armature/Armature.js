@@ -3,6 +3,7 @@
  */
 
 import { vec3 } from "../../util";
+import { rgb } from "../../util/color";
 import { generateCylinder, generateSphere } from "../primitives";
 import SceneObject from "../SceneObject";
 import ArmatureBone from "./ArmatureBone";
@@ -24,7 +25,7 @@ import ArmatureJoint from "./ArmatureJoint";
  *
  * @class
  */
-export class Armature {
+export default class Armature {
   /**
    * make a new armature structue
    *
@@ -40,6 +41,7 @@ export class Armature {
     // easy with them lol
     this.jointsById = new Map();
     this.bonesById = new Map();
+    this.rootJointId = 0;
     this.nextJointId = 0;
     this.nextBoneId = 0;
   }
@@ -155,7 +157,7 @@ export class Armature {
    * @param {number[]} [options.color=hsl(0, 0%, 0%)]
    * @param {number[]} [options.colorJoint=rgb(255, 255, 255)]
    * @param {string} [options.prefix=""]
-   * @param {number} [options.rootJointId=this.headJointId]
+   * @param {number} [options.rootJointId=this.rootJointId]
    * @returns
    */
   generateArmatureObject({
@@ -165,12 +167,12 @@ export class Armature {
     color = rgb(0, 0, 0),
     colorJoint = rgb(255, 255, 255),
     prefix = "",
-    rootJointId = this.headJointId,
+    rootJointId = this.rootJointId,
   } = {}) {
     this.validate();
 
     // the parent of all other objects
-    const rootObject = this._makeJoint(
+    const rootObject = _makeJoint(
       prefix + "ROOT" + this.label,
       2,
       0.001,
@@ -189,14 +191,19 @@ export class Armature {
     const visitedJoints = new Set();
     const visitedBones = new Set();
 
-    function _buildJoint(parent, joint) {
+    /**
+     * build the sceneobject joint structure
+     * @param {SceneObject} parent 
+     * @param {ArmatureJoint} joint 
+     */
+    const _buildJoint = (parent, joint) =>  {
       if (visitedJoints.has(joint.id)) {
         return;
       }
 
       visitedJoints.add(joint.id);
 
-      const jointObj = this._makeJoint(
+      const jointObj = _makeJoint(
         prefix + joint.label,
         segments,
         radius,
@@ -205,7 +212,7 @@ export class Armature {
       );
 
       jointObj.position = [...joint.restPosition];
-      jointObject.rotation = [...joint.restAngle];
+      jointObj.rotation = [...joint.restRotation];
 
       parent.addChild(jointObj);
       jointObjects.set(joint.id, jointObjects);
@@ -234,7 +241,7 @@ export class Armature {
           throw new Error(`Bone ${boneId} has a missing endpoint :(`);
         }
 
-        const boneObj = this._makeBone(
+        const boneObj = _makeBone(
           prefix + bone.label,
           endJoint.restPosition,
           segments,
@@ -268,56 +275,56 @@ export class Armature {
 
     return rootObject;
   }
+}
 
-  /**
-   * make a joint scene object
-   *
-   * @param {string} label
-   * @param {number} segments
-   * @param {number} radius
-   * @param {*} color
-   * @param {boolean} [rayObject=false]
-   * @returns {SceneObject}
-   */
-  _makeJoint(label, segments, radius, color, rayObject = false) {
-    const sphere = generateSphere(segments, radius);
-    sphere.generateColors(color);
-    return sphere.toSceneObject(label);
+/**
+ * make a joint scene object
+ *
+ * @param {string} label
+ * @param {number} segments
+ * @param {number} radius
+ * @param {*} color
+ * @param {boolean} [rayObject=false]
+ * @returns {SceneObject}
+ */
+function _makeJoint(label, segments, radius, color, rayObject = false) {
+  const sphere = generateSphere(segments, radius);
+  sphere.generateColors(color);
+  return sphere.toSceneObject(label);
+}
+
+/**
+ * make a bone scene object
+ *
+ * @param {string} label
+ * @param {number[]} offset
+ * @param {number} segments
+ * @param {number} radius
+ * @param {number[]} color
+ * @param {boolean} [rayObject=false]
+ */
+function _makeBone(label, offset, segments, radius, color, rayObject = false) {
+  const [x, y, z] = offset;
+  const len = Math.hypot(x, y, z);
+
+  if (len == 0) {
+    // oops all joint
+    return undefined;
   }
 
-  /**
-   * make a bone scene object
-   *
-   * @param {string} label
-   * @param {number[]} offset
-   * @param {number} segments
-   * @param {number} radius
-   * @param {number[]} color
-   * @param {boolean} [rayObject=false]
-   */
-  _makeBone(label, offset, segments, radius, color, rayObject = false) {
-    const [x, y, z] = offset;
-    const len = Math.hypot(x, y, z);
+  const bonePrim = generateCylinder(segments, radius, length, {
+    z_c: length / 2,
+    bulge: 0.75,
+    segments_h: 8,
+  });
+  bonePrim.generateColors(color);
+  const bone = bonePrim.toSceneObject(label);
 
-    if (len == 0) {
-      // oops all joint
-      return undefined;
-    }
+  // this should be just like the bvh loader rotation
+  // but im not sure
+  const rotationX = -Math.atan2(y, Math.hypot(x, z));
+  const rotationY = Math.atan2(x, z);
+  bone.rotation = [rotationX, rotationY, 0];
 
-    const bonePrim = generateCylinder(segments, radius, length, {
-      z_c: length / 2,
-      bulge: 0.75,
-      segments_h: 8,
-    });
-    bonePrim.generateColors(color);
-    const bone = bonePrim.toSceneObject(label);
-
-    // this should be just like the bvh loader rotation
-    // but im not sure
-    const rotationX = -Math.atan2(y, Math.hypot(x, z));
-    const rotationY = Math.atan2(x, z);
-    bone.rotation = [rotationX, rotationY, 0];
-
-    return bone;
-  }
+  return bone;
 }

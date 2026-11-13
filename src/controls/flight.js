@@ -22,14 +22,31 @@ export function setupMouseControls(scene, { sensitivity = 0.005 } = {}) {
     lastX,
     lastY;
 
-  canvas.addEventListener("mousedown", (e) => {
+  // take over touch events
+  canvas.style.touchAction = "none";
+
+  // should also cover mouse events
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!e.isPrimary || e.button !== 0) {
+      return;
+    }
+
     mouseDown = true;
     lastX = e.clientX;
     lastY = e.clientY;
+
+    canvas.setPointerCapture(e.pointerId);
   });
-  canvas.addEventListener("mouseup", () => (mouseDown = false));
-  canvas.addEventListener("mouseleave", () => (mouseDown = false));
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("pointerup", () => {
+    mouseDown = false;
+  });
+  canvas.addEventListener("pointercancel", () => {
+    mouseDown = false;
+  });
+  canvas.addEventListener("lostpointercapture", () => {
+    mouseDown = false;
+  });
+  canvas.addEventListener("pointermove", (e) => {
     if (!mouseDown) return;
     let dx = e.clientX - lastX;
     let dy = e.clientY - lastY;
@@ -141,7 +158,6 @@ export function setupKeyboardControls(
     let x = strafe * Math.cos(yaw) + forward * Math.sin(yaw);
     let y = vertical;
     let z = -strafe * Math.sin(yaw) + forward * Math.cos(yaw);
-
 
     let adjustedSpeed = pressed.has("alt") ? speed * 2 : speed;
     const target = [x * adjustedSpeed, y * adjustedSpeed, z * adjustedSpeed];

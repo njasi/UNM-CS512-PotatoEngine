@@ -84,10 +84,48 @@ function parseProperties(properties) {
 
 /**
  * Figure out the property type from the target
- * @param {*} target 
- * @param {string} property 
+ * @param {*} target
+ * @param {string} property
+ * @param {*} forceType
  */
-function parsePropertyType(target, property) {}
+function parsePropertyType(target, property, forceType = undefined) {
+  if (forceType) {
+    return forceType;
+  }
+
+  if (PROPERTY_TYPES[property]) {
+    return PROPERTY_TYPES[property];
+  }
+
+  const val = target[property];
+  switch (typeof val) {
+    case "boolean":
+      return "boolean";
+    case "number":
+      return "number";
+    case Array.isArray(value) && val.length == 3:
+      return TYPE_3TUPLE_SELECTOR;
+  }
+
+  return "string";
+}
+
+/**
+ * Helper to grab the stuff from scene so its clean
+ * 
+ * @param {Scene} scene 
+ * @param {string} type 
+ */
+function getOptionsFromScene(scene, type){
+  switch(type){
+    case TYPE_MATERIAL_SELECTOR:
+      return scene.materials.entries()
+    case TYPE_OBJECT_SELECTOR:
+      return scene.objects.entries()
+    case TYPE_PROGRAM_SELECTOR:
+      return scene.programs.entries()
+  }
+}
 
 /**
  * Iterate through the properties noted for the target object
@@ -106,7 +144,7 @@ function parsePropertyType(target, property) {}
  *
  * @param {*} target
  * @param {*} properties
- * @param {*} scene
+ * @param {Scene} scene
  */
 function createPanel(target, properties, scene) {
   const panel = document.getElementById("editor-panel-body");

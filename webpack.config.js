@@ -1,7 +1,16 @@
 const path = require("path");
 
 const examplesDir = path.resolve(__dirname, "examples");
-const exampleNames = ["bvh", "prims", "arm", "cannon", "renderpasses", "textures", "ray"];
+const exampleNames = [
+  "bvh",
+  "prims",
+  "arm",
+  "cannon",
+  "renderpasses",
+  "textures",
+  "ray",
+  "armature",
+];
 
 const configs = exampleNames.map((name) => ({
   name,

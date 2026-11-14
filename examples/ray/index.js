@@ -60,10 +60,11 @@ function initSceneObjects() {
     position: [0, 0, -5],
     materialLabel: MAT_BLUE_GLASS,
   });
-  // let cube3 = new RayObject("testCube3", RayObject.OBJECT_TYPE_CUBE, {
-  //   halfSize: 2,
-  //   position: [0, 0, -10],
-  // });
+  let cube3 = new RayObject("testCube3", RayObject.OBJECT_TYPE_CUBE, {
+    halfSize: 2,
+    position: [4, -1, -10],
+    materialIndex:-3
+  });
   let cube2 = new RayObject("testCube2", RayObject.OBJECT_TYPE_CUBE, {
     halfSize: 1,
     position: [10, 0, -5],
@@ -81,15 +82,15 @@ function initSceneObjects() {
     lightPower: 3,
   });
 
-  lightSphere2 = new RayObject(
-    "testLightSphere2",
-    RayObject.OBJECT_TYPE_SPHERE,
-    {
-      radius: 0.1,
-      light: true,
-      position: [0, 2, -10],
-    },
-  );
+  // lightSphere2 = new RayObject(
+  //   "testLightSphere2",
+  //   RayObject.OBJECT_TYPE_SPHERE,
+  //   {
+  //     radius: 0.1,
+  //     light: true,
+  //     position: [0, 2, -10],
+  //   },
+  // );
 
   scene.addObject(sphere, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
@@ -106,18 +107,21 @@ function initSceneObjects() {
   scene.addObject(lightSphere, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
-  scene.addObject(lightSphere2, SHADER_PROGRAM_RAY, undefined, {
-    passes: [RENDER_PASS_RAY],
-  });
+  // scene.addObject(lightSphere2, SHADER_PROGRAM_RAY, undefined, {
+  //   passes: [RENDER_PASS_RAY],
+  // });
   scene.addObject(cube2, SHADER_PROGRAM_RAY, undefined, {
     passes: [RENDER_PASS_RAY],
   });
-  // scene.addObject(cube3, SHADER_PROGRAM_RAY, undefined, {
-  //   passes: [RENDER_PASS_RAY],
-  // });
+  scene.addObject(cube3, SHADER_PROGRAM_RAY, undefined, {
+    passes: [RENDER_PASS_RAY],
+  });
 }
 
-flight.setupMouseControls(scene);
+flight.setupMouseControls(scene, {
+  scalePitch: 1,
+  scaleYaw: -1,
+});
 const cameraCB = flight.setupKeyboardControls(scene);
 
 function updateScene(dt) {
@@ -126,11 +130,11 @@ function updateScene(dt) {
   sphere.position[0] = 5 * Math.sin(scene.time / 500);
   sphere.position[1] = 5 * -Math.cos(scene.time / 500);
 
-  lightSphere2.position = [
-    -scene.camera.x,
-    -scene.camera.y - 1,
-    -scene.camera.z,
-  ];
+  // lightSphere2.position = [
+  //   -scene.camera.x,
+  //   -scene.camera.y - 1,
+  //   -scene.camera.z,
+  // ];
 }
 
 /**
@@ -176,10 +180,8 @@ scene.setUpdateCB(updateScene);
  */
 async function main() {
   addRayTracingRenderPass(scene, SHADER_PROGRAM_RAY);
-  addMaterials()
+  addMaterials();
   await scene.load();
-
-
 
   initSceneObjects();
   setupInputControls();

@@ -17,8 +17,8 @@ precision highp float;
 // TODO make this size dynamic to get the most out of it
 #define MAX_OBJECTS 146 
 #define MAX_LIGHTS 146
-// mat struct bytes = 64, 16384 / 64 = 256
-#define MAX_MATERIALS 256
+// mat struct bytes = 80, 16384 / 80 = 204
+#define MAX_MATERIALS 204
 // materials not provided by js, but rather defined in this shader
 // see materials section below
 #define INTERNAL_MATERIALS 3
@@ -32,7 +32,7 @@ uniform vec3 u_target; // essentially camera position
 uniform int u_raySamples;
 uniform int u_glassMode;
 uniform int u_maxShadowLayers;
-uniform bool u_tirShadow;
+uniform int u_shadowMode;
 
 // track the sizes of buffers, since you cant 
 // really check the buffer itself for this info
@@ -40,6 +40,10 @@ uniform bool u_tirShadow;
 uniform int u_objectCount;
 uniform int u_lightCount;
 uniform int u_materialCount;
+
+// 2D sampler usage once I implement it in here
+// uniform sampler2DArray u_textures;
+// vec4 color = texture(u_textures, vec3(uv, float(layerIndex)));
 
 out vec4 fragColor;
 
@@ -55,6 +59,11 @@ const int GLASS_MODE_CONTRIBUTION = 1;
 const int GLASS_MODE_SAMPLE = 2;
 const int GLASS_MODE_NONE = 3;
 
+const int SHADOW_MODE_FAST = 0;
+const int SHADOW_MODE_FAST_GLASS = 1;
+const int SHADOW_MODE_SIMPLE_GLASS = 2;
+const int SHADOW_MODE_TIR_GLASS = 3;
+
 /////////////////////
 // MATERIAL CONFIG //
 /////////////////////
@@ -64,13 +73,33 @@ const int GLASS_MODE_NONE = 3;
 struct Material {
   vec4 ka; // w unused
   vec4 kd; // w unused
-  vec4 ks; // w unused
+  vec4 ks; // w unused 
   vec4 optics; // specular, refractiveIndex, reflectivity
-  // textures? => maybe shove texuture ids into the unused ws?
-  // albedo (with transparency), 
-  // => this could be an emission map if the object is in the light block
-  // normals or bump map?, 
-  // specular map?
+  uvec4 textures; // be smart using bytes here...
+  // can probably shove texture type, texture number into a small region of unsigned int
+  // probably use it byte by byte, allows 256 textures + 256 types per 16 bits.
+  // this adds up to 8 textures + types per mat. should be sufficient for normal usage
+  // tbh dont need to use a uvec4 here, I just want to keep it standard with the 
+  // other layouts
+  // perhaps 2 4 bit types of textures and then 4 bit types of functions ie function that
+  // highly reduces the space available though
+
+  // maybe a: 1 bit, b: 3: bits, c: 4 bits, d: 8 bits 
+  //  a: is function / texture
+  //  b: blend mode (3 bit => 8 options)  additive, max, multiply etc
+  //  c: texture / function type (4 bit => 16 options)  albedo, normal, bump, displacement, specular, optical maps...
+  //  d: texture / function num (8 bit => 256 options)
+  // it would be a little annoying to unpack these but with some proper bitshifts can probaly work out fine
+  // bitshifting is very fast but wonder if there is a way to keep these shited values cached so it doesnt
+  // have to be redone every time....
+  // all this is fun to think abt but i can probably just double the size of the struct tbh lol.
+  // 128 materials is still a lot and thats only the external ones...
+
+  // tbh also could combine ka / kd by transforming them using the same packing technique.
+  // ie 2 16 bit floats in one 32 bit float. would still be a good range (espically for colors)
+  // not particularly worth it but still a notable optimization option here.
+  // same could be done for objects to shove a bunch of objects into a block, but its 
+  // probably besy to use 
 };
 
 // should allow materials calculated in the shader as well
@@ -83,12 +112,12 @@ layout(std140) uniform materialBlock {
 // should allow me some flexibility, can probably do something similar with the objects
 // although objects that are very advanced might make more sense in a second renderpass?
 // internal default mat, just a solid grey (id = -1)
-const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f));
-const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f));
-const Material _03_diamond_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f));
+const Material _01_default = Material(vec4(0.6f), vec4(0.8f), vec4(0.2f), vec4(0.f), uvec4(0));
+const Material _02_reflect = Material(vec4(1.f), vec4(0.8f), vec4(0.2f), vec4(0.f, 0.f, .8f, 0.f), uvec4(0));
+const Material _03_diamond_green = Material(vec4(0.f, 0.8f, 0.f, 0.f), vec4(0.f, 0.8f, 0, 0), vec4(0.2f), vec4(0.f, 2.42f, 0.f, 0.f), uvec4(0));
 const Material shaderMaterials[INTERNAL_MATERIALS] = Material[INTERNAL_MATERIALS](_01_default, _02_reflect, _03_diamond_green);
 
-const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0));
+const Material NOTHING_MATERIAL = Material(vec4(0), vec4(0), vec4(0), vec4(0), uvec4(0));
 
 // get a material by its id
 Material getMaterial(int matId) {
@@ -102,6 +131,26 @@ Material getMaterial(int matId) {
 // check if a material id is valid
 bool isValidMatId(int matId) {
   return !((matId < 0 && matId < -INTERNAL_MATERIALS) || matId >= u_materialCount);
+}
+
+// calculate a material function or evaluate a textured material at a given uv
+Material calculateMaterial(int matId, vec2 uv) {
+  // return ;
+
+  Material selected;
+  if(!isValidMatId(matId)) {
+    // get default internal material as a fallback
+    // TODO: make the default internal material
+    selected = getMaterial(-1);
+  } else {
+    selected = getMaterial(matId);
+  }
+
+  // TODO apply texture information or function based on the type indicated...
+  //      hmm probably make this return the start of a hitdata or take in a hitdata
+  //      rather than returning a mat....
+
+  return selected;
 }
 
 //////////////////
@@ -507,11 +556,15 @@ vec3 refractGlass(vec3 I, vec3 N, float eta, float cosThetaI, float etaSin2I) {
 
 // trace the shadow path and account for glassy objects
 // ie transmittance
-vec3 traceShadow(HitData hit, Object light) {
-  vec3 position = hit.point + hit.normal * 0.001f;
-  vec3 toLight = light.centerRadius.xyz - position;
+vec3 traceShadow(HitData hit, Object light, int sampleNum, int lightNum) {
+  vec3 toLight = light.centerRadius.xyz - hit.point;
   float lightDist = length(toLight);
   vec3 lightDir = toLight / lightDist;
+
+  float normalDotLight = dot(hit.normal, lightDir);
+
+  vec3 position = hit.point +
+    hit.normal * (normalDotLight >= 0.0f ? 0.001f : -0.001f);
 
   vec3 transmittance = vec3(1.f);
 
@@ -528,7 +581,7 @@ vec3 traceShadow(HitData hit, Object light) {
       break;
     }
 
-    if(!blocker.isGlass) {
+    if(u_shadowMode == SHADOW_MODE_FAST || !blocker.isGlass) {
       return vec3(0.f);
     }
 
@@ -548,49 +601,68 @@ vec3 traceShadow(HitData hit, Object light) {
       n1 = blocker.ior;
       n2 = 1.0f;
     }
+    // add shadow mode to select fast, simple, TIR
+    if(u_shadowMode == SHADOW_MODE_FAST_GLASS) {
+      // fast mode, simply update the color when pass through glass
+      // dont bother accounting for reflection
+      // or refraction, this produces reasonable looking, but not correct
+      // color transmission
+      if(!exit) {
+        transmittance *= mix(transmittance, blocker.color, 0.5f);
+        transmittance = normalize(transmittance);
+      }
+    } else {
 
-    float eta = n1 / n2;
-    float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
+      float eta = n1 / n2;
+      float etaSin2I = eta * eta * (1.0f - cosThetaI * cosThetaI);
 
-    bool TIR = etaSin2I >= 1.0f;
+      bool TIR = etaSin2I >= 1.0f;
 
-    // TIR => no light make it through => no color shadow
-    // technically it could refract/reflect multiple times and eventually make it out
-    // but im not going to think about that here...
-    if(TIR) {
-      if(u_tirShadow) {
-        // These look ok but idk if correct...
-        // really weird effects on sphere probably best to avoid by default
-        lightDir = reflectGlass(I, N);
-        position = blocker.point + N * 0.001f;
-        // technically you should continue here but it looks much better if you 
-        // dont continue
-        continue;
-      } else {
-        return vec3(0.f);
+      // TIR => no light make it through => no color shadow
+      // technically it could refract/reflect multiple times and eventually make it out
+      // but im not going to think about that here...
+      if(TIR) {
+        if(u_shadowMode == SHADOW_MODE_TIR_GLASS) {
+          // These look ok but idk if correct...
+          // really weird effects on sphere probably best to avoid by default
+          lightDir = reflectGlass(I, N);
+          position = blocker.point + N * 0.001f;
+          // technically you should continue here but it looks much better if you 
+          // dont continue
+          continue;
+        } else {
+          return vec3(0.f);
+        }
+      }
+
+      float F = schlick(cosThetaI, n1, n2);
+      transmittance *= (1.f - F);
+
+      // NOTE: only apply the color on entry into the material
+      // only on exit doesnt look right, unsure what the difference is
+      // will have to look inito later
+      if(!exit) {
+        transmittance *= mix(vec3(1.f), blocker.color, 0.5f);
+      }
+
+      // if getting dim just give up and return the transmittince early
+      if(max(transmittance.r, max(transmittance.g, transmittance.b)) * light.options.w < 0.0001f) {
+        // this branch seems to be hit way too soon, rays are unable to pass through two glass objects with a ior 1.01
+        // except when the shadow layers are low (which is just only passing through the first object)
+        break;
       }
     }
 
-    float F = schlick(cosThetaI, n1, n2);
-    transmittance *= (1.f - F);
-
-    // NOTE: only apply the color on entry into the material
-    // only on exit doesnt look right, unsure what the difference is
-    // will have to look inito later
-    if(!exit) {
-      transmittance *= blocker.color;
-    }
-
-    // if getting dim just give up and return the transmittince early
-    if(max(transmittance.r, max(transmittance.g, transmittance.b)) < 0.01f) {
-      break;
-    }
-
-    lightDist -= blocker.t + 0.001f;
     position = blocker.point + lightDir * 0.001f;
+    // oh this wouldnt work properly since we dont always head towards the light after refraction
+    // or reflection? idk too tired to reason abt it rn
+    // am i missing the thing that stops when we reach the light did that get deleted? my head hurts
+    lightDist = length(light.centerRadius.xyz - position);
   }
 
   float diff = max(dot(hit.normal, lightDir), 0.0f);
+  // light dist is changed in the loop, recalculate it 
+  lightDist = length(toLight);
   float falloff = 1.0f / (1.0f + 0.1f * lightDist * lightDist);
 
   return transmittance * (diff * falloff);
@@ -707,7 +779,7 @@ vec3 trace(Ray ray, int sampleNum) {
     for(int i = 0; i < u_lightCount; i++) {
       Object light = lights[i];
 
-      vec3 shadowColor = traceShadow(hit, light);
+      vec3 shadowColor = traceShadow(hit, light, sampleNum, i);
 
       vec3 lightColor = vec3(1.f);
       if(isValidMatId(light.meta.y)) {

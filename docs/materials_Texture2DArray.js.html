@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: materials/Texture2DArray.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: materials/Texture2DArray.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/** @module materials/Texture2DArray */
+
+/**
+ * Convenience representation of a 2D texture array
+ * 
+ * @class
+ * @alias module:materials/Texture2DArray
+ */
+export default class Texture2DArray {
+  /**
+   * @param {WebGL2RenderingContext} gl
+   * @param {number} width
+   * @param {number} height
+   * @param {number} layers
+   * @param {Object} [options]
+   * @param {boolean} [options.flipY=true]
+   * @param {boolean} [options.mipmaps=true]
+   * @param {*} [options.minFilter=gl.LINEAR]
+   * @param {*} [options.magFilter=gl.LINEAR]
+   * @param {*} [options.wrapS=gl.REPEAT]
+   * @param {*} [options.wrapT=gl.REPEAT]
+   * @param {boolean} [options.animated=false]
+   */
+  constructor(
+    gl,
+    width,
+    height,
+    layers,
+    {
+      flipY = true,
+      mipmaps = true,
+      minFilter = gl.LINEAR,
+      magFilter = gl.LINEAR,
+      wrapS = gl.REPEAT,
+      wrapT = gl.REPEAT,
+      animated = false,
+    } = {},
+  ) {
+    if (
+      !Number.isInteger(width) ||
+      width &lt; 1 ||
+      !Number.isInteger(height) ||
+      height &lt; 1 ||
+      !Number.isInteger(layers) ||
+      layers &lt; 1
+    ) {
+      throw new Error("width, height, and layers must be positive integers");
+    }
+
+    this._gl = gl;
+    this.width = width;
+    this.height = height;
+    this.layers = layers;
+    this.flipY = flipY;
+    this.mipmaps = mipmaps;
+    this.minFilter = minFilter;
+    this.magFilter = magFilter;
+    this.wrapS = wrapS;
+    this.wrapT = wrapT;
+    this.animated = animated;
+    this._sources = new Map();
+
+    this.texture = gl.createTexture();
+    if (!this.texture) {
+      throw new Error("Failed to create WebGL texture array");
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture);
+    // 3D texture, empty layers start as 0s
+    // in contrast to the normal 2d textures we rely on all
+    // the layers being the same size so we dont start with a
+    // filler 1x1 placeholder
+    gl.texImage3D(
+      gl.TEXTURE_2D_ARRAY,
+      0,
+      gl.RGBA8,
+      width,
+      height,
+      layers,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      null,
+    );
+
+    gl.texParameteri(
+      gl.TEXTURE_2D_ARRAY,
+      gl.TEXTURE_MAG_FILTER,
+      this.magFilter,
+    );
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, this.wrapS);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, this.wrapT);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+    if (mipmaps) {
+      gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    }
+  }
+
+
+  /**
+   * Load the image at the url into this texture at the specified layer
+   * @param {string} url 
+   * @param {number} layer 
+   */
+  load(url, layer) {
+    this._checkLayer(layer);
+
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+
+      image.onload = () => {
+        try {
+          this.upload(image, layer);
+          this.loaded = true;
+          resolve(this);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      image.onerror = () => reject(new Error(`Failed to load texture: ${url}`));
+      image.src = url;
+    });
+  }
+
+
+  /**
+   * parse some valid source to the texture layer
+   *  - dimensions must match the preset width and height...
+   *  - could probably get around this by padding black or smth
+   *    but should be fine working with it if i choose a reasonable
+   *    size to use overall...
+   * @param {TexImageSource} source
+   * @param {number} layer
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
+   */
+  upload(source, layer, gl = this._gl) {
+    this._checkLayer(layer);
+
+    const size = this._sourceSize(source);
+    if (size.width !== this.width || size.height !== this.height) {
+      throw new Error(
+        `Source must be ${this.width}x${this.height}; got ${size.width}x${size.height}`,
+      );
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture);
+
+    const previousFlipY = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, this.flipY);
+
+    try {
+      gl.texSubImage3D(
+        gl.TEXTURE_2D_ARRAY,
+        0,
+        0,
+        0,
+        layer,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        source,
+      );
+    } finally {
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlipY);
+    }
+
+    this._sources.set(layer, source);
+
+    if (this.mipmaps) {
+      gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+      // note: leave out the black mipmaps, dont think
+      //       ill need this feature. is in tex2d if smth comes up tho
+    }
+  }
+
+  /**
+   * Size helper since the attributes vary based on type
+   * notably: images, video, html element
+   * @param {TexImageSource} source 
+   * @returns {{width:number, height:number}}
+   */
+  _sourceSize(source) {
+    return {
+      width: source.width ?? source.videoWidth ?? source.naturalWidth,
+      height: source.height ?? source.videoHeight ?? source.naturalHeight,
+    };
+  }
+
+  /**
+   * Validate that a layer number is in range
+   * @param {number} layer 
+   */
+  _checkLayer(layer) {
+    if (!Number.isInteger(layer) || layer &lt; 0 || layer >= this.layers) {
+      throw new RangeError(
+        `Layer must be an integer from 0 to ${this.layers - 1}`,
+      );
+    }
+  }
+
+  /**
+   * bind this texture to a texture unit
+   * @param {*} unit the unit
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
+   */
+  bind(unit = 0, gl = this._gl) {
+
+    // TODO: come back here and allow indv layers to be animated
+    //       rather than all of them being updated...
+    if (this.animated) {
+      for (const [layer, source] of this._sources) {
+        this.upload(source, layer);
+      }
+    }
+
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture);
+  }
+
+  /**
+   * Clean up the allocated things
+   * @param {WebGL2RenderingContext} [gl=this._gl] 
+   */
+  dispose(gl = this._gl) {
+    if (this.texture) {
+      gl.deleteTexture(this.texture);
+      this.texture = null;
+      this._sources.clear();
+    }
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_armature.Armature.html">Armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Nov 12 2026 14:42:13 GMT-0700 (Mountain Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

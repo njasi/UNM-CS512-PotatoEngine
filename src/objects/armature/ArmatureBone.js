@@ -3,7 +3,7 @@
  */
 
 import { vec3 } from "../../util";
-import { Armature } from "./Armature";
+import Armature from "./Armature";
 
 /**
  * Representation of a bone in armature model
@@ -13,7 +13,7 @@ import { Armature } from "./Armature";
 export default class ArmatureBone {
   /**
    * Make a new ArmatureBone
-   * @param {string} label 
+   * @param {string} label
    * @param {*} options
    */
   constructor(label, { id, headJointId, tailJointId }) {

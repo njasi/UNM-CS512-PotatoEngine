@@ -14,22 +14,44 @@ import { Scene } from "..";
  * @param {Scene} scene The scene to attach the controls to
  * @param {Object} [options={}]
  * @param {number} [options.sensitivity=0.005]
+ * @param {number} [options.scaleYaw=1]
+ * @param {number} [options.scalePitch=1]
  */
-export function setupMouseControls(scene, { sensitivity = 0.005 } = {}) {
+export function setupMouseControls(
+  scene,
+  { sensitivity = 0.005, scaleYaw = 1, scalePitch = 1 } = {},
+) {
   const canvas = scene.canvas;
   // Mouse and keyboard interactions
   let mouseDown = false,
     lastX,
     lastY;
 
-  canvas.addEventListener("mousedown", (e) => {
+  // take over touch events
+  canvas.style.touchAction = "none";
+
+  // should also cover mouse events
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!e.isPrimary || e.button !== 0) {
+      return;
+    }
+
     mouseDown = true;
     lastX = e.clientX;
     lastY = e.clientY;
+
+    canvas.setPointerCapture(e.pointerId);
   });
-  canvas.addEventListener("mouseup", () => (mouseDown = false));
-  canvas.addEventListener("mouseleave", () => (mouseDown = false));
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("pointerup", () => {
+    mouseDown = false;
+  });
+  canvas.addEventListener("pointercancel", () => {
+    mouseDown = false;
+  });
+  canvas.addEventListener("lostpointercapture", () => {
+    mouseDown = false;
+  });
+  canvas.addEventListener("pointermove", (e) => {
     if (!mouseDown) return;
     let dx = e.clientX - lastX;
     let dy = e.clientY - lastY;
@@ -37,7 +59,10 @@ export function setupMouseControls(scene, { sensitivity = 0.005 } = {}) {
     // TODO: yaw and pitch arent perfect since pitch doesnt always make you look
     //       downwards, as it depends on your yaw alignment. i dont really want to
     //       do that math rn but it should actually be a simple correction
-    scene.camera.rotate(dx * sensitivity, dy * sensitivity);
+    scene.camera.rotate(
+      dx * sensitivity * scaleYaw,
+      dy * sensitivity * scalePitch,
+    );
 
     lastX = e.clientX;
     lastY = e.clientY;
@@ -118,6 +143,16 @@ export function setupKeyboardControls(
     pressed.clear();
   });
 
+  createDPad(
+    scene,
+    (key) => {
+      pressed.add(key);
+    },
+    (key) => {
+      pressed.delete(key);
+    },
+  );
+
   /**
    * Smooth movement update function, call this in your scene update handler
    * @param {number} dt time in seconds since last frame
@@ -141,7 +176,6 @@ export function setupKeyboardControls(
     let x = strafe * Math.cos(yaw) + forward * Math.sin(yaw);
     let y = vertical;
     let z = -strafe * Math.sin(yaw) + forward * Math.cos(yaw);
-
 
     let adjustedSpeed = pressed.has("alt") ? speed * 2 : speed;
     const target = [x * adjustedSpeed, y * adjustedSpeed, z * adjustedSpeed];
@@ -167,3 +201,72 @@ export default {
   setupKeyboardControls,
   setupMouseControls,
 };
+
+/**
+ * mobile accessibility since my computer has no hope of rendering
+ * the ray tracing scenes, but my phone can...
+ *
+ * TODO maybe suggest mobile support provided to the students for this assignment
+ *
+ * Note that we expect the scene canvas to be inside a "canvas-wrapper"...
+ * - see the common template layout
+ * - https://symbl.cc/en/unicode-table/#miscellaneous-symbols-and-arrows
+ * - not sure i like up and down, go back to link above later
+ */
+function createDPad(scene, press, release) {
+  const directions = [
+    { key: "w", label: "Forward", row: 1, col: 2, symbol: "⯅" },
+    { key: "a", label: "Left", row: 2, col: 1, symbol: "⯇" },
+    { key: "s", label: "Backward", row: 2, col: 2, symbol: "⯆" },
+    { key: "d", label: "Right", row: 2, col: 3, symbol: "⯈" },
+    { key: "shift", label: "Down", row: 1, col: 1, symbol: "⭘" },
+    { key: " ", label: "Up", row: 1, col: 3, symbol: "⭙" },
+  ];
+
+  let dpadElement = document.createElement("div");
+  dpadElement.setAttribute("aria-label", "Camera movement controls");
+  dpadElement.classList.add("canvas-dpad");
+
+  for (const direction of directions) {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = direction.symbol;
+    button.setAttribute("aria-label", direction.label);
+
+    button.style.cssText = `
+        grid-row: ${direction.row};
+        grid-column: ${direction.col};
+      `;
+
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      button.setPointerCapture(event.pointerId);
+      press(direction.key);
+      button.classList.add("pressed");
+    });
+
+    button.addEventListener("pointerup", (event) => {
+      release(direction.key);
+      button.classList.remove("pressed");
+    });
+
+    button.addEventListener("pointercancel", (event) => {
+      release(direction.key);
+      button.classList.remove("pressed");
+    });
+
+    button.addEventListener("lostpointercapture", (event) => {
+      release(direction.key);
+      button.classList.remove("pressed");
+    });
+
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+    });
+
+    dpadElement.appendChild(button);
+  }
+
+  scene.canvas.parentElement.appendChild(dpadElement);
+}

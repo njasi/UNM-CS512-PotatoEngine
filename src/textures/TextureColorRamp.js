@@ -1,4 +1,4 @@
-/** @module materials/TextureColorRamp */
+/** @module textures/TextureColorRamp */
 import { TYPE_COLOR_RAMP_PREVIEW, TYPE_COLOR_SELECTOR, TYPE_READ_ONLY } from "../controls/sceneEditor";
 import Texture2D from "./Texture2D";
 
@@ -7,7 +7,7 @@ import Texture2D from "./Texture2D";
  * - makes a 1 by <width> strip eased between colorStart to colorEnd
  *
  * @class
- * @alias module:materials/TextureColorRamp
+ * @alias module:textures/TextureColorRamp
  */
 export default class TextureColorRamp extends Texture2D {
   static EDITOR_PROPERTIES = [

@@ -16,7 +16,8 @@ import RenderPass from "./renderers/RenderPass";
 import { renderers } from ".";
 import { Texture2D, Material, Texture2DArray } from "./materials";
 import { TYPE_COLOR_SELECTOR, TYPE_READ_ONLY } from "./controls/sceneEditor";
-import { RayRenderPass } from "./renderers";
+import { RayRenderPass, RENDER_PASS_BASIC } from "./renderers";
+import { RenderTarget } from "./renderers/RenderTarget";
 
 /**
  * Overall state management for a scene
@@ -69,7 +70,8 @@ export default class Scene {
     this.shaders = new Map();
     this.materials = new Map();
     this.textures = new Map();
-    this.passes = new Map();
+    this.passes = new Map(); // TODO this guy really should be explicitly ordered
+    this.renderTargets = new Map();
 
     // background color of the scene
     // TODO skybox
@@ -98,14 +100,16 @@ export default class Scene {
     // bind this to the renderer so we dont have context issues
     this.render = this.render.bind(this);
 
-    // still cant get the shadows working ugh
-    // renderers.addShadowAndMainPasses(this);
-    // this.defaultPasses = ["shadow", "main"];
-
+    // render pass logic
     // basic render passes
     renderers.addBasicRenderPass(this);
-    renderers.addTransparentRenderPass(this);
-    this.defaultPasses = ["basic"];
+    // renderers.addTransparentRenderPass(this);
+    this.defaultPasses = [RENDER_PASS_BASIC];
+    this.previousRender = undefined;
+
+    // ping & pong pass results 
+    this.createRenderTarget(RenderPass.TARGET_PING);
+    this.createRenderTarget(RenderPass.TARGET_PONG);
   }
 
   ///////////////////////
@@ -346,7 +350,7 @@ export default class Scene {
     label,
     vertShaderUrl,
     fragShaderUrl,
-    wrapperClass = shaderProg,
+    wrapperClass = ShaderProgram,
     {
       vertLabel = vertShaderUrl.split("/").pop(),
       fragLabel = fragShaderUrl.split("/").pop(),
@@ -507,6 +511,85 @@ export default class Scene {
    */
   removeRenderPass(label) {
     return this.passes.delete(label);
+  }
+
+  /////////////////////////////
+  // RENDERTARGET MANAGEMENT //
+  /////////////////////////////
+  // these are really just a subsection of renderpasses, but i like 
+  // making these sections, they look nice lol
+
+  /**
+   * create and add a render target to the scene
+   *
+   * @param {string} label
+   * @param {number} width
+   * @param {number} height
+   * @param {Object} options
+   * @returns {RenderTarget}
+   */
+  createRenderTarget(
+    label,
+    width = this.canvas.width,
+    height = this.canvas.height,
+    options = {},
+  ) {
+    if (this.renderTargets.has(label)) {
+      throw new Error(`Render target "${label}" already exists`);
+    }
+
+    const target = new RenderTarget(this.gl, width, height, options);
+    target.label = label;
+    this.renderTargets.set(label, target);
+    return target;
+  }
+
+  /**
+   * get a render target by its label
+   *
+   * @param {string} label
+   * @returns {RenderTarget}
+   */
+  getRenderTarget(label) {
+    const target = this.renderTargets.get(label);
+    if (!target) {
+      throw new Error(`Render target "${label}" was not found`);
+    }
+    return target;
+  }
+
+  /**
+   * remove a render target from the scene
+   *
+   * @param {string} label
+   * @returns {boolean}
+   */
+  removeRenderTarget(label) {
+    const target = this.renderTargets.get(label);
+    if (!target) {
+      return false;
+    }
+    target.dispose();
+    return this.renderTargets.delete(label);
+  }
+
+  /**
+   * record the output for later
+   * 
+   * NOTE: only records color texture for now, maybe handle depth later idk
+   *
+   * @param {RenderPass} pass
+   * @param {RenderTarget | undefined} output
+   */
+  _handlePassOutput(pass, output) {
+    if (output) {
+      this.previousOutput = output.colorTexture;
+    } else {
+      // if no output then we cant sample
+      // maybe we could use a behavior or not overriting with undefined if no output
+      // depends idk
+      this.previousOutput = undefined;
+    }
   }
 
   ////////////////////////
@@ -794,9 +877,10 @@ export default class Scene {
    * Render a set of objects using a given RenderPass
    * @param {RenderPass} pass the renderpass to use
    * @param {*} matrices the scene transformation matricies, projection, rotation etc
+   * @param {{}} [inputs={}] input previous passes
    */
-  _renderPass(pass, matrices) {
-    const objects = pass.getObjects();
+  _renderPass(pass, matrices, inputs = {}) {
+    const objects = pass.getObjects(this);
     const lights = [...this.lights.values()];
 
     // override if the shader program sets its own matrices
@@ -820,7 +904,7 @@ export default class Scene {
       this._clearActiveMaterial();
 
       if (!!pass.updateUniforms) {
-        pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
+        pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride, inputs);
       }
 
       return;
@@ -854,7 +938,7 @@ export default class Scene {
         this._updateShaderLights(shaderProgram, lightTransformation);
 
         if (!!pass.updateUniforms) {
-          pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride);
+          pass.updateUniforms(this.gl, shaderProgram, this, pass, matOverride, inputs);
         }
 
         //
@@ -893,13 +977,11 @@ export default class Scene {
    */
   render() {
     const nextTime = Date.now() - this.startTime;
-
     const dt = nextTime - this.time;
-    this.update(dt / 1000);
-
-    this.time = nextTime;
-
+    
     // delta time since start in ms
+    this.update(dt / 1000);
+    this.time = nextTime;
 
     if (!this.gl) {
       console.error("Scene has no WebGL context");
@@ -909,7 +991,10 @@ export default class Scene {
     const matrices = this._calculateMatrices();
 
     for (const [label, pass] of this.passes) {
-      pass.attach(this);
+      const inputs = pass.selectInputRenderTargets(this);
+      const output = pass.selectOutputRenderTarget(this);
+
+      pass.attach(this, output);
 
       // reset switch flags
       // NOTE: if end up in a situation with only one program
@@ -917,9 +1002,11 @@ export default class Scene {
       // this.activeMaterial = undefined;
       this.activeProgram = undefined;
 
-      this._renderPass(pass, matrices);
+      this._renderPass(pass, matrices, inputs);
 
       pass.detach(this);
+
+      this._handlePassOutput(pass, output);
     }
 
     // unbind the framebuffer if we end with one

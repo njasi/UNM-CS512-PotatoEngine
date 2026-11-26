@@ -1,4 +1,4 @@
-/** @module materials/DataTexture */
+/** @module textures/DataTexture */
 import { RayObject } from "../objects";
 
 /**
@@ -7,7 +7,7 @@ import { RayObject } from "../objects";
  * - TODO material data
  *
  * @class
- * @alias module:materials/DataTexture
+ * @alias module:textures/DataTexture
  */
 export default class DataTexture {
   static OBJECT_TEXELS = RayObject.OBJECT_TEXTURE_TEXELS;

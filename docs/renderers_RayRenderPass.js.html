@@ -30,9 +30,12 @@
  * @module renderers/RayRenderPass
  */
 
+import { Scene } from "..";
+import { ShaderProgram } from "../shaders";
 import { RayMaterial } from "../materials";
 import RayObject from "../objects/RayObject";
 import RenderPass from "./RenderPass";
+import RayShaderProgram from "../shaders/RayShaderProgram";
 
 /**
  * Wrapper class to help define render order and different types of objects
@@ -46,6 +49,7 @@ import RenderPass from "./RenderPass";
  * @alias module:renderers/RayRenderPass
  */
 export default class RayRenderPass extends RenderPass {
+  static RENDER_PASS_RAY = "ray";
   /**
    * Create a render pass
    * @param {string} label
@@ -75,6 +79,7 @@ export default class RayRenderPass extends RenderPass {
       programLabel = undefined,
     } = {},
   ) {
+    let pass;
     super(label, {
       framebuffer,
       viewport,
@@ -82,11 +87,17 @@ export default class RayRenderPass extends RenderPass {
       clearColor,
       setup,
       cleanup,
-      updateUniforms,
+      updateUniforms: (gl, program, scene) => {
+        pass._updateUniforms(gl, program, scene);
+        if (!!updateUniforms) {
+          updateUniforms(gl, program, scene);
+        }
+      },
       sort,
       objIndependent,
       programLabel,
     });
+    pass = this;
 
     // add lights set
     this.lights = new Set();
@@ -169,6 +180,108 @@ export default class RayRenderPass extends RenderPass {
   removeTexture(texture) {
     this.textures.delete(texture);
   }
+
+  /**
+   * Add a basic ray tracing render pass
+   * which primarily uses RayObjects in its scene.
+   * @param {Scene} scene
+   * @param {string} programLabel the label of the ray tracing program
+   */
+  static add(scene, programLabel = RayRenderPass.RENDER_PASS_RAY) {
+    const rayPass = new RayRenderPass(RayRenderPass.RENDER_PASS_RAY, {
+      clearMask: scene.gl
+        ? scene.gl.COLOR_BUFFER_BIT | scene.gl.DEPTH_BUFFER_BIT
+        : 0,
+      objIndependent: true,
+      programLabel,
+    });
+
+    scene.addRenderPass(rayPass);
+  }
+
+  /**
+   * Update the uniforms relevant to the pass
+   * which are linked to the scene directly
+   * - in our case here probably the camera uniforms count
+   * - data texture information
+   * @param {WebGL2RenderingContext} gl
+   * @param {ShaderProgram} shaderProgram
+   * @param {Scene} scene
+   */
+  _updateUniforms(gl, shaderProgram, scene) {
+    if (!(shaderProgram instanceof RayShaderProgram)) {
+      return;
+    }
+
+    shaderProgram.uniforms.u_target = new Float32Array([
+      -scene.camera.x,
+      -scene.camera.y,
+      -scene.camera.z,
+    ]);
+
+    shaderProgram.uniforms.u_cameraOrbit = new Float32Array([
+      scene.camera.pitch,
+      scene.camera.yaw,
+    ]);
+
+    shaderProgram.uniforms.u_fov = -scene.camera.fov;
+
+    const seenTextures = new Set();
+    for (const mat of this.materials) {
+      const tl = mat.textureMapLabel;
+
+      if (tl &amp;&amp; !seenTextures.has(tl)) {
+        seenTextures.add(tl);
+        const tex = scene.getTexture(tl);
+        tex.bind(seenTextures.size - 1, scene.gl);
+        gl.uniform1ui(
+          shaderProgram.locs[`u_textureLayerCount${seenTextures.size - 1}`],
+          tex.layerCount,
+        );
+      }
+    }
+
+    gl.uniform1i(shaderProgram.locs.u_objectData, seenTextures.size);
+    gl.uniform1i(
+      shaderProgram.locs.u_objectDataWidth,
+      shaderProgram.objectDataTexture.width,
+    );
+
+    gl.uniform1i(shaderProgram.locs.u_lightData, seenTextures.size + 1);
+    gl.uniform1i(
+      shaderProgram.locs.u_lightDataWidth,
+      shaderProgram.lightDataTexture.width,
+    );
+
+    shaderProgram.objectDataTexture.uploadObjects(
+      gl,
+      [...this.objects],
+      this.materialMap,
+      seenTextures.size,
+      shaderProgram.locs.u_objectData,
+      shaderProgram.locs.u_objectCount,
+    );
+
+    shaderProgram.lightDataTexture.uploadObjects(
+      gl,
+      [...this.lights],
+      this.materialMap,
+      seenTextures.size + 1,
+      shaderProgram.locs.u_lightData,
+      shaderProgram.locs.u_lightCount,
+    );
+
+    shaderProgram.materialDataTexture.uploadMaterials(
+      gl,
+      this.materials,
+      seenTextures.size + 2,
+      shaderProgram.locs.u_materialData,
+      shaderProgram.locs.u_materialCount,
+      shaderProgram.locs.u_materialDataWidth,
+    );
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
 }
 </code></pre>
         </article>
@@ -180,13 +293,13 @@ export default class RayRenderPass extends RenderPass {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#appendInputControlRow">appendInputControlRow</a></li><li><a href="global.html#createPanel">createPanel</a></li><li><a href="global.html#getOptionsFromScene">getOptionsFromScene</a></li><li><a href="global.html#makeEditorTabs">makeEditorTabs</a></li><li><a href="global.html#pack">pack</a></li><li><a href="global.html#parseProperties">parseProperties</a></li><li><a href="global.html#parsePropertyType">parsePropertyType</a></li><li><a href="global.html#preview2DTextureArraySources">preview2DTextureArraySources</a></li><li><a href="global.html#previewColorRamp">previewColorRamp</a></li><li><a href="global.html#previewTextureMaterialLayers">previewTextureMaterialLayers</a></li><li><a href="global.html#syncProperties">syncProperties</a></li><li><a href="global.html#titleCase">titleCase</a></li><li><a href="global.html#toString">toString</a></li><li><a href="global.html#updatePropertyHandler">updatePropertyHandler</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#appendInputControlRow">appendInputControlRow</a></li><li><a href="global.html#createPanel">createPanel</a></li><li><a href="global.html#getOptionsFromScene">getOptionsFromScene</a></li><li><a href="global.html#makeEditorTabs">makeEditorTabs</a></li><li><a href="global.html#pack">pack</a></li><li><a href="global.html#parseProperties">parseProperties</a></li><li><a href="global.html#parsePropertyType">parsePropertyType</a></li><li><a href="global.html#preview2DTextureArraySources">preview2DTextureArraySources</a></li><li><a href="global.html#previewColorRamp">previewColorRamp</a></li><li><a href="global.html#previewTextureMaterialLayers">previewTextureMaterialLayers</a></li><li><a href="global.html#syncProperties">syncProperties</a></li><li><a href="global.html#titleCase">titleCase</a></li><li><a href="global.html#toString">toString</a></li><li><a href="global.html#updatePropertyHandler">updatePropertyHandler</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Nov 24 2026 17:09:02 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Nov 26 2026 12:30:45 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

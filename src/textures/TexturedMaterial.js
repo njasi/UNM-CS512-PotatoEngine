@@ -1,5 +1,5 @@
 /**
- * @module materials/TexturedMaterial
+ * @module textures/TexturedMaterial
  */
 
 import { Scene } from "..";
@@ -7,8 +7,8 @@ import {
   TYPE_READ_ONLY,
   TYPE_TEXTURED_MATERIAL_TEXTURES,
 } from "../controls/sceneEditor";
+import { Material } from "../materials";
 import { ShaderProgram } from "../shaders";
-import Material from "./Material";
 
 /**
  * Wrapper class to represent a material that uses texture data
@@ -16,7 +16,7 @@ import Material from "./Material";
  * TODO might want to extend PhongMaterial to get those basic values...
  *
  * @class
- * @alias module:materials/TexturedMaterial
+ * @alias module:textures/TexturedMaterial
  */
 export default class TexturedMaterial extends Material {
   static EDITOR_PROPERTIES = [

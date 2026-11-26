@@ -154,7 +154,7 @@ Helps track:
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line35">line 35</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line36">line 36</a>
     </li></ul></dd>
     
 
@@ -264,7 +264,7 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line780">line 780</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line860">line 860</a>
     </li></ul></dd>
     
 
@@ -352,7 +352,7 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line768">line 768</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line848">line 848</a>
     </li></ul></dd>
     
 
@@ -388,7 +388,7 @@ might need these in render passes so sectioning out...
     
 
     
-    <h4 class="name" id="_renderPass"><span class="type-signature"></span>_renderPass<span class="signature">(pass, matrices)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="_handlePassOutput"><span class="type-signature"></span>_handlePassOutput<span class="signature">(pass, output)</span><span class="type-signature"></span></h4>
     
 
     
@@ -396,7 +396,7 @@ might need these in render passes so sectioning out...
 
 
 <div class="description">
-    Render a set of objects using a given RenderPass
+    Record the output of a render pass for subsequent passes.
 </div>
 
 
@@ -448,20 +448,23 @@ might need these in render passes so sectioning out...
 
             
 
-            <td class="description last">the renderpass to use</td>
+            <td class="description last"></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>matrices</code></td>
+                <td class="name"><code>output</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">*</span>
+<span class="param-type">RenderTarget</span>
+|
+
+<span class="param-type">undefined</span>
 
 
             
@@ -471,7 +474,7 @@ might need these in render passes so sectioning out...
 
             
 
-            <td class="description last">the scene transformation matricies, projection, rotation etc</td>
+            <td class="description last"></td>
         </tr>
 
     
@@ -512,7 +515,234 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line799">line 799</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line582">line 582</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="_renderPass"><span class="type-signature"></span>_renderPass<span class="signature">(pass, matrices, inputs<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Render a set of objects using a given RenderPass
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>pass</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">RenderPass</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">the renderpass to use</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>matrices</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">the scene transformation matricies, projection, rotation etc</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>inputs</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last">input previous passes</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line880">line 880</a>
     </li></ul></dd>
     
 
@@ -718,7 +948,7 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line721">line 721</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line801">line 801</a>
     </li></ul></dd>
     
 
@@ -855,7 +1085,7 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line449">line 449</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line452">line 452</a>
     </li></ul></dd>
     
 
@@ -1016,7 +1246,7 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line394">line 394</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line397">line 397</a>
     </li></ul></dd>
     
 
@@ -1272,7 +1502,7 @@ might need these in render passes so sectioning out...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line130">line 130</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line133">line 133</a>
     </li></ul></dd>
     
 
@@ -1537,7 +1767,7 @@ the PhoneSgaderProgram class...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line295">line 295</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line298">line 298</a>
     </li></ul></dd>
     
 
@@ -1692,7 +1922,7 @@ the PhoneSgaderProgram class...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line485">line 485</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line488">line 488</a>
     </li></ul></dd>
     
 
@@ -1829,7 +2059,7 @@ the PhoneSgaderProgram class...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line260">line 260</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line263">line 263</a>
     </li></ul></dd>
     
 
@@ -2139,7 +2369,7 @@ the PhoneSgaderProgram class...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line592">line 592</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line672">line 672</a>
     </li></ul></dd>
     
 
@@ -2557,7 +2787,7 @@ argument. For example the PhongShaderProgram class...
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line346">line 346</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line349">line 349</a>
     </li></ul></dd>
     
 
@@ -2594,6 +2824,230 @@ argument. For example the PhongShaderProgram class...
     <dd>
         
 <span class="param-type">ShaderProgram</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="createRenderTarget"><span class="type-signature"></span>createRenderTarget<span class="signature">(label, width, height, options)</span><span class="type-signature"> &rarr; {RenderTarget}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    create and add a render target to the scene
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>label</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>width</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>height</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line531">line 531</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">RenderTarget</span>
 
 
     </dd>
@@ -3227,7 +3681,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line536">line 536</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line616">line 616</a>
     </li></ul></dd>
     
 
@@ -3382,7 +3836,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line467">line 467</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line470">line 470</a>
     </li></ul></dd>
     
 
@@ -3541,7 +3995,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line408">line 408</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line411">line 411</a>
     </li></ul></dd>
     
 
@@ -3696,7 +4150,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line191">line 191</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line194">line 194</a>
     </li></ul></dd>
     
 
@@ -3833,7 +4287,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line315">line 315</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line318">line 318</a>
     </li></ul></dd>
     
 
@@ -3980,7 +4434,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line498">line 498</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line501">line 501</a>
     </li></ul></dd>
     
 
@@ -4017,6 +4471,161 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     <dd>
         
 <span class="param-type">RenderPass</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getRenderTarget"><span class="type-signature"></span>getRenderTarget<span class="signature">(label)</span><span class="type-signature"> &rarr; {RenderTarget}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    get a render target by its label
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>label</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line553">line 553</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">RenderTarget</span>
 
 
     </dd>
@@ -4135,7 +4744,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line269">line 269</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line272">line 272</a>
     </li></ul></dd>
     
 
@@ -4290,7 +4899,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line617">line 617</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line697">line 697</a>
     </li></ul></dd>
     
 
@@ -4445,7 +5054,7 @@ NOTE: ensure that you call load or loadTextures to finish the loading process
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line965">line 965</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line1048">line 1048</a>
     </li></ul></dd>
     
 
@@ -4537,7 +5146,7 @@ This is called internally by load so do not call unless doing something weird
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line425">line 425</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line428">line 428</a>
     </li></ul></dd>
     
 
@@ -4626,7 +5235,7 @@ only use if doing something weird
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line248">line 248</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line251">line 251</a>
     </li></ul></dd>
     
 
@@ -4716,7 +5325,7 @@ weird
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line632">line 632</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line712">line 712</a>
     </li></ul></dd>
     
 
@@ -4853,7 +5462,7 @@ weird
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line458">line 458</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line461">line 461</a>
     </li></ul></dd>
     
 
@@ -5125,7 +5734,7 @@ Additionally cleans up the buffers related to the object
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line202">line 202</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line205">line 205</a>
     </li></ul></dd>
     
 
@@ -5262,7 +5871,7 @@ Additionally cleans up the buffers related to the object
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line509">line 509</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line512">line 512</a>
     </li></ul></dd>
     
 
@@ -5303,6 +5912,161 @@ Additionally cleans up the buffers related to the object
     <dd>
         
 <span class="param-type">RenderPass</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="removeRenderTarget"><span class="type-signature"></span>removeRenderTarget<span class="signature">(label)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    remove a render target from the scene
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>label</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line567">line 567</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
 
 
     </dd>
@@ -5422,7 +6186,7 @@ true if it was removed.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line650">line 650</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line730">line 730</a>
     </li></ul></dd>
     
 
@@ -5528,7 +6292,7 @@ true if it was removed.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line896">line 896</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line976">line 976</a>
     </li></ul></dd>
     
 
@@ -5665,7 +6429,7 @@ true if it was removed.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line950">line 950</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line1033">line 1033</a>
     </li></ul></dd>
     
 
@@ -5802,7 +6566,7 @@ true if it was removed.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line939">line 939</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line1022">line 1022</a>
     </li></ul></dd>
     
 
@@ -5962,7 +6726,7 @@ true if it was removed.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line230">line 230</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line233">line 233</a>
     </li></ul></dd>
     
 
@@ -6125,7 +6889,7 @@ NOTE this is not camera rotation,
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line760">line 760</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line840">line 840</a>
     </li></ul></dd>
     
 
@@ -6263,7 +7027,7 @@ render.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line670">line 670</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line750">line 750</a>
     </li></ul></dd>
     
 
@@ -6400,7 +7164,7 @@ render.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line679">line 679</a>
+        <a href="Scene.js.html">Scene.js</a>, <a href="Scene.js.html#line759">line 759</a>
     </li></ul></dd>
     
 
@@ -6446,13 +7210,13 @@ render.
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_Texture2D.html">materials/Texture2D</a></li><li><a href="module-materials_Texture2DArray.html">materials/Texture2DArray</a></li><li><a href="module-materials_TextureColorRamp.html">materials/TextureColorRamp</a></li><li><a href="module-materials_TexturedMaterial.html">materials/TexturedMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#appendInputControlRow">appendInputControlRow</a></li><li><a href="global.html#createPanel">createPanel</a></li><li><a href="global.html#getOptionsFromScene">getOptionsFromScene</a></li><li><a href="global.html#makeEditorTabs">makeEditorTabs</a></li><li><a href="global.html#pack">pack</a></li><li><a href="global.html#parseProperties">parseProperties</a></li><li><a href="global.html#parsePropertyType">parsePropertyType</a></li><li><a href="global.html#preview2DTextureArraySources">preview2DTextureArraySources</a></li><li><a href="global.html#previewColorRamp">previewColorRamp</a></li><li><a href="global.html#previewTextureMaterialLayers">previewTextureMaterialLayers</a></li><li><a href="global.html#syncProperties">syncProperties</a></li><li><a href="global.html#titleCase">titleCase</a></li><li><a href="global.html#toString">toString</a></li><li><a href="global.html#updatePropertyHandler">updatePropertyHandler</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#appendInputControlRow">appendInputControlRow</a></li><li><a href="global.html#createPanel">createPanel</a></li><li><a href="global.html#getOptionsFromScene">getOptionsFromScene</a></li><li><a href="global.html#makeEditorTabs">makeEditorTabs</a></li><li><a href="global.html#pack">pack</a></li><li><a href="global.html#parseProperties">parseProperties</a></li><li><a href="global.html#parsePropertyType">parsePropertyType</a></li><li><a href="global.html#preview2DTextureArraySources">preview2DTextureArraySources</a></li><li><a href="global.html#previewColorRamp">previewColorRamp</a></li><li><a href="global.html#previewTextureMaterialLayers">previewTextureMaterialLayers</a></li><li><a href="global.html#syncProperties">syncProperties</a></li><li><a href="global.html#titleCase">titleCase</a></li><li><a href="global.html#toString">toString</a></li><li><a href="global.html#updatePropertyHandler">updatePropertyHandler</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Nov 24 2026 17:09:02 GMT-0700 (Mountain Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Nov 26 2026 12:30:46 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

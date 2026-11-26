@@ -1,11 +1,11 @@
-/** @module materials/Texture2D */
+/** @module textures/Texture2D */
 
 import { TYPE_IMAGE_URL, TYPE_READ_ONLY } from "../controls/sceneEditor";
 
 /**
  * Convenience representation of a 2D texture
  * @class
- * @alias module:materials/Texture2D
+ * @alias module:textures/Texture2D
  *
  */
 export default class Texture2D {

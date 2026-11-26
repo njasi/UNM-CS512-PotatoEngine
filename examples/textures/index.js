@@ -9,11 +9,10 @@ import {
 } from "../../src/objects";
 
 import basicControls from "../../src/controls/basic";
-import { common, TexturedMaterial } from "../../src/materials";
+import { common, TextureColorRamp, TexturedMaterial } from "../../src/materials";
 import Light, { LIGHT_DIRECTIONAL, LIGHT_SPOT } from "../../src/lights/Light";
 import { rgb, rgba, hsv, hsvrad } from "../../src/util/color";
 import flight from "../../src/controls/flight";
-import TextureColorRamp from "../../src/materials/TextureColorRamp";
 import { makeEditorTabs, syncProperties } from "../../src/controls/sceneEditor";
 
 const matSelector = document.getElementById("material-selector");

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: textures/DataTexture.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: textures/DataTexture.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/** @module textures/DataTexture */
+import { RayObject } from "../objects";
+
+/**
+ * wrapper around a texture, used for packing data
+ * - object data
+ * - TODO material data
+ *
+ * @class
+ * @alias module:textures/DataTexture
+ */
+export default class DataTexture {
+  static OBJECT_TEXELS = RayObject.OBJECT_TEXTURE_TEXELS;
+  static OBJECT_FLOATS = RayObject.OBJECT_TEXTURE_FLOATS;
+  static MATERIAL_TEXELS = 6;
+  static MATERIAL_FLOATS = DataTexture.MATERIAL_TEXELS * 4;
+
+  /**
+   * Make a new data texture
+   * @param {WebGL2RenderingContext} gl
+   */
+  constructor(gl) {
+    this.texture = gl.createTexture();
+    this.width = 0;
+    this.height = 0;
+    this.capacity = 0;
+  }
+
+  /**
+   * upload objects into the data texture
+   * @param {WebGL2RenderingContext} gl
+   * @param {RayObject[]} objects
+   * @param {*} materials
+   * @param {number} textureUnit
+   * @param {*} samplerLoc
+   * @param {*} countLoc
+   */
+  uploadObjects(gl, objects, materials, textureUnit, samplerLoc, countLoc) {
+    // figure out our size dimensions
+    const required = Math.max(objects.length, 1);
+    const maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const texelsNeeded = required * DataTexture.OBJECT_TEXELS;
+    const width = Math.min(
+      maxSize,
+      2 **
+        Math.ceil(Math.log2(Math.max(1, Math.ceil(Math.sqrt(texelsNeeded))))),
+    );
+    const height = Math.ceil(texelsNeeded / width);
+
+    const resized = this.width !== width || this.height !== height;
+    if (resized) {
+      this.width = width;
+      this.height = height;
+      this.capacity = Math.floor((width * height) / DataTexture.OBJECT_TEXELS);
+    }
+
+    // make float array and shove the data in
+    // can probably cache the data in the obj tbh
+    // although this is pretty fast anyway
+    const floats = new Float32Array(this.width * this.height * 4);
+    for (let i = 0; i &lt; objects.length; i++) {
+      const object = objects[i];
+      object.materialIndex =
+        materials.get(object.materialLabel) ?? object.materialIndex;
+
+      object.packTextureData(floats, i * DataTexture.OBJECT_FLOATS);
+    }
+
+    this.uploadData(gl, floats, textureUnit, resized);
+
+    gl.uniform1i(samplerLoc, textureUnit);
+    gl.uniform1i(countLoc, objects.length);
+  }
+
+  /**
+   * upload materials into the data texture
+   *
+   * @param {WebGL2RenderingContext} gl
+   * @param {Map&lt;string, RayMaterial>} materials
+   * @param {number} textureUnit
+   * @param {*} samplerLoc
+   * @param {*} countLoc
+   * @param {*} widthLoc
+   */
+  uploadMaterials(gl, materials, textureUnit, samplerLoc, countLoc, widthLoc) {
+    const materialList = [...materials.values()];
+    const required = Math.max(materialList.length, 1);
+    const maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const texelsNeeded = required * DataTexture.MATERIAL_TEXELS;
+    const width = Math.min(
+      maxSize,
+      2 **
+        Math.ceil(Math.log2(Math.max(1, Math.ceil(Math.sqrt(texelsNeeded))))),
+    );
+    const height = Math.ceil(texelsNeeded / width);
+
+    const resized = this.width !== width || this.height !== height;
+    if (resized) {
+      this.width = width;
+      this.height = height;
+      this.capacity = Math.floor(
+        (width * height) / DataTexture.MATERIAL_TEXELS,
+      );
+    }
+
+    // make float array and shove the data in
+    // can probably cache the data in the obj tbh
+    // although this is pretty fast anyway
+    const floats = new Float32Array(this.width * this.height * 4);
+    for (let i = 0; i &lt; materialList.length; i++) {
+      const material = materialList[i];
+      material.materialIndex = i;
+      material.packTextureData(floats, i * DataTexture.MATERIAL_FLOATS);
+    }
+
+    this.uploadData(gl, floats, textureUnit, resized);
+
+    gl.uniform1i(samplerLoc, textureUnit);
+    gl.uniform1i(countLoc, materialList.length);
+    gl.uniform1i(widthLoc, this.width);
+  }
+
+  /**
+   * upload float data into texture
+   * @param {WebGL2RenderingContext} gl
+   * @param {Float32Array} floats
+   * @param {number} textureUnit
+   * @param {bool} resized
+   */
+  uploadData(gl, floats, textureUnit, resized) {
+    gl.activeTexture(gl.TEXTURE0 + textureUnit);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    if (resized) {
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA32F,
+        this.width,
+        this.height,
+        0,
+        gl.RGBA,
+        gl.FLOAT,
+        floats,
+      );
+    } else {
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        0,
+        this.width,
+        this.height,
+        gl.RGBA,
+        gl.FLOAT,
+        floats,
+      );
+    }
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#appendInputControlRow">appendInputControlRow</a></li><li><a href="global.html#createPanel">createPanel</a></li><li><a href="global.html#getOptionsFromScene">getOptionsFromScene</a></li><li><a href="global.html#makeEditorTabs">makeEditorTabs</a></li><li><a href="global.html#pack">pack</a></li><li><a href="global.html#parseProperties">parseProperties</a></li><li><a href="global.html#parsePropertyType">parsePropertyType</a></li><li><a href="global.html#preview2DTextureArraySources">preview2DTextureArraySources</a></li><li><a href="global.html#previewColorRamp">previewColorRamp</a></li><li><a href="global.html#previewTextureMaterialLayers">previewTextureMaterialLayers</a></li><li><a href="global.html#syncProperties">syncProperties</a></li><li><a href="global.html#titleCase">titleCase</a></li><li><a href="global.html#toString">toString</a></li><li><a href="global.html#updatePropertyHandler">updatePropertyHandler</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Nov 26 2026 12:30:45 GMT-0700 (Mountain Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

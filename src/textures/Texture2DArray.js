@@ -1,4 +1,4 @@
-/** @module materials/Texture2DArray */
+/** @module textures/Texture2DArray */
 
 import {
   TYPE_2D_TEXTURE_SOURCES,
@@ -9,7 +9,7 @@ import {
  * Convenience representation of a 2D texture array
  *
  * @class
- * @alias module:materials/Texture2DArray
+ * @alias module:textures/Texture2DArray
  */
 export default class Texture2DArray {
   static EDITOR_PROPERTIES = [

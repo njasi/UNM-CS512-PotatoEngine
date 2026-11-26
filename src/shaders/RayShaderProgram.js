@@ -8,7 +8,7 @@ import {
   TYPE_SHADER_PROGRAM_UNIFORMS,
 } from "../controls/sceneEditor";
 import { RayMaterial } from "../materials";
-import DataTexture from "../materials/DataTexture";
+import DataTexture from "../textures/DataTexture";
 import { RayObject, SceneObject } from "../objects";
 import ShaderProgram from "./ShaderProgram";
 

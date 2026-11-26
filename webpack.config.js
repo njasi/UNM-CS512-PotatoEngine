@@ -10,6 +10,7 @@ const exampleNames = [
   "textures",
   "ray",
   "armature",
+  "rendertargets"
 ];
 
 const configs = exampleNames.map((name) => ({

@@ -4,6 +4,7 @@
 
 import SceneObject from "../objects/SceneObject";
 import Scene from "../Scene";
+import { RenderTarget } from "./RenderTarget";
 
 /**
  * Wrapper class to help define render order and different types of objects
@@ -14,11 +15,18 @@ import Scene from "../Scene";
  * @alias module:renderers/RenderPass
  */
 export default class RenderPass {
+  // render to the canvas, dont think you can sample from this one
+  static TARGET_CANVAS = RenderTarget.TARGET_CANVAS;
+  static TARGET_PING = RenderTarget.TARGET_PING;
+  static TARGET_PONG = RenderTarget.TARGET_PONG;
+  static TARGET_PREV = RenderTarget.TARGET_PREV;
+
   /**
    * Create a render pass
    * @param {string} label
    * @param {*} options
-   * @param {*} options.framebuffer
+   * @param {*} options.inputs  dictionary of label: RenderTarget label TARGET_CANVAS | TARGET_PING | TARGET_PONG | TARGET_PREV
+   * @param {*} options.output
    * @param {*} options.viewport
    * @param {*} options.clearMask
    * @param {rgb()} options.clearColor the color to clear with
@@ -31,7 +39,8 @@ export default class RenderPass {
   constructor(
     label,
     {
-      framebuffer = undefined,
+      inputs = {},
+      output = RenderPass.TARGET_CANVAS,
       viewport = undefined,
       clearMask = 0,
       clearColor = undefined,
@@ -44,7 +53,8 @@ export default class RenderPass {
     } = {},
   ) {
     this.label = label;
-    this.framebuffer = framebuffer;
+    this.inputs = { ...inputs };
+    this.output = output;
     this.viewport = viewport;
     this.clearMask = clearMask;
     this.clearColor = clearColor;
@@ -91,11 +101,17 @@ export default class RenderPass {
   /**
    * Attach a render pass to a rendering session
    * @param {Scene} scene scene we are rendering in
+   * @param {RenderTarget} output
    */
-  attach(scene) {
+  attach(scene, output) {
     const gl = scene.gl;
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    // NOTE: output is derived from this.output, but is not the same
+    //       kept messing this up while writing this lol
+    // see below: selectOutputRenderTarget
+    // console.log(output)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, output ? output.framebuffer : null);
 
     const [x, y, width, height] = this.viewport ?? [
       0,
@@ -142,5 +158,43 @@ export default class RenderPass {
     return this.sort
       ? [...this.objects].sort((a, b) => this.sort(a, b, scene))
       : this.objects;
+  }
+
+  /**
+   * select the output target
+   * @param {Scene} scene
+   * @returns {undefined | RenderTarget}
+   */
+  selectOutputRenderTarget(scene) {
+    if (this.output == RenderPass.TARGET_CANVAS) {
+      return undefined;
+    }
+
+    if (this.output) {
+      return scene.getRenderTarget(this.output);
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Select the input targets from the scene
+   *
+   * inputs are then attached in the scene and passed to the update uniforms cb
+   *
+   * @param {Scene} scene
+   */
+  selectInputRenderTargets(scene) {
+    const inputs = {};
+
+    for (const [name, source] of Object.entries(this.inputs)) {
+      if (source == RenderPass.TARGET_PREV) {
+        inputs[name] = scene.previousOutput;
+      } else {
+        inputs[name] = scene.getRenderTarget(source).colorTexture;
+      }
+    }
+
+    return inputs;
   }
 }

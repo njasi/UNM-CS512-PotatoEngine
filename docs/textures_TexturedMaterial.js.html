@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: textures/TexturedMaterial.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: textures/TexturedMaterial.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module textures/TexturedMaterial
+ */
+
+import { Scene } from "..";
+import {
+  TYPE_READ_ONLY,
+  TYPE_TEXTURED_MATERIAL_TEXTURES,
+} from "../controls/sceneEditor";
+import { Material } from "../materials";
+import { ShaderProgram } from "../shaders";
+
+/**
+ * Wrapper class to represent a material that uses texture data
+ *
+ * TODO might want to extend PhongMaterial to get those basic values...
+ *
+ * @class
+ * @alias module:textures/TexturedMaterial
+ */
+export default class TexturedMaterial extends Material {
+  static EDITOR_PROPERTIES = [
+    { name: "programLabel", type: TYPE_READ_ONLY },
+    { name: "_textures", type: TYPE_TEXTURED_MATERIAL_TEXTURES },
+  ];
+
+  /**
+   * Default texture type name for normal texture maps
+   */
+  static TEXTURE_TYPE_NORMAL = "normal";
+  /**
+   * Default texture type name for bump texture maps
+   */
+  static TEXTURE_TYPE_BUMP = "bump";
+  /**
+   * Default texture type name for albedo (regular base color) texture maps
+   */
+  static TEXTURE_TYPE_ALBEDO = "albedo";
+  /**
+   * Default texture type name for secondary albedo map ( to blend with TEXTURE_TYPE_ALBEDO) texture maps
+   */
+  static TEXTURE_TYPE_ALBEDO2 = "albedo2";
+  /**
+   * Default texture type name for displacement texture maps (shifts all other maps in the texture)
+   */
+  static TEXTURE_TYPE_DISPLACEMENT = "displacement";
+
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   *
+   * Applies to TEXTURE_TYPE_ALBEDO
+   */
+  static TEXTURE_TYPE_COLOR_RAMP = "colorRamp";
+
+  /**
+   * Default texture type name for color ramp texture (TextureColorRamp)
+   *
+   * Applies to TEXTURE_TYPE_ALBEDO2
+   */
+  static TEXTURE_TYPE_COLOR_RAMP2 = "colorRampSecondary";
+
+  /**
+   * Applies to TEXTURE_TYPE_BUMP
+   *
+   * The scale of bumps in bump maps
+   *
+   * type: float
+   */
+  static U_BUMP_SCALE = "uBumpScale";
+  /**
+   * Applies to TEXTURE_TYPE_NORMAL
+   *
+   * The scale of normals in normal map
+   *
+   * type: float
+   */
+  static U_NORMAL_SCALE = "uNormalScale";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The u coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_U = "uDisplacementU";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * The c coord displacement
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_V = "uDisplacementV";
+  /**
+   * Applies to TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: float
+   */
+  static U_DISPLACEMENT_STRENGTH = "uDisplacementStrength";
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO, TEXTURE_TYPE_NORMAL, TEXTURE_TYPE_BUMP, TEXTURE_TYPE_DISPLACEMENT
+   *
+   * Scales the amount of displacement the displacement map causes
+   *
+   * type: vec2
+   */
+  static U_TILE = "uTile";
+
+  /**
+   * Applies to TEXTURE_TYPE_ALBEDO2 and TEXTURE_TYPE_ALBEDO
+   *
+   * Select the blend mode between the two albedo maps
+   */
+  static U_BLEND_MODE = "uAlbedoBlendMode";
+
+  /**
+   * Make a new texturedmaterial
+   * @param {*} label
+   * @param {*} textures
+   */
+  constructor(label, textures = {}) {
+    super(label);
+
+    // texture information
+    this._textures = new Map();
+    this._locs = new Map();
+
+    this.label = label;
+    this.programLabel = undefined;
+
+    for (const [type, cfg] of Object.entries(textures)) {
+      this.setTexture(type, cfg.textureLabel, cfg);
+    }
+  }
+
+  /**
+   * Set the value of a texture type, ie normal, bump etc
+   * @param {string} type the type of the texture
+   * @param {string} textureLabel the label of the texture to use
+   * @param {*} [options={}]
+   * @param {string} [options.samplerUniform=undefined] specify the name of the  sampler uniform defaults to u&lt;Type>Map
+   * @param {string} [options.useUniform=undefined] specify the name of the use uniform defaults to uUse&lt;Type>Map
+   * @param {*} [options.extraUniforms={}] dictionary of supplemental uniforms {uniformName:value} pairs
+   */
+  setTexture(
+    type,
+    textureLabel,
+    {
+      samplerUniform = undefined,
+      useUniform = undefined,
+      extraUniforms = {},
+    } = {},
+  ) {
+    const uLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+    // add tile to extra by default
+    extraUniforms = { ...extraUniforms, [`uTile${uLabel}`]: [1, 1] };
+
+    if (TexturedMaterial.U_TILE in extraUniforms) {
+      extraUniforms[TexturedMaterial.U_TILE + uLabel] =
+        extraUniforms[TexturedMaterial.U_TILE];
+      delete extraUniforms[TexturedMaterial.U_TILE];
+    }
+
+    const textureInfo = {
+      textureLabel,
+      samplerUniform: samplerUniform ?? `u${uLabel}Map`,
+      useUniform: useUniform ?? `uUse${uLabel}Map`,
+      extraUniforms: extraUniforms,
+    };
+
+    // TODO proper cleaning check here, this should work for now
+    // to make sure an old texture is removed properly
+    this.removeTexture(type);
+    this._textures.set(type, textureInfo);
+
+    if (this._gl &amp;&amp; this._program) {
+      // add after the program has started...
+      this._getLocs(type, textureInfo);
+    }
+  }
+
+  /**
+   * Remove a texture from the material
+   * @param {string} type the usage of the material in the shader eg normal, bump, etc
+   */
+  removeTexture(type) {
+    const locs = this._locs.get(type);
+
+    // make sure we turn off the texture usage in the shader before
+    // we delete any information...
+    if (!!locs &amp;&amp; !!locs.use) {
+      this._gl.uniform1i(locs.use, 0);
+    }
+
+    // TODO: I don't need to unbind anything here since we will
+    // ignore related locs if the use loc is false, but
+    // it might be better to not have garbage left behind
+
+    this._textures.delete(type);
+    this._locs.delete(type);
+  }
+
+  /**
+   * Setup the texture(TODO s) location
+   * @param {WebGL2RenderingContext} gl
+   * @param {ShaderProgram} shaderProgram
+   */
+  initUniforms(gl, shaderProgram) {
+    super.initUniforms(gl, shaderProgram);
+    this._locs.clear();
+
+    // will still need this to interface with my render loop in scene.
+    this.programLabel = shaderProgram.label;
+
+    for (const [type, texture] of this._textures) {
+      this._getLocs(type, texture);
+    }
+  }
+
+  /**
+   * Bind the textures &amp; update related uniforms
+   * @param {WebGL2RenderingContext} gl
+   * @param {Scene} scene the scene prompting the update
+   */
+  updateUniforms(gl, scene) {
+    super.updateUniforms(gl);
+
+    let textureUnit = 0;
+
+    for (const [type, texture] of this._textures) {
+      const locs = this._locs.get(type);
+      const texture2d = scene.getTexture(texture.textureLabel);
+
+      // TODO: do we need to verify the texture still exists?
+      // might be useful since user could remove a texture while things
+      // are running...
+
+      texture2d.bind(textureUnit);
+
+      if (!!locs.sampler) {
+        this._gl.uniform1i(locs.sampler, textureUnit);
+      }
+
+      if (!!locs.use) {
+        this._gl.uniform1i(locs.use, 1);
+      }
+
+      for (const [uniformName, value] of Object.entries(
+        texture.extraUniforms,
+      )) {
+        // TODO: for now just support floats, vec2, maybe a robust
+        // type split later?
+        if (typeof value == "number") {
+          // floats
+          this._gl.uniform1f(locs[uniformName], value);
+        } else if (
+          // vec2 support
+          typeof value == "object" &amp;&amp;
+          Array.isArray(value) &amp;&amp;
+          value.length == 2
+        ) {
+          this._gl.uniform2fv(locs[uniformName], value);
+        } else {
+          console.error(
+            `Unsupported extra uniform (type, value): (${typeof value}, ${value})`,
+          );
+        }
+      }
+
+      textureUnit++;
+    }
+  }
+
+  /**
+   * Set the value of a extra uniform on a texture map
+   * without re setting the entire texture
+   * @param {String} type
+   * @param {String} uniformName
+   * @param {*} value
+   */
+  setTextureExtraUniform(type, uniformName, value) {
+    const texture = this._textures.get(type);
+    if (!texture) {
+      throw new Error(`Texture type "${type}" is not set`);
+    }
+
+    if (uniformName == TexturedMaterial.U_TILE) {
+      uniformName += type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    // updated value will propagate to shader in updateUniforms
+    texture.extraUniforms[uniformName] = value;
+
+    // update the locations as well
+    // since we could be adding an extra loc
+    const locs = this._locs.get(type);
+    if (this._gl &amp;&amp; this._program &amp;&amp; locs &amp;&amp; !(uniformName in locs)) {
+      locs[uniformName] = this._gl.getUniformLocation(
+        this._program,
+        uniformName,
+      );
+    }
+  }
+
+  /**
+   * Clean up the uniforms after material was used
+   */
+  cleanup() {
+    super.cleanup();
+    for (const [type, _] of this._textures) {
+      this.disableTexture(type);
+    }
+  }
+
+  /**
+   * Disable the usage uniform for a texture
+   * @param {string} type the type of texture eg normal, bump, etc
+   */
+  disableTexture(type) {
+    this._setTextureUsageUniform(type, 0);
+  }
+
+  /**
+   * Enable the usage uniform for a texture
+   * @param {string} type the type of texture eg normal, bump, etc
+   */
+  enableTexture(type) {
+    this._setTextureUsageUniform(type, 1);
+  }
+
+  /**
+   * Set the usage uniform for the given
+   * @param {string} type the type of texture eg normal, bump, etc
+   * @param {boolean} value
+   */
+  _setTextureUsageUniform(type, value) {
+    const locs = this._locs.get(type);
+    this._gl.uniform1i(locs.use, value);
+  }
+
+  /**
+   * Find all the locs related to a specific texture type
+   * and update the internal locs map
+   * @param {string} type
+   * @param {*} texture
+   */
+  _getLocs(type, texture) {
+    const locs = {
+      sampler: this._gl.getUniformLocation(
+        this._program,
+        texture.samplerUniform,
+      ),
+      use: this._gl.getUniformLocation(this._program, texture.useUniform),
+    };
+
+    // get the cursed extra uniforms, may want to nest these or prefix them with
+    // the type by default?
+    for (const extraUniformName of Object.keys(texture.extraUniforms)) {
+      locs[extraUniformName] = this._gl.getUniformLocation(
+        this._program,
+        extraUniformName,
+      );
+    }
+
+    this._locs.set(type, locs);
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Scene.html">Scene</a></li><li><a href="module-controls_basic.html">controls/basic</a></li><li><a href="module-controls_flight.html">controls/flight</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-materials_common.html">materials/common</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_compositions.html">objects/compositions</a></li><li><a href="module-objects_helpers.html">objects/helpers</a></li><li><a href="module-objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="module-objects_loaders_bvhLoader.html">objects/loaders/bvhLoader</a></li><li><a href="module-objects_loaders_objLoader.html">objects/loaders/objLoader</a></li><li><a href="module-objects_primitives.html">objects/primitives</a></li><li><a href="module-renderers.html">renderers</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="module-util_color.html">util/color</a></li><li><a href="module-util_transformations.html">util/transformations</a></li><li><a href="module-util_vec3.html">util/vec3</a></li><li><a href="module-util_vec4.html">util/vec4</a></li></ul><h3>Classes</h3><ul><li><a href="ArmatureBone.html">ArmatureBone</a></li><li><a href="Camera.html">Camera</a></li><li><a href="module.exports.html">exports</a></li><li><a href="module-Scene.html">Scene</a></li><li><a href="module-lights_Light.html">lights/Light</a></li><li><a href="module-materials_Material.html">materials/Material</a></li><li><a href="module-materials_PhongMaterial.html">materials/PhongMaterial</a></li><li><a href="module-materials_ProceduralMaterial.html">materials/ProceduralMaterial</a></li><li><a href="module-materials_RayMaterial.html">materials/RayMaterial</a></li><li><a href="module-objects_FloatingObject.html">objects/FloatingObject</a></li><li><a href="module-objects_PhysicsObject.html">objects/PhysicsObject</a></li><li><a href="module-objects_PrimitiveObject.html">objects/PrimitiveObject</a></li><li><a href="module-objects_RayObject.html">objects/RayObject</a></li><li><a href="module-objects_SceneObject.html">objects/SceneObject</a></li><li><a href="module-objects_armature.html">objects/armature</a></li><li><a href="module-objects_loaders_bvhLoader_Joint.html">objects/loaders/bvhLoader/Joint</a></li><li><a href="module-renderers_CopyRenderPass.html">renderers/CopyRenderPass</a></li><li><a href="module-renderers_ProceduralMaterialRenderPass.html">renderers/ProceduralMaterialRenderPass</a></li><li><a href="module-renderers_RayRenderPass.html">renderers/RayRenderPass</a></li><li><a href="module-renderers_RenderPass.html">renderers/RenderPass</a></li><li><a href="module-renderers_RenderTarget.html">renderers/RenderTarget</a></li><li><a href="module-shaders_PhongShaderProgram.html">shaders/PhongShaderProgram</a></li><li><a href="module-shaders_ProceduralMaterialProgram.html">shaders/ProceduralMaterialProgram</a></li><li><a href="module-shaders_Shader.html">shaders/Shader</a></li><li><a href="module-shaders_ShaderProgram.html">shaders/ShaderProgram</a></li><li><a href="module-textures_DataTexture.html">textures/DataTexture</a></li><li><a href="module-textures_Texture2D.html">textures/Texture2D</a></li><li><a href="module-textures_Texture2DArray.html">textures/Texture2DArray</a></li><li><a href="module-textures_TextureColorRamp.html">textures/TextureColorRamp</a></li><li><a href="module-textures_TexturedMaterial.html">textures/TexturedMaterial</a></li><li><a href="objects_loaders_BVHObject.html">objects/loaders/BVHObject</a></li><li><a href="objects_loaders_BVHObjectRoot.html">objects/loaders/BVHObjectRoot</a></li></ul><h3>Global</h3><ul><li><a href="global.html#appendInputControlRow">appendInputControlRow</a></li><li><a href="global.html#createPanel">createPanel</a></li><li><a href="global.html#getOptionsFromScene">getOptionsFromScene</a></li><li><a href="global.html#makeEditorTabs">makeEditorTabs</a></li><li><a href="global.html#pack">pack</a></li><li><a href="global.html#parseProperties">parseProperties</a></li><li><a href="global.html#parsePropertyType">parsePropertyType</a></li><li><a href="global.html#preview2DTextureArraySources">preview2DTextureArraySources</a></li><li><a href="global.html#previewColorRamp">previewColorRamp</a></li><li><a href="global.html#previewTextureMaterialLayers">previewTextureMaterialLayers</a></li><li><a href="global.html#syncProperties">syncProperties</a></li><li><a href="global.html#titleCase">titleCase</a></li><li><a href="global.html#toString">toString</a></li><li><a href="global.html#updatePropertyHandler">updatePropertyHandler</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Nov 26 2026 12:30:45 GMT-0700 (Mountain Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
